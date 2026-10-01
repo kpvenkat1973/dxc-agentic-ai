@@ -1,0 +1,21 @@
+{
+  "session": "S02",
+  "section": "Welcome",
+  "section_idx": 0,
+  "sections_total": 10,
+  "xp_total": 0,
+  "active_minutes": 1,
+  "quiz_answered": 0,
+  "quiz_correct": 0,
+  "labs_self_reported": {
+    "labA": false,
+    "labB": false,
+    "labC": false
+  },
+  "participant": {
+    "name": "Anil",
+    "github_user": "askanilkumar",
+    "team": "A"
+  },
+  "updated_at": "2026-10-01T04:29:29.507731+00:00"
+}
