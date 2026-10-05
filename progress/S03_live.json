@@ -1,0 +1,17 @@
+{
+  "session": "S03",
+  "section": "Welcome",
+  "section_idx": 0,
+  "sections_total": 10,
+  "xp_total": 6,
+  "active_minutes": 1,
+  "quiz_answered": 0,
+  "quiz_correct": 0,
+  "labs_self_reported": {
+    "lab2a": false,
+    "lab2b": false,
+    "lab2c": false
+  },
+  "participant": null,
+  "updated_at": "2026-10-05T03:58:51.372393+00:00"
+}
