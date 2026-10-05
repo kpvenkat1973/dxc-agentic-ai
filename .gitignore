@@ -17,3 +17,6 @@ __pycache__/
 # Generated
 progress/.tmp_*.xml
 Day*/Labs/*/index/
+Day*/Labs/*/.cache/
+Day*/Labs/*/chroma_db/
+Day*/Labs/*/evals_agentic/

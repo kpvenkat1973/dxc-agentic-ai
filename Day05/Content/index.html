@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5 · Agents, Tools & Function Calling</title>
+<style>
+
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --surface2:#eef1f7; --ink:#141a2a; --muted:#5a6478; --line:#dde2ec;
+  --accent:#0f7c8c; --accent-soft:#d8f0f3; --warn:#b45309; --warn-soft:#fdecd3;
+  --ok:#157f3b; --ok-soft:#dcf3e4; --bad:#b42318; --bad-soft:#fbe0dd;
+  --basic:#157f3b; --inter:#b45309; --adv:#6d3fc0;
+  --shadow:0 2px 10px rgba(20,26,42,.07);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17;
+  --basic:#4ccf7c; --inter:#f0a44b; --adv:#b494ff; --shadow:none;}}
+:root[data-theme="dark"]{
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17;
+  --basic:#4ccf7c; --inter:#f0a44b; --adv:#b494ff; --shadow:none;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Aptos Narrow","Aptos","Segoe UI",system-ui,-apple-system,sans-serif;font-size:18px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer}
+header{position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar{max-width:1200px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:.2px}
+.brand small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.steps{display:flex;gap:6px;flex-wrap:wrap;flex:1;justify-content:center;align-items:center}
+.step{border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:4px 12px;font-size:14px}
+.step.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.step.lab{border-style:dashed}
+.xp{font-weight:700;background:var(--warn-soft);color:var(--warn);border-radius:999px;padding:4px 12px;font-size:15px;white-space:nowrap}
+.theme{border:1px solid var(--line);background:var(--surface2);border-radius:8px;padding:4px 10px;font-size:14px}
+main{max-width:1200px;margin:0 auto;padding:24px 16px 90px}
+section{display:none;animation:fade .25s ease}
+section.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+h1{font-size:40px;line-height:1.15;margin:.2em 0 .3em}
+h2{font-size:30px;margin:.2em 0 .4em}
+h3{font-size:22px;margin:1.4em 0 .5em}
+.kicker{color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:14px}
+.lead{font-size:21px;color:var(--muted);max-width:820px}
+.chip{display:inline-block;font-size:13px;font-weight:700;border-radius:6px;padding:2px 8px;margin-right:6px;vertical-align:middle;border:1px solid currentColor}
+.chip.b{color:var(--basic)} .chip.i{color:var(--inter)} .chip.a{color:var(--adv)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+/* flip cards */
+.flip{perspective:1000px;min-height:170px;border:0;background:none;padding:0;text-align:left;width:100%}
+.flip .in{position:relative;width:100%;height:100%;min-height:170px;transition:transform .5s;transform-style:preserve-3d}
+.flip.flipped .in{transform:rotateY(180deg)}
+.flip .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;padding:16px;border:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}
+.flip .front{background:var(--surface);box-shadow:var(--shadow)}
+.flip .front b{font-size:21px}
+.flip .front .hint{font-size:13px;color:var(--muted);margin-top:8px}
+.flip .back{background:var(--accent-soft);transform:rotateY(180deg);font-size:16px}
+.big-emoji{font-size:30px;line-height:1}
+/* stepper */
+.timeline{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.tl-item{display:none;gap:14px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:10px;padding:12px 16px}
+.tl-item.show{display:flex;animation:fade .3s}
+.tl-item .yr{font-weight:700;color:var(--accent);min-width:110px}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:9px 18px;font-weight:700}
+.btn.ghost{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+/* quiz */
+.q{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:12px 0}
+.q .qt{font-weight:700;margin-bottom:10px}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--surface2);border-radius:10px;padding:9px 14px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:var(--ok-soft);border-color:var(--ok)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.why{display:none;margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--surface2);font-size:16px}
+.why.show{display:block}
+/* classify */
+.cls{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line)}
+.cls select{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--ink)}
+.cls .res{grid-column:1/-1;font-size:15px;display:none}
+.cls .res.show{display:block}
+/* lab card */
+.lab{border:2px dashed var(--accent);background:var(--accent-soft);border-radius:16px;padding:22px}
+.lab h2{margin-top:0}
+.lab ol{margin:.4em 0 0;padding-left:1.3em}
+.lab li{margin:4px 0}
+.path{font-family:Consolas,"Cascadia Mono",monospace;font-size:15px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+.openpath{margin-top:14px;font-weight:700}
+.steplist{list-style:none;padding:0;margin:12px 0 0}
+.steplist li{padding:6px 10px;border-radius:8px;margin:4px 0;background:var(--surface2)}
+.steplist li.ok{background:var(--ok-soft)} .steplist li.bad{background:var(--bad-soft)}
+.who{font-size:14px;color:var(--muted);white-space:nowrap}
+.tag{font-size:13px;font-weight:700;border-radius:6px;padding:1px 8px;background:var(--surface);border:1px solid var(--line);margin-left:6px}
+/* widgets */
+textarea{width:100%;min-height:110px;font:inherit;font-size:16px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--ink)}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+.stat{background:var(--surface2);border-radius:10px;padding:8px 14px;min-width:130px}
+.stat b{display:block;font-size:26px}
+.slider{display:grid;grid-template-columns:200px 1fr 70px;gap:10px;align-items:center;margin:8px 0}
+.slider input{width:100%}
+.slider output{font-weight:700;text-align:right}
+.ctxbar{display:flex;height:40px;border-radius:10px;overflow:hidden;border:2px solid var(--line);margin-top:12px;background:var(--surface2)}
+.ctxbar div{height:100%;transition:width .25s}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;margin-top:8px}
+.legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;background:var(--c);vertical-align:-1px}
+.alert{margin-top:10px;padding:10px 14px;border-radius:10px;font-weight:700}
+.alert.ok{background:var(--ok-soft);color:var(--ok)} .alert.bad{background:var(--bad-soft);color:var(--bad)}
+.bars{margin-top:12px}
+.pb{display:grid;grid-template-columns:120px 1fr 64px;gap:10px;align-items:center;margin:5px 0;font-size:16px}
+.pb .track{background:var(--surface2);border-radius:6px;height:22px;overflow:hidden}
+.pb .fill{height:100%;background:var(--accent);transition:width .25s}
+.pb.cut{opacity:.35}
+.pb.cut .fill{background:var(--muted)}
+.samples{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+.samples span{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:2px 10px;font-size:15px}
+.matrix{display:grid;grid-template-columns:120px 1fr 1fr;gap:8px}
+.matrix .hd{font-weight:700;color:var(--muted);display:flex;align-items:center;justify-content:center;text-align:center;font-size:15px}
+.cell{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px;min-height:110px;text-align:left}
+.cell .rv{display:none;font-size:15px;margin-top:6px}
+.cell.open .rv{display:block}
+.cell .t{font-weight:700}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ticket{font-style:italic;background:var(--surface2);border-left:4px solid var(--warn);padding:12px 16px;border-radius:8px}
+table.kv{border-collapse:collapse;width:100%;font-size:16px}
+table.kv td{border-bottom:1px solid var(--line);padding:6px 8px}
+table.kv td:first-child{color:var(--muted);width:40%}
+.agenda{display:grid;gap:6px}
+.ag{display:grid;grid-template-columns:120px 1fr;gap:10px;padding:8px 12px;border-radius:8px;background:var(--surface)}
+.ag.lab{background:var(--accent-soft);border:1px dashed var(--accent)}
+.ag b{font-variant-numeric:tabular-nums}
+.score{font-size:48px;font-weight:800;color:var(--accent)}
+footer.nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line)}
+footer .bar{justify-content:space-between}
+.hidden{display:none!important}
+@media (max-width:700px){
+  body{font-size:16px} h1{font-size:30px} h2{font-size:24px}
+  .brand small{display:none} .steps{order:3;flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding-bottom:4px}
+  .step{white-space:nowrap;flex:none}
+  .compare{grid-template-columns:1fr} .slider{grid-template-columns:1fr 60px} .slider label{grid-column:1/-1}
+  .matrix{grid-template-columns:80px 1fr 1fr} .ag{grid-template-columns:90px 1fr} .pb{grid-template-columns:90px 1fr 54px}
+}
+
+.wwho{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 16px}
+.wwho div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:17px;line-height:1.4}
+.wwho b{display:block;color:var(--accent);font-size:14px;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+@media(max-width:800px){.wwho{grid-template-columns:1fr}}
+/* ---- added for Day 3/4 ---- */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
+.tabs button{border:1px solid var(--line);background:var(--surface2);border-radius:10px 10px 0 0;padding:8px 14px;font-weight:700;font-size:16px}
+.tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tabpanel{display:none;background:var(--surface);border:1px solid var(--line);border-radius:0 12px 12px 12px;padding:16px;box-shadow:var(--shadow)}
+.tabpanel.on{display:block;animation:fade .25s}
+.say{background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:8px;padding:10px 14px;margin:10px 0;font-size:17px}
+.vrow{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;margin:4px 0;font-size:15px}
+.vbars{display:flex;gap:3px;align-items:center;height:64px}
+.vb{flex:1;position:relative;height:100%;background:var(--surface2);border-radius:4px}
+.vb i{position:absolute;left:0;right:0;border-radius:3px}
+.vb span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:11px;color:var(--muted)}
+.simtable{width:100%;border-collapse:collapse;font-size:16px;margin-top:8px}
+.simtable th,.simtable td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+.simtable th{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.5px}
+.simtable tr.top td{background:var(--ok-soft)}
+.num{font-variant-numeric:tabular-nums;font-weight:700}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--surface2);padding:6px 14px;font-weight:700}
+.seg button.on{background:var(--accent);color:#fff}
+select.pick{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);max-width:100%}
+.kw{display:inline-block;font-size:13px;border-radius:6px;padding:1px 7px;background:var(--warn-soft);color:var(--warn);font-weight:700}
+.sm{display:inline-block;font-size:13px;border-radius:6px;padding:1px 7px;background:var(--ok-soft);color:var(--ok);font-weight:700}
+.adr label{display:block;font-weight:700;margin-top:10px}
+.adr textarea{min-height:70px}
+.adr pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:12px;white-space:pre-wrap;font-size:14px;max-height:340px;overflow:auto}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.pill{border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:3px 12px;font-size:15px}
+.doc{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;margin:6px 0;display:grid;grid-template-columns:90px 1fr auto;gap:10px;align-items:center;transition:all .3s}
+.doc.rel{border-color:var(--ok);background:var(--ok-soft)}
+.doc.out{opacity:.35}
+.doc b{font-variant-numeric:tabular-nums}
+.node{cursor:pointer}
+@media(max-width:700px){.vrow{grid-template-columns:1fr}.doc{grid-template-columns:70px 1fr}}
+
+/* ===== top navigation (cleaner): brand + XP on row 1, one scrollable step row below ===== */
+header .bar{flex-wrap:wrap;row-gap:8px}
+.brand{margin-right:auto}
+.steps{order:3;flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;gap:8px;padding:2px 0 6px;scrollbar-width:thin}
+.step{flex:none;white-space:nowrap;font-size:16px;padding:6px 14px;border-radius:999px;line-height:1.2}
+.step.lab{padding:6px 14px;border-radius:999px;background:var(--accent-soft);border:1.5px dashed var(--accent);color:var(--ink)}
+.step.lab::before{content:"🧪 "}
+.step.on,.step.lab.on{background:var(--accent);border:1.5px solid var(--accent);color:#fff;font-weight:700}
+.step.seen:not(.on){border-color:var(--accent)}
+.step.seen:not(.on)::after{content:" ✓";color:var(--accent);font-weight:700}
+@media(max-width:700px){.step{font-size:14px;padding:5px 11px}}
+header .bar{max-width:1700px}
+.step{font-size:15px;padding:5px 11px}.step.lab{padding:5px 11px}
+.steps{gap:6px}
+
+
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <div class="brand">AskIT Program · Session 5<small>Agentic AI · DevPro Academy</small></div>
+  <nav class="steps" id="steps"></nav>
+  <span class="who" id="who"></span><span class="xp" id="xp">⭐ 0 XP</span>
+  <button class="theme" id="theme" aria-label="Toggle theme">◐</button>
+</div></header>
+
+<main>
+<!-- ============ 0. WELCOME ============ -->
+<section data-title="Welcome">
+  <div class="kicker">Session 5 · Agents, tools &amp; function calling</div>
+  <h1>From "AskIT answers" to "AskIT acts"</h1>
+  <p class="lead">Until now AskIT <b>read</b>: it searched the KB and wrote an answer. Today it <b>acts</b>: it looks up a ticket, adds a note, resets a password. The model decides <i>what</i> to do. Your code does it, safely, in a loop that always has a stop.</p>
+
+  <h3>Where we are, in 3 cards</h3>
+  <div class="grid g3">
+    <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">📚</span><b>Days 3 and 4</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>RAG: find the right article, answer from it, check it, and loop once with a critic. AskIT could only <b>read</b>.</div></div></div></button>
+    <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🛠️</span><b>Today</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>Four tools (search the KB, get a ticket, add a note, reset a password) and a <b>manual agent loop</b> you write yourself, with no framework.</div></div></div></button>
+    <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🚨</span><b>Today's incident</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>At 12:25 something goes wrong in production. You will read the trace, find the root cause and fix it in 10 minutes.</div></div></div></button>
+  </div>
+
+  <h3>Today's flow · concept, lab, concept, lab</h3>
+  <div class="agenda">
+    <div class="ag"><b>9:00</b><span>Recap quiz (AhaSlides) (15 min)</span></div>
+    <div class="ag"><b>9:15</b><span>① Agents, ReAct and tool calling (20 min)</span></div>
+    <div class="ag lab"><b>9:35</b><span>🧪 Lab 5A: one tool call, by hand (40 min)</span></div>
+    <div class="ag"><b>10:15</b><span>② The agent loop and its stop rules (20 min)</span></div>
+    <div class="ag lab"><b>10:35</b><span>🧪 Lab 5B: write the agent loop (40 min)</span></div>
+    <div class="ag"><b>11:15</b><span>Break</span></div>
+    <div class="ag"><b>11:25</b><span>③ Safe tools and Bedrock Converse (20 min)</span></div>
+    <div class="ag lab"><b>11:45</b><span>🧪 Lab 5C: ask a human before the agent changes anything (40 min)</span></div>
+    <div class="ag lab"><b>12:25</b><span>🚨 Incident: the agent is stuck in a loop (10 min) · lab catch-up (20 min)</span></div>
+    <div class="ag"><b>12:55</b><span>🏁 Sum-up and Day End</span></div>
+  </div>
+</section>
+
+<!-- ============ 1. AGENTS + TOOLS ============ -->
+<section data-title="① Agents &amp; tools">
+  <div class="kicker">Concept 1 · <span class="chip b">BASIC</span> → <span class="chip i">INTERMEDIATE</span></div>
+  <h2>What is an agent? What is a tool?</h2>
+  <p class="lead">An agent is a model that can <b>ask for tools</b> and keep going until the job is done. The model never runs anything itself: it only asks. <b>Your code</b> runs the tool.</p>
+
+  <div data-tabs="c1">
+    <div class="tabs"><button>① Agent = model + tools + loop</button><button>② ReAct: think, act, observe</button><button>③ Tool calling: who does what</button><button>④ The 4 AskIT tools</button></div>
+
+    <div class="tabpanel">
+      <div class="say"><b>RAG vs agent:</b> RAG always follows the same fixed path (search, then answer). An agent <b>chooses</b> its next step each time, so the path changes with the question.</div>
+      <div class="compare">
+        <div class="card"><b>📚 RAG pipeline</b><br>question → search → answer<br><span class="muted">Same path every time. Predictable. Cannot change anything.</span></div>
+        <div class="card"><b>🤖 Agent</b><br>question → <i>decide</i> → tool → <i>decide</i> → tool → answer<br><span class="muted">Path depends on the question. Can act. Needs limits.</span></div>
+      </div>
+      <h3>Three parts, nothing more</h3>
+      <div class="grid g3">
+        <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🧠</span><b>The model</b><span class="hint">Click to flip</span></div>
+          <div class="face back"><div>Reads the question and the tool descriptions. Decides: answer now, or ask for a tool.</div></div></div></button>
+        <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🔧</span><b>The tools</b><span class="hint">Click to flip</span></div>
+          <div class="face back"><div>Ordinary Python functions. Each has a name, a description and the inputs it needs.</div></div></div></button>
+        <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🔁</span><b>The loop</b><span class="hint">Click to flip</span></div>
+          <div class="face back"><div>Your code: ask the model, run the tool, give the result back, repeat. It stops on an answer or at a step limit.</div></div></div></button>
+      </div>
+    </div>
+
+    <div class="tabpanel">
+      <div class="say"><b>ReAct = Reason + Act.</b> Each turn the agent thinks, acts with a tool, then observes the result. Click through one real AskIT question.</div>
+      <div data-stepper="react">
+        <div><b>Question:</b> "Priya left her laptop at the airport (ticket TKT-0046). What should she do, and how fast will we respond?"</div>
+        <div class="timeline">
+          <div class="tl-item"><div class="yr">💭 Think</div><div>Two parts: what to do, and how fast. I need the ticket first.</div></div>
+          <div class="tl-item"><div class="yr">🔧 Act</div><div>Tool <b>get_ticket</b> with ticket TKT-0046.</div></div>
+          <div class="tl-item"><div class="yr">👁️ Observe</div><div>"Lost laptop at airport", priority <b>Critical</b>, status Open.</div></div>
+          <div class="tl-item"><div class="yr">💭 Think</div><div>Now I need the lost-device rule.</div></div>
+          <div class="tl-item"><div class="yr">🔧 Act</div><div>Tool <b>search_kb</b> with "lost laptop device".</div></div>
+          <div class="tl-item"><div class="yr">👁️ Observe</div><div>KB-014: call the helpdesk, always Critical, the device is locked and wiped.</div></div>
+          <div class="tl-item"><div class="yr">💭 Think</div><div>I still need the Critical response time.</div></div>
+          <div class="tl-item"><div class="yr">🔧 Act</div><div>Tool <b>search_kb</b> with "critical priority response time".</div></div>
+          <div class="tl-item"><div class="yr">👁️ Observe</div><div>KB-016: Critical means first response in 15 minutes.</div></div>
+          <div class="tl-item"><div class="yr">✅ Answer</div><div>"Call the helpdesk now; the device will be locked and wiped [KB-014]. Critical tickets get a first response in 15 minutes [KB-016]."</div></div>
+        </div>
+        <div class="row"><button class="btn stNext">Next step ▶</button><button class="btn ghost stReset">Reset</button></div>
+      </div>
+      <p class="muted" style="font-size:15px;margin-bottom:0">Day 4's critic loop was a fixed recipe. Here the <b>model chooses</b> each action. That is the whole difference.</p>
+    </div>
+
+    <div class="tabpanel">
+      <div class="say"><b>The most important idea of the day:</b> the model does <u>not</u> run your tool. It sends a request. Your code runs the tool and sends the result back. Click through one round trip (this is the Bedrock <b>Converse API</b> that you use in Lab 5A).</div>
+      <div data-stepper="conv">
+        <div class="timeline">
+          <div class="tl-item"><div class="yr">1️⃣ App → Model</div><div>Your code sends the <b>question</b> and the <b>list of tools</b> (name, description, inputs).</div></div>
+          <div class="tl-item"><div class="yr">2️⃣ Model → App</div><div>The model replies with a <b>tool request</b>: "please run <b>get_ticket</b> with ticket_id = TKT-0004" and a request id. Stop reason: <b>tool_use</b>. Nothing has run yet.</div></div>
+          <div class="tl-item"><div class="yr">3️⃣ Your code</div><div>Your code finds the Python function and <b>runs it</b>. The model is not involved.</div></div>
+          <div class="tl-item"><div class="yr">4️⃣ App → Model</div><div>Your code sends back a <b>tool result</b> with the <u>same request id</u>, so the model can match answer to question.</div></div>
+          <div class="tl-item"><div class="yr">5️⃣ Model → App</div><div>The model reads the result and writes the <b>final answer</b>. Stop reason: <b>end_turn</b>. Or it asks for another tool, and we go round again.</div></div>
+        </div>
+        <div class="row"><button class="btn stNext">Next step ▶</button><button class="btn ghost stReset">Reset</button></div>
+      </div>
+      <p class="muted" style="font-size:15px;margin-bottom:0">Three message pieces to remember: the <b>user message</b>, the model's <b>toolUse</b> request, and your <b>toolResult</b> reply.</p>
+    </div>
+
+    <div class="tabpanel">
+      <div class="say">Only <b>four tools</b>, all day, every session. Two <b>read</b>, two <b>change</b> data. The model sees only the name and description, never the code, so write them well.</div>
+      <div class="grid g2">
+        <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🔎</span><b>search_kb</b> <span class="tag">READ</span><span class="hint">Click to flip</span></div>
+          <div class="face back"><div>Finds the best KB articles for some keywords. Input: <b>query</b>. You met the KB on Day 3.</div></div></div></button>
+        <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🎫</span><b>get_ticket</b> <span class="tag">READ</span><span class="hint">Click to flip</span></div>
+          <div class="face back"><div>Looks up one ticket: subject, priority, status, notes. Input: <b>ticket_id</b>, like TKT-0004.</div></div></div></button>
+        <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">📝</span><b>update_ticket</b> <span class="tag">WRITE</span><span class="hint">Click to flip</span></div>
+          <div class="face back"><div>Adds a work note to a ticket. Inputs: <b>ticket_id</b>, <b>note</b>. It changes data (mock today).</div></div></div></button>
+        <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🔑</span><b>reset_password</b> <span class="tag">WRITE</span><span class="hint">Click to flip</span></div>
+          <div class="face back"><div>Resets an employee's password. Input: <b>user_id</b>, like EMP-1021. It changes data (mock today).</div></div></div></button>
+      </div>
+    </div>
+  </div>
+
+  <h3>Exercise · which tool would the agent pick? <span class="chip b">BASIC</span></h3>
+  <div class="card" data-classify="tools"></div>
+
+  <h3>Quick check</h3>
+  <div data-quiz="m1"></div>
+</section>
+
+<!-- ============ LAB 5A ============ -->
+<section data-title="Lab 5A" data-lab="1">
+  <div class="lab">
+    <div class="kicker">🧪 Lab 5A · 40 min</div>
+    <h2>One tool call, by hand</h2>
+    <div class="wwho"><div><b>What we do</b>Send one question to the model with the four tools. The model asks for a tool. You write 3 small functions that run it and send the result back.</div><div><b>Why</b>You must see the raw conversation once, with no framework hiding it. This is the Bedrock Converse API.</div><div><b>Outcome / learning</b>You can read a tool request, run the tool safely, and wrap the result so the model understands it.</div><div><b>How</b>Read the tools (5 min) &rarr; TODO-1, 2, 3 in <span class="path">agent.py</span> (20 min) &rarr; run it and read the 4 printed steps (10 min) &rarr; notes (5 min).</div></div>
+    <ol>
+      <li><b>Start:</b> <span class="path">cd /d C:\AskIT\dxc-agentic-ai</span> &rarr; <span class="path">.venv\Scripts\activate</span> &rarr; <span class="path">pip install -r Day05\Labs\lab05-askit-agent-loop\requirements.txt</span> &rarr; <span class="path">cd Day05\Labs\lab05-askit-agent-loop</span> <span class="tag">AWS Bedrock (Nova small model) is the default</span></li>
+      <li><b>Read the tools (5 min):</b> open <span class="path">askit_core\tools.py</span> and read <b>TOOL_SPECS</b> at the bottom. This text is all the model knows about each tool.</li>
+      <li><b>Open</b> <span class="path">agent.py</span> and fill <b>TODO-1</b> <span class="path">run_tool</span> (run the tool, never crash) &middot; <b>TODO-2</b> <span class="path">get_tool_requests</span> (find the tool requests in the model's reply) &middot; <b>TODO-3</b> <span class="path">make_tool_result</span> (wrap the result).</li>
+      <li><b>Run it:</b> <span class="path">python run_5a.py</span>. Read the 4 steps it prints. Then ask your own: <span class="path">python run_5a.py "How do I fix VPN error 809?"</span></li>
+      <li><b>Check:</b> <span class="path">python check.py 5a</span> &rarr; aim for 4 passed (the 4th checks your notes). Fill the <b>Lab 5A</b> lines in <span class="path">submission\lab05_notes.md</span>.</li>
+      <li><span class="tag">stretch</span> <b>STRETCH-A:</b> add a 5th tool, <span class="path">get_user</span>. Write its body in <span class="path">agent.py</span>, remove the two <b>#</b> in front of the registration lines, then run <span class="path">python run_5a.py "Who is EMP-1002?"</span></li>
+    </ol>
+    <div class="card"><b>Stuck?</b> Hints and full answers: <span class="path">Day05\Hints\lab05_hints.md</span> &middot; "Model: offline" printed &rarr; your <span class="path">.env</span> has no AWS keys or <b>BEDROCK_SMALL_MODEL_ID</b>: ask the trainer, or add <b>OPENAI_API_KEY=...</b> and <b>ASKIT_MODEL=openai</b> to <span class="path">.env</span> (backup) &middot; Throttling error &rarr; wait 30 s and run again &middot; <b>offline</b> is fine for the TODOs; only the answers are simpler.</div>
+    <div class="openpath">📂 Open in VS Code: <span class="path">C:\AskIT\dxc-agentic-ai\Day05\Labs\lab05-askit-agent-loop\agent.py</span></div>
+    <div class="row"><button class="btn" data-done="lab5a">🏁 I completed Lab 5A: run my checks and push</button></div>
+  </div>
+</section>
+
+<!-- ============ 2. THE LOOP ============ -->
+<section data-title="② The loop">
+  <div class="kicker">Concept 2 · <span class="chip i">INTERMEDIATE</span></div>
+  <h2>The agent loop and its stop rules</h2>
+  <p class="lead">A loop is powerful and dangerous in one breath. Every agent loop needs <b>a way to finish</b> and <b>a way to give up</b>.</p>
+
+  <div data-tabs="c2">
+    <div class="tabs"><button>① Watch the loop run</button><button>② Three ways to stop</button><button>③ What a loop costs</button></div>
+
+    <div class="tabpanel">
+      <div class="say"><b>Pick a question, press Next step.</b> Scenario C is the dangerous one: the tool never gives a useful answer. Move the step limit and see what changes.</div>
+      <div class="row" style="margin-top:0"><span>Scenario:</span>
+        <select class="pick" id="lpS"><option value="0">A · Simple: status of TKT-0004</option><option value="1">B · Two parts: the airport laptop</option><option value="2">C · Stuck: the ticket system is syncing</option></select>
+        <span>Step limit</span><input type="range" id="lpL" min="1" max="8" value="6" style="width:130px"><output id="oLpL">6</output></div>
+      <div class="row"><button class="btn" id="lpNext">Next step ▶</button><button class="btn ghost" id="lpReset">Reset</button></div>
+      <div id="lpOut" style="margin-top:8px"></div>
+      <div class="stats"><div class="stat"><span class="muted">Steps used</span><b id="lpN">0</b></div><div class="stat"><span class="muted">Input tokens so far (illustrative)</span><b id="lpT">0</b></div></div>
+      <div id="lpEnd" class="alert" style="display:none"></div>
+    </div>
+
+    <div class="tabpanel">
+      <div class="say">Three exits. Build all three, because any one of them can fail.</div>
+      <div class="grid g3">
+        <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">✅</span><b>The model answers</b><span class="hint">Click to flip</span></div>
+          <div class="face back"><div>No tool request in the reply means the model is finished. The normal exit.</div></div></div></button>
+        <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🔢</span><b>A step limit</b><span class="hint">Click to flip</span></div>
+          <div class="face back"><div>Written in <b>code</b>, not in the prompt. A prompt is a request; code is a guarantee. AskIT uses 6.</div></div></div></button>
+        <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🙋</span><b>Hand over to a human</b><span class="hint">Click to flip</span></div>
+          <div class="face back"><div>Out of steps? Say so, hand the ticket to a person. Never leave the user with silence or a guess.</div></div></div></button>
+      </div>
+      <h3>Tool errors are information</h3>
+      <div class="card">If a tool fails ("ticket not found"), do <b>not</b> crash. Return the error as the <b>tool result</b>. The model reads it and explains, or tries different inputs. That is why your <span class="path">run_tool</span> catches every exception.</div>
+    </div>
+
+    <div class="tabpanel">
+      <div class="say"><b>Every step resends the whole conversation.</b> So cost grows faster than the step count. Illustrative numbers: your Lab 5C run shows the real ones.</div>
+      <div class="slider"><label>Steps taken</label><input type="range" id="ccS" min="1" max="10" value="4"><output id="oCcS"></output></div>
+      <div class="slider"><label>Tokens added per step</label><input type="range" id="ccG" min="100" max="800" step="50" value="300"><output id="oCcG"></output></div>
+      <div class="stats">
+        <div class="stat"><span class="muted">Input tokens in total</span><b id="ccT">0</b></div>
+        <div class="stat"><span class="muted">Cost of 1,000 questions, small Nova model</span><b id="ccC">0</b></div>
+        <div class="stat"><span class="muted">Same question in 1 step</span><b id="ccOne">0</b></div>
+      </div>
+      <p class="muted" style="font-size:15px;margin-bottom:0">Step 1 sends about 500 tokens, then each step adds the number above. Price used: 0.035 USD per million input tokens, 0.14 per million output (about 60 output tokens a step). Check the AWS pricing page for today's prices.</p>
+    </div>
+  </div>
+
+  <h3>Quick check</h3>
+  <div data-quiz="m2"></div>
+</section>
+
+<!-- ============ LAB 5B ============ -->
+<section data-title="Lab 5B" data-lab="1">
+  <div class="lab">
+    <div class="kicker">🧪 Lab 5B · 40 min</div>
+    <h2>Write the agent loop</h2>
+    <div class="wwho"><div><b>What we do</b>Finish <span class="path">run_agent</span>: ask the model, run its tool, give the result back, repeat. Add the two exits: the model answers, or the step limit hands over to a human.</div><div><b>Why</b>This loop is what every agent framework does inside. Tomorrow LangChain does it for you. Today you own it.</div><div><b>Outcome / learning</b>A working agent that answers two-part questions with several tools, and stops safely when it cannot.</div><div><b>How</b>TODO-4, 5, 6 in <span class="path">run_agent</span> (20 min) &rarr; run three questions (10 min) &rarr; check and notes (10 min).</div></div>
+    <ol>
+      <li><b>Start:</b> same folder as Lab 5A (venv active): <span class="path">cd /d C:\AskIT\dxc-agentic-ai\Day05\Labs\lab05-askit-agent-loop</span></li>
+      <li><b>In</b> <span class="path">agent.py</span> <b>fill 3 TODOs inside</b> <span class="path">run_agent</span>: <b>TODO-4</b> no tool request means done: save the answer and return &middot; <b>TODO-5</b> run each tool, add the results, go round again (the comments list 4 steps) &middot; <b>TODO-6</b> out of steps: <span class="path">give_up(...)</span>.</li>
+      <li><b>Run the agent:</b> <span class="path">python run_agent.py "Priya left her laptop at the airport (ticket TKT-0046). What should she do and how fast will we respond?"</span> Watch each step print.</li>
+      <li><b>Try two more:</b> <span class="path">python run_agent.py "Hi"</span> (no tool) and <span class="path">python run_agent.py "What is the status of TKT-9999?"</span> (a tool error).</li>
+      <li><b>Check:</b> <span class="path">python check.py 5b</span> &rarr; aim for 4 passed. Fill the <b>Lab 5B</b> lines in <span class="path">submission\lab05_notes.md</span>.</li>
+      <li><span class="tag">stretch</span> Set <span class="path">MAX_STEPS = 2</span> at the top of <span class="path">agent.py</span> and ask the airport question again. What happens? Then set it back to 6.</li>
+    </ol>
+    <div class="card"><b>Stuck?</b> <span class="path">Day05\Hints\lab05_hints.md</span> has hints and full answers &middot; Nothing happens after the first step &rarr; the <span class="path">break</span> line from TODO-5 is still there &middot; Lab 5A TODOs must be done first &middot; Bedrock keys, throttling and offline: same as Lab 5A.</div>
+    <div class="openpath">📂 Open in VS Code: <span class="path">C:\AskIT\dxc-agentic-ai\Day05\Labs\lab05-askit-agent-loop\agent.py</span></div>
+    <div class="row"><button class="btn" data-done="lab5b">🏁 I completed Lab 5B: run my checks and push</button></div>
+  </div>
+</section>
+
+<!-- ============ 3. SAFE TOOLS + AWS ============ -->
+<section data-title="③ Safe tools &amp; Bedrock">
+  <div class="kicker">Concept 3 · <span class="chip i">INTERMEDIATE</span> → <span class="chip a">ADVANCED</span></div>
+  <h2>Safe tools, and the same loop on any model</h2>
+  <p class="lead">Reading is low risk. <b>Changing</b> things is where agents hurt people. Put the safety in <b>code</b> around the tool, never only in the prompt.</p>
+
+  <div data-tabs="c3">
+    <div class="tabs"><button>① Read vs write</button><button>② Approval flow</button><button>③ Bedrock vs OpenAI</button><button>④ Cost per question</button></div>
+
+    <div class="tabpanel">
+      <div class="say">Sort the four tools by what they can <b>damage</b>. Switch the approval rule on and off and ask for a password reset.</div>
+      <table class="simtable"><tr><th>Tool</th><th>Changes data?</th><th>Rule</th></tr>
+        <tr><td>search_kb</td><td>No</td><td>Runs freely</td></tr>
+        <tr><td>get_ticket</td><td>No</td><td>Runs freely</td></tr>
+        <tr><td>update_ticket</td><td>Yes</td><td>A human approves</td></tr>
+        <tr><td>reset_password</td><td>Yes</td><td>A human approves</td></tr></table>
+      <div class="row"><label><input type="checkbox" id="apOn" checked> Approval rule ON</label>
+        <select class="pick" id="apWho"><option value="n">Reset password for James Miller (EMP-1021)</option><option value="v">Reset password for Aarav Sharma (EMP-1001, VIP)</option></select></div>
+      <div id="apOut" style="margin-top:8px"></div>
+    </div>
+
+    <div class="tabpanel">
+      <div class="say">Where the check lives: <b>between</b> the model's request and the tool. The model cannot skip it.</div>
+      <div data-stepper="appr">
+        <div class="timeline">
+          <div class="tl-item"><div class="yr">🧠 Model</div><div>Asks for <b>reset_password</b> with EMP-1021.</div></div>
+          <div class="tl-item"><div class="yr">🛡️ Your code</div><div>Does this tool <b>change data</b>? Yes, so it pauses.</div></div>
+          <div class="tl-item"><div class="yr">🙋 Human</div><div>The agent shows what it wants to run. A person answers <b>y</b> or <b>n</b>.</div></div>
+          <div class="tl-item"><div class="yr">✅ If yes</div><div>The tool runs and the result goes back to the model.</div></div>
+          <div class="tl-item"><div class="yr">⛔ If no</div><div>The tool does <u>not</u> run. The model gets an error: "not approved, do not retry". It tells the user a human will follow up.</div></div>
+        </div>
+        <div class="row"><button class="btn stNext">Next step ▶</button><button class="btn ghost stReset">Reset</button></div>
+      </div>
+      <p class="muted" style="font-size:15px;margin-bottom:0">KB-018 goes further: for a VIP, AskIT may gather information but must hand over to a human before any action. That is the stretch in Lab 5C.</p>
+    </div>
+
+    <div class="tabpanel">
+      <div class="say">Same idea, different words. Your <span class="path">provider.py</span> translates, so <b>agent.py never changes</b> when you switch model.</div>
+      <table class="simtable"><tr><th>Idea</th><th>AWS Bedrock Converse</th><th>OpenAI (backup)</th></tr>
+        <tr><td>Tools the model may use</td><td>toolConfig → tools</td><td>tools</td></tr>
+        <tr><td>"I want to run a tool"</td><td>toolUse block, stop reason tool_use</td><td>tool_calls, finish reason tool_calls</td></tr>
+        <tr><td>Your result going back</td><td>toolResult block in a user message</td><td>a message with role tool</td></tr>
+        <tr><td>Matching request and result</td><td>toolUseId</td><td>tool_call_id</td></tr>
+        <tr><td>Final answer</td><td>text block, stop reason end_turn</td><td>content, finish reason stop</td></tr></table>
+      <p class="muted" style="font-size:15px;margin-bottom:0">The AWS step of today is <b>Converse tool use</b>, and you have been using it since Lab 5A. Lab 5C asks you to read the raw conversation once more.</p>
+    </div>
+
+    <div class="tabpanel">
+      <div class="say">An agent question costs several model calls. Pick a model and a number of steps. Illustrative prices: verify on each provider's pricing page.</div>
+      <div class="row" style="margin-top:0"><span>Model:</span><select class="pick" id="mcM"><option value="0">Amazon Nova Micro (small)</option><option value="1">Amazon Nova Lite (large)</option><option value="2">OpenAI gpt-5-mini (backup)</option></select>
+        <span>Steps</span><input type="range" id="mcS" min="1" max="8" value="3" style="width:130px"><output id="oMcS">3</output></div>
+      <div class="stats">
+        <div class="stat"><span class="muted">Cost of one question</span><b id="mcOne">0</b></div>
+        <div class="stat"><span class="muted">Cost of 1,000 questions</span><b id="mcK">0</b></div>
+      </div>
+      <p class="muted" style="font-size:15px;margin-bottom:0">Assumes 500 input tokens at step 1, +300 per step, 60 output tokens per step. Small models are cheap, but must still choose tools well: you measure that in the labs.</p>
+    </div>
+  </div>
+
+  <h3>Exercise · which control fixes which risk? <span class="chip i">INTERMEDIATE</span></h3>
+  <div class="card" data-classify="ctl5"></div>
+
+  <h3>Quick check</h3>
+  <div data-quiz="m3"></div>
+</section>
+
+<!-- ============ LAB 5C ============ -->
+<section data-title="Lab 5C" data-lab="1">
+  <div class="lab">
+    <div class="kicker">🧪 Lab 5C · 40 min</div>
+    <h2>Ask a human before the agent changes anything</h2>
+    <div class="wwho"><div><b>What we do</b>Add an approval step around the two tools that change data. Then read the raw Converse conversation and note what one question costs.</div><div><b>Why</b>A helpful agent that can reset passwords is also a risk. The check must live in code, where the model cannot skip it.</div><div><b>Outcome / learning</b>An agent that pauses for a human on write tools, runs read tools freely, and a first feel for tokens and cost per question.</div><div><b>How</b>TODO-7 and 8 (15 min) &rarr; run read and write questions (10 min) &rarr; read the raw conversation (10 min) &rarr; notes (5 min).</div></div>
+    <ol>
+      <li><b>Start:</b> same folder, venv active.</li>
+      <li><b>In</b> <span class="path">agent.py</span> <b>fill:</b> <b>TODO-7</b> <span class="path">needs_approval</span> (which tools change data?) &middot; <b>TODO-8</b> <span class="path">run_tool_safely</span> (ask a human first, refuse if the answer is no).</li>
+      <li><b>Try a write tool:</b> <span class="path">python run_agent.py "Reset the password for EMP-1021"</span> and answer <b>y</b>. Run it again and answer <b>n</b>. What did the agent say the second time?</li>
+      <li><b>Try a read tool:</b> <span class="path">python run_agent.py "What is the status of ticket TKT-0004?"</span> It must NOT ask you anything.</li>
+      <li><b>Read the raw conversation:</b> <span class="path">python run_agent.py --raw "What is the status of ticket TKT-0004?"</span> Find the <b>toolUse</b> and the <b>toolResult</b> blocks and check that their ids match.</li>
+      <li><b>Check:</b> <span class="path">python check.py 5c</span> &rarr; aim for 3 passed. Fill the <b>Lab 5C</b> lines in <span class="path">submission\lab05_notes.md</span> (the run prints the tokens and the cost).</li>
+      <li><span class="tag">stretch</span> <b>STRETCH-B:</b> write <span class="path">vip_block</span> (KB-018), then try <span class="path">python run_agent.py "Reset the password for EMP-1001"</span> &middot; or add <b>OPENAI_API_KEY</b> and <b>ASKIT_MODEL=openai</b> to <span class="path">.env</span> and run the same question again: same code, different model.</li>
+    </ol>
+    <div class="card"><b>Stuck?</b> <span class="path">Day05\Hints\lab05_hints.md</span> &middot; It never asks for approval &rarr; <span class="path">run_agent</span> must call <span class="path">run_tool_safely</span> (it does, if TODO-5 was copied exactly) and TODO-7 must return True for the write tools &middot; Typing y does nothing &rarr; press Enter after y.</div>
+    <div class="openpath">📂 Open in VS Code: <span class="path">C:\AskIT\dxc-agentic-ai\Day05\Labs\lab05-askit-agent-loop\agent.py</span></div>
+    <div class="row"><button class="btn" data-done="lab5c">🏁 I completed Lab 5C: run my checks and push</button></div>
+  </div>
+</section>
+
+<!-- ============ INCIDENT ============ -->
+<section data-title="🚨 Incident" data-lab="1">
+  <div class="lab" style="border-color:var(--bad);background:var(--bad-soft)">
+    <div class="kicker" style="color:var(--bad)">🚨 Incident of the Day · 12:25 · 10 min</div>
+    <h2>"AskIT has been working on one ticket for five minutes"</h2>
+    <p class="lead">The Orbit Corp CIO just messaged: <i>"The bill is climbing and the user still has no answer. Find out why. Fix it."</i> First team with the right root cause scores points.</p>
+    <div class="wwho"><div><b>What we do</b>Turn on the incident, reproduce the problem, read the trace, find the root cause, and write a small fix.</div><div><b>Why</b>Agents fail in loops, quietly and expensively. Reading a trace is the skill.</div><div><b>Outcome / learning</b>You name the root cause in one sentence and the agent stops itself early.</div><div><b>How</b>Reproduce (2 min) &rarr; diagnose (3 min) &rarr; fix TODO-9 (5 min) &rarr; confirm.</div></div>
+    <ol>
+      <li><b>When the trainer says GO:</b> open <span class="path">C:\AskIT\dxc-agentic-ai\.env</span> and add a new line: <span class="path">ASKIT_INCIDENT=loop</span> (save the file).</li>
+      <li><b>Reproduce:</b> in the lab folder run <span class="path">python run_agent.py "What is the status of ticket TKT-0004?"</span> Watch the steps. Count them.</li>
+      <li><b>Diagnose:</b> what does every step have in common? What does the tool keep answering? Write what you saw and the root cause in the <b>Incident</b> lines of <span class="path">submission\lab05_notes.md</span>.</li>
+      <li><b>Fix (TODO-9):</b> write <span class="path">is_repeat</span> in <span class="path">agent.py</span>, then add the 2-line check inside <span class="path">run_agent</span> before the tool runs (the docstring shows the lines). Run the question again: the agent must stop after two steps.</li>
+      <li><b>Clean up:</b> delete the <span class="path">ASKIT_INCIDENT=loop</span> line from <span class="path">.env</span> (or put a # in front).</li>
+      <li><b>Check:</b> <span class="path">python check.py incident</span> &rarr; aim for 3 passed.</li>
+    </ol>
+    <div class="card"><b>Stuck?</b> <span class="path">Day05\Hints\lab05_hints.md</span> (Incident section) &middot; Think: is a step limit enough? It stopped the loop, but only after 6 expensive steps.</div>
+    <div class="row"><button class="btn" data-done="lab5i">🏁 I fixed the incident: run my checks and push</button></div>
+  </div>
+</section>
+
+<!-- ============ BOSS QUIZ ============ -->
+<section data-title="🏆 Boss Quiz">
+  <div class="kicker">Boss Quiz · Basic → Advanced</div>
+  <h2>12 questions. How far can you go?</h2>
+  <p class="lead">Basic 5 · Intermediate 10 · Advanced 15 XP.</p>
+  <div data-quiz="boss"></div>
+  <div class="card" style="text-align:center;margin-top:16px">
+    <div class="muted">Boss Quiz score</div><div class="score" id="bossScore">0 / 12</div>
+    <div id="bossBadge" class="muted">Answer all questions to earn your badge.</div>
+  </div>
+</section>
+
+<!-- ============ WRAP ============ -->
+<section data-title="Sum-up">
+  <div class="kicker">Sum-up</div>
+  <h2>What we built today</h2>
+  <div class="grid g3">
+    <div class="card"><b>The model asks, your code acts</b><br>Tool request, tool result, matching ids. The Bedrock Converse API, by hand.</div>
+    <div class="card"><b>A loop that always ends</b><br>Think, act, observe. Exits: an answer, a step limit, a handover to a human.</div>
+    <div class="card"><b>Safety lives in code</b><br>Approval for write tools, a repeat guard from the incident, a VIP rule from KB-018.</div>
+  </div>
+
+  <h3>Coming next · Session 6 (tomorrow)</h3>
+  <div class="card">You wrote the loop yourself. Tomorrow a framework, <b>LangChain</b>, builds that loop for you, so you add the interesting parts: <b>middleware</b> (hide personal data, cap cost, handle tool failures) and <b>streaming</b> (see each step as it happens). We finish with <b>Review Board 3: Design Review</b> of your agent.</div>
+
+  <h3>Exit ticket (saved with your Day End)</h3>
+  <div class="grid g3">
+    <div class="card">💡 One thing that <b>surprised</b> you today<textarea class="et" data-k="surprised" style="min-height:80px;margin-top:8px"></textarea></div>
+    <div class="card">❓ One thing still <b>unclear</b><textarea class="et" data-k="unclear" style="min-height:80px;margin-top:8px"></textarea></div>
+    <div class="card">🎯 Confidence today (1 = lost, 5 = could teach it)<div class="row" id="conf"></div></div>
+  </div>
+
+  <h3>🏁 Day End: do this before you leave</h3>
+  <div class="lab">
+    <p>One click: saves your XP, quiz answers and exit ticket, and <b>pushes everything to your GitHub fork</b>. Lab results come from the "I completed" buttons. You can click again if you finish more later.</p>
+    <button class="btn" id="dayEnd">🏁 Day End · Save &amp; Push</button>
+    <ul class="steplist" id="deOut"></ul>
+    <p class="muted" id="deHelp" style="display:none">Page not opened via <b>START_DAY.bat</b>? Your file was downloaded instead. Now double-click <span class="path">C:\AskIT\dxc-agentic-ai\DAY_END.bat</span>.</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="nav"><div class="bar">
+  <button class="btn ghost" id="prev">◀ Back</button>
+  <span class="muted" id="where"></span>
+  <button class="btn" id="next">Next ▶</button>
+</div></footer>
+
+<script>
+const SESSION="S05", PFX="s5_";
+const Q={
+ m1:[
+  {l:"b",q:"Who actually RUNS a tool when the model asks for one?",o:["The model itself","Your own code","AWS Bedrock","The end user"],a:1,w:"The model only asks. Your code finds the function, runs it and sends the result back."},
+  {l:"i",q:"The model's reply is a tool request, not text. What is the stop reason in Bedrock Converse?",o:["end_turn","tool_use","max_tokens","content_filtered"],a:1,w:"stopReason = tool_use means: run the tool(s), send the results, call the model again."},
+  {l:"a",q:"Why should a tool's description be written carefully?",o:["It is only a note for developers, nobody reads it","The model picks the tool by reading it","It makes the tool run faster on AWS Bedrock","AWS bills extra for long descriptions of tools"],a:1,w:"The name and description are all the model knows about a tool. Vague text means wrong tool choices."}
+ ],
+ m2:[
+  {l:"b",q:"What are the three beats of one agent step?",o:["Think, act, observe","Read, write, delete","Train, test, deploy","Embed, search, rank"],a:0,w:"The model thinks, your code acts (runs the tool), the model observes the result."},
+  {l:"i",q:"The model keeps asking for tools and never answers. What stops it?",o:["A step limit","A bigger model on Bedrock","A longer system prompt for the agent","Lowering the temperature to 0"],a:0,w:"A step limit written in code. Prompts ask; code enforces."},
+  {l:"a",q:"A tool returns an error: ticket not found. What is the best handling inside the loop?",o:["Crash the whole agent and show a stack trace to the user","Hand the error back as the tool result","Ignore it and make up a ticket status","Retry the same call until it works for sure"],a:1,w:"Errors are information. Return them as the tool result so the model can explain or try other inputs."}
+ ],
+ m3:[
+  {l:"b",q:"Which AskIT tools need a human to approve them?",o:["search_kb and get_ticket, the two that read data","update_ticket and reset_password","Only the tools that call the internet","All four tools, every single time"],a:1,w:"The two that change data. Reading is low risk and runs freely."},
+  {l:"i",q:"A VIP user's password reset is requested (KB-018). What is the best control?",o:["Block it and hand over to a human","Let the model decide on its own without any check","Approve it automatically because VIPs are in a hurry","Reset it twice just to be extra safe"],a:0,w:"KB-018: for VIPs the tools may gather information, but a human takes any action."},
+  {l:"a",q:"Why does an agent's cost grow faster than its number of steps?",o:["Every step resends the growing conversation","Each tool call is billed as a separate API request","Bedrock charges a fixed fee for every single tool","Later steps always use a bigger and costlier model"],a:0,w:"The whole conversation goes to the model on every step, so input tokens add up."}
+ ],
+ boss:[
+  {l:"b",q:"What is an agent, in one line?",o:["A model plus tools plus a loop","A much bigger language model than usual","A database that stores vectors for search","A fixed prompt template for chat"],a:0,w:"The model decides, the tools act, the loop repeats until done."},
+  {l:"b",q:"Which Converse block carries the model's request to run a tool?",o:["toolUse","toolResult","text","stopReason"],a:0,w:"toolUse = the request (name + inputs + id). toolResult = your answer."},
+  {l:"b",q:"What must a toolResult carry so the model can match it to its request?",o:["The matching toolUseId","The name of the human user in the chat","The temperature that was used","The priority of the open ticket"],a:0,w:"Same id in, same id out."},
+  {l:"b",q:"Which AskIT tool is read-only?",o:["get_ticket","update_ticket","reset_password","All of them change data"],a:0,w:"search_kb and get_ticket read. update_ticket and reset_password change data."},
+  {l:"i",q:"Why put the step limit in code and not only in the prompt?",o:["A prompt asks; code enforces","Prompts make the model run more slowly","Code limits are billed at a lower price","Models always ignore every system prompt"],a:0,w:"The model may ignore a request. It cannot ignore code."},
+  {l:"i",q:"The agent called get_ticket with the same input four times. Best diagnosis?",o:["Stuck repeating: add a repeat guard","The ticket does not exist in the helpdesk database","The company VPN is down for everyone today","Bedrock has run out of tokens for the account"],a:0,w:"Identical calls with identical results mean the agent is not making progress. Stop it and hand over."},
+  {l:"i",q:"Why return an error dict from a tool instead of raising an exception?",o:["The model can read it and react","Because Python exceptions are always slow","Because Python forbids raising any exceptions","Errors in dicts are free of tokens"],a:0,w:"An exception would crash the agent. A returned error is just another observation."},
+  {l:"i",q:"Which setup matches the AskIT approval rule?",o:["Reads run, writes wait for a human","Every single call needs a human click","Nothing is ever checked by anyone","Only the search tool is ever checked"],a:0,w:"Read tools run freely. Write tools pause for approval."},
+  {l:"a",q:"Step 1 sends 500 input tokens and every later step adds 300. How many input tokens in total for a 4-step run?",o:["3,800","2,000","1,400","5,000"],a:0,w:"500 + 800 + 1,100 + 1,400 = 3,800. Each step resends everything."},
+  {l:"a",q:"Two tool requests arrive in one model reply. What is the correct way to answer in Converse?",o:["One user message holding both results","Two user messages sent one after another","Send only the result of the first tool","One text block that summarises both of them"],a:0,w:"Every toolUse needs its own toolResult, and all of them go back together in ONE user message."},
+  {l:"a",q:"KB-018 says VIP actions need a human. Where is the best place to enforce it?",o:["In code, before the tool runs","In the system prompt only, politely","Inside the user's own message","By lowering the model temperature"],a:0,w:"A rule that must never be broken belongs in code. The prompt is only a request."},
+  {l:"a",q:"Which production metrics would you alert on for an agent?",o:["Steps and handoffs per question","The number of Python files in the repo","How long the system prompt has become","The time of day of each request"],a:0,w:"Rising steps per question or handoff rate flag loops and weak tools early."}
+ ]
+};
+const CLS={
+ tools:{opts:["search_kb","get_ticket","update_ticket","reset_password","No tool"],items:[
+  ["How do I connect to the VPN from home?",0,"A how-to question: search the knowledge base."],
+  ["What is the status of ticket TKT-0046?",1,"A specific ticket id: look it up."],
+  ["Log on TKT-0046 that I called the user and they confirmed the laptop is lost.",2,"Adding a work note changes the ticket."],
+  ["James Miller (EMP-1021) forgot his password. Please reset it.",3,"A password reset on a named employee."],
+  ["Thanks, that's all I needed.",4,"Nothing to look up or change: just reply."]]},
+ ctl5:{opts:["Approval for write tools","Step limit","Repeat guard","Error returned as tool result","VIP rule in code"],items:[
+  ["The agent asks for a tool that does not exist and the whole program crashes.",3,"Return an error dict so the model can read it and recover."],
+  ["The agent asks for get_ticket with the same input again and again.",2,"Stop on an exact repeat and hand over to a human."],
+  ["The agent resets a password just because a user message sounded urgent.",0,"A human approves anything that changes data."],
+  ["The agent keeps trying different tools for ten minutes and the bill rises.",1,"A hard limit on steps, in code."],
+  ["An executive's account must never be changed by software alone (KB-018).",4,"Block the action in code and hand over to a human."]]}
+};
+const ADR={};
+/* Deterministic shuffle of answer options (same order on every load), so the right answer is not always first. */
+(function(){let seed=11;const rnd=()=>{seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff};
+ for(const k in Q)Q[k].forEach(q=>{const right=q.o[q.a],arr=q.o.slice();
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}
+  q.o=arr;q.a=arr.indexOf(right)})})();
+
+/* ===== storage (safe) ===== */
+const store = {
+  get(k,d){try{const v=localStorage.getItem(PFX+k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(PFX+k,JSON.stringify(v))}catch(e){}}
+};
+const $=id=>document.getElementById(id);
+/* ===== theme ===== */
+$("theme").onclick=()=>{
+  const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
+  r.dataset.theme=dark?"light":"dark";store.set("theme",r.dataset.theme)};
+{const t=store.get("theme",null);if(t)document.documentElement.dataset.theme=t;}
+/* ===== XP ===== */
+let earned=store.get("xp",{});
+function renderXP(){const t=Object.values(earned).reduce((a,b)=>a+b,0);$("xp").textContent="⭐ "+t+" XP"}
+function addXP(key,n){if(earned[key]!==undefined)return;earned[key]=n;store.set("xp",earned);renderXP()}
+renderXP();
+/* ===== navigation ===== */
+const secs=[...document.querySelectorAll("main section")];
+const stepsEl=$("steps");
+secs.forEach((s,i)=>{const b=document.createElement("button");b.className="step"+(s.dataset.lab?" lab":"");b.textContent=s.dataset.title;b.onclick=()=>go(i);stepsEl.appendChild(b)});
+let cur=0;
+function go(i){cur=Math.max(0,Math.min(secs.length-1,i));secs.forEach((s,j)=>s.classList.toggle("on",j===cur));
+  [...stepsEl.children].forEach((b,j)=>{b.classList.toggle("on",j===cur);if(j<cur)b.classList.add("seen")});const on=stepsEl.children[cur];if(on&&on.scrollIntoView)on.scrollIntoView({inline:"center",block:"nearest"});
+  $("where").textContent=(cur+1)+" / "+secs.length;
+  $("prev").disabled=cur===0;$("next").disabled=cur===secs.length-1;
+  store.set("cur",cur);window.scrollTo({top:0,behavior:"smooth"})}
+$("prev").onclick=()=>go(cur-1);$("next").onclick=()=>go(cur+1);
+document.addEventListener("keydown",e=>{if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;if(e.key==="ArrowRight")go(cur+1);if(e.key==="ArrowLeft")go(cur-1)});
+go(store.get("cur",0));
+/* ===== flip cards, reveal cells ===== */
+document.querySelectorAll(".flip").forEach((f,i)=>f.addEventListener("click",()=>{f.classList.toggle("flipped");addXP("flip_"+i,1)}));
+document.querySelectorAll(".cell").forEach((c,i)=>c.onclick=()=>{c.classList.toggle("open");addXP("cell"+i,1)});
+/* ===== "I completed the lab": run tests + collect evidence + push to GitHub (via local portal) ===== */
+document.querySelectorAll("[data-done]").forEach(b=>{const k=b.dataset.done,label=b.dataset.label||b.textContent;
+  const out=document.createElement("div");out.className="labres";out.style.cssText="margin-top:8px;width:100%";b.parentNode.after(out);
+  const idle=again=>{b.disabled=false;b.textContent=again?"🔁 Re-check & push again":label};
+  const show=(html,cls)=>{out.innerHTML=`<div class="alert ${cls}">${html}</div>`};
+  if(earned["sub_"+k]!==undefined){idle(true);show("Submitted earlier. Press again after more work to re-check.","ok")}
+  b.onclick=async()=>{
+    if(!location.protocol.startsWith("http")){show("Open this page through <b>START_DAY.bat</b> (http://localhost:8765) so your lab tests can run and be pushed.","bad");return}
+    b.disabled=true;b.textContent="⏳ Running your tests and pushing… (up to a minute)";out.innerHTML="";
+    try{const r=await fetch("/api/labdone",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({session:SESSION,lab:k})});
+      const res=await r.json(),s=res.summary||{},steps=(res.steps||[]).map(x=>`<li>${x.ok?"✅":"❌"} ${x.step}${x.detail?" — "+x.detail:""}</li>`).join("");
+      if(s.total!==undefined){addXP("sub_"+k,5);const all=s.total>0&&s.passed===s.total;if(all)addXP("pass_"+k,15);
+        const fl=(s.failed||[]).map(f=>`<li><code>${f.name}</code> ${f.msg?"— "+f.msg:""}</li>`).join("");
+        show(`<b>${all?"🎉 All "+s.total+" checks pass.":"Result: "+s.passed+"/"+s.total+" checks pass."}</b>${s.stretch?" Stretch: "+s.stretch[0]+"/"+s.stretch[1]+".":""}${fl?"<ul>"+fl+"</ul>Fix these and press the button again. Your trainer can already see this result.":""}<ul>${steps}</ul>`,all&&res.ok?"ok":"bad");beat()}
+      else show(`<ul>${steps||"<li>Something went wrong. Call the trainer.</li>"}</ul>`,"bad");
+    }catch(e){show("Could not reach the portal. Is the START_DAY window still open?","bad")}
+    idle(true)}});
+function labsDone(){const o={};Object.keys(earned).forEach(k=>{if(k.startsWith("sub_"))o[k.slice(4)]=true});
+  document.querySelectorAll("[data-done]").forEach(b=>{if(!(b.dataset.done in o))o[b.dataset.done]=false});return o}
+/* ===== sub tabs ===== */
+document.querySelectorAll("[data-tabs]").forEach(host=>{const bs=[...host.querySelectorAll(":scope > .tabs > button")],ps=[...host.querySelectorAll(":scope > .tabpanel")];
+  const show=i=>{bs.forEach((b,j)=>b.classList.toggle("on",j===i));ps.forEach((p,j)=>p.classList.toggle("on",j===i));addXP("tab_"+host.dataset.tabs+i,1)};
+  bs.forEach((b,i)=>b.onclick=()=>show(i));show(0)});
+/* ===== timeline steppers (id tl*) ===== */
+document.querySelectorAll("[data-stepper]").forEach(host=>{const items=[...host.querySelectorAll(".tl-item")];let n=0;
+  const nx=host.querySelector(".stNext"),rs=host.querySelector(".stReset");
+  nx.onclick=()=>{if(n<items.length){items[n].classList.add("show");n++}if(n===items.length){nx.disabled=true;addXP("st_"+host.dataset.stepper,3)}};
+  rs.onclick=()=>{items.forEach(i=>i.classList.remove("show"));n=0;nx.disabled=false}});
+/* ===== classify exercises ===== */
+document.querySelectorAll("[data-classify]").forEach(box=>{const cfg=CLS[box.dataset.classify];
+ cfg.items.forEach(it=>{const d=document.createElement("div");d.className="cls";
+  d.innerHTML=`<div>${it[0]}</div><select><option value="">Choose…</option>${cfg.opts.map((o,j)=>`<option value="${j}">${o}</option>`).join("")}</select><div class="res"></div>`;box.appendChild(d)});
+ const btn=document.createElement("button");btn.className="btn";btn.textContent="Check answers";btn.style.marginTop="12px";box.appendChild(btn);
+ btn.onclick=()=>{let right=0;[...box.querySelectorAll(".cls")].forEach((d,i)=>{const v=d.querySelector("select").value;const r=d.querySelector(".res");
+   const ok=v!==""&&+v===cfg.items[i][1];if(ok)right++;r.className="res show";r.style.color=ok?"var(--ok)":"var(--bad)";
+   r.textContent=(ok?"✔ Correct — ":"✘ Answer: "+cfg.opts[cfg.items[i][1]]+" — ")+cfg.items[i][2]});
+   if(right===cfg.items.length)addXP("cls_"+box.dataset.classify,10)}});
+/* ===== quizzes ===== */
+const PTS={b:5,i:10,a:15};const LBL={b:"BASIC",i:"INTERMEDIATE",a:"ADVANCED"};
+let bossRight=0,bossDone=0;let answers=store.get("answers",{});
+document.querySelectorAll("[data-quiz]").forEach(host=>{const set=host.dataset.quiz;
+ Q[set].forEach((it,qi)=>{const d=document.createElement("div");d.className="q";
+  d.innerHTML=`<div class="qt"><span class="chip ${it.l}">${LBL[it.l]}</span>${qi+1}. ${it.q}</div><div class="opts">${it.o.map((o,oi)=>`<button class="opt" data-i="${oi}">${o}</button>`).join("")}</div><div class="why"></div>`;
+  host.appendChild(d);
+  d.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{const ok=+b.dataset.i===it.a;
+   d.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(+x.dataset.i===it.a)x.classList.add("right")});
+   if(!ok)b.classList.add("wrong");
+   const w=d.querySelector(".why");w.className="why show";w.innerHTML=(ok?"✔ <b>Correct.</b> ":"✘ <b>Not quite.</b> ")+it.w+(ok?` <b>+${PTS[it.l]} XP</b>`:"");
+   answers[set+"_"+qi]={correct:ok,level:it.l};store.set("answers",answers);
+   if(ok)addXP("q_"+set+"_"+qi,PTS[it.l]);
+   if(set==="boss"){bossDone++;if(ok)bossRight++;updBoss()}});
+ })});
+function updBoss(){const n=Q.boss.length;$("bossScore").textContent=bossRight+" / "+n;
+ if(bossDone===n){const b=$("bossBadge"),p=bossRight/n;
+  b.innerHTML=p>=.9?"🥇 <b>Agent Architect</b> — outstanding!":p>=.7?"🥈 <b>Agent Builder</b> — strong grip.":p>=.45?"🥉 <b>Agent Explorer</b> — review the modules tonight.":"🔁 <b>Rookie</b> — revisit the modules and retry."}}
+/* ===== presenter timer ===== */
+if($("tmr")){let left=240,t=null;const el=$("tmr");
+ const show=()=>{el.textContent=Math.floor(left/60)+":"+String(left%60).padStart(2,"0");el.style.color=left<=30?"var(--bad)":"var(--accent)"};
+ $("tmrGo").onclick=()=>{if(t)return;t=setInterval(()=>{left=Math.max(0,left-1);show();if(!left){clearInterval(t);t=null}},1000)};
+ $("tmrReset").onclick=()=>{clearInterval(t);t=null;left=240;show()};show();}
+/* ===== ADR builder (data-adr="key"): fields -> markdown, copy / download ===== */
+document.querySelectorAll("[data-adr]").forEach(host=>{const cfg=ADR[host.dataset.adr];const saved=store.get("adr_"+host.dataset.adr,{});
+ host.classList.add("adr");
+ host.innerHTML=cfg.fields.map(f=>`<label>${f[1]}</label><div class="muted" style="font-size:14px">${f[2]}</div><textarea data-k="${f[0]}"></textarea>`).join("")+
+  `<div class="row"><button class="btn" data-a="make">Build ADR text</button><button class="btn ghost" data-a="copy">Copy</button><button class="btn ghost" data-a="dl">Download .md</button></div><pre class="hidden"></pre>`;
+ const ta=[...host.querySelectorAll("textarea")],pre=host.querySelector("pre");
+ ta.forEach(t=>{t.value=saved[t.dataset.k]||"";t.addEventListener("input",()=>{saved[t.dataset.k]=t.value;store.set("adr_"+host.dataset.adr,saved)})});
+ const md=()=>`# ${cfg.title}\n\nStatus: Proposed · Team: ${ME?ME.team:"?"} · Date: ${new Date().toISOString().slice(0,10)}\n\n`+cfg.fields.map(f=>`## ${f[1]}\n${saved[f[0]]||"(empty)"}\n`).join("\n");
+ host.querySelector('[data-a="make"]').onclick=()=>{pre.textContent=md();pre.classList.remove("hidden");addXP("adr_"+host.dataset.adr,15)};
+ host.querySelector('[data-a="copy"]').onclick=async e=>{try{await navigator.clipboard.writeText(md());e.target.textContent="Copied ✔"}catch(x){pre.textContent=md();pre.classList.remove("hidden")}};
+ host.querySelector('[data-a="dl"]').onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([md()],{type:"text/markdown"}));a.download=cfg.file;document.body.appendChild(a);a.click();a.remove()}});
+/* ===== participant identity (served by local portal) ===== */
+let ME=null;
+if(location.protocol.startsWith("http")){fetch("/api/me").then(r=>r.ok?r.json():null).then(m=>{if(m){ME=m;$("who").textContent="👤 "+m.name+" · Team "+m.team}}).catch(()=>{})}
+/* ===== exit ticket ===== */
+let exitT=store.get("exit",{});
+document.querySelectorAll(".et").forEach(t=>{t.value=exitT[t.dataset.k]||"";t.addEventListener("input",()=>{exitT[t.dataset.k]=t.value;store.set("exit",exitT)})});
+{const c=$("conf");for(let i=1;i<=5;i++){const b=document.createElement("button");b.className="btn ghost";b.textContent=i;
+ if(exitT.confidence===i)b.className="btn";
+ b.onclick=()=>{exitT.confidence=i;store.set("exit",exitT);[...c.children].forEach((x,j)=>x.className=j===i-1?"btn":"btn ghost")};c.appendChild(b)}}
+/* ===== heartbeat: live progress ===== */
+let lastAct=Date.now();["click","keydown","scroll","input","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{lastAct=Date.now()},{passive:true}));
+let activeMin=store.get("activeMin",0);
+function beat(){if(!location.protocol.startsWith("http"))return;
+ fetch("/api/heartbeat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({session:SESSION,section:secs[cur].dataset.title,section_idx:cur,sections_total:secs.length,
+  xp_total:Object.values(earned).reduce((a,b)=>a+b,0),active_minutes:activeMin,quiz_answered:Object.keys(answers).length,quiz_correct:Object.values(answers).filter(v=>v.correct).length,
+  labs_self_reported:labsDone()})}).catch(()=>{})}
+setInterval(()=>{if(document.visibilityState==="visible"&&Date.now()-lastAct<120000){activeMin++;store.set("activeMin",activeMin)}beat()},60000);
+$("prev").addEventListener("click",()=>setTimeout(beat,300));$("next").addEventListener("click",()=>setTimeout(beat,300));
+stepsEl.addEventListener("click",()=>setTimeout(beat,300));setTimeout(beat,2000);
+/* ===== Day End ===== */
+function payload(){const xpTotal=Object.values(earned).reduce((a,b)=>a+b,0);
+ const bossAns=Object.entries(answers).filter(([k])=>k.startsWith("boss_"));
+ return {session:SESSION,timestamp:new Date().toISOString(),participant:ME,xp_total:xpTotal,xp:earned,
+  active_minutes:activeMin,quiz:answers,boss:{answered:bossAns.length,correct:bossAns.filter(([k,v])=>v.correct).length,of:Q.boss.length},
+  labs_self_reported:labsDone(),exit_ticket:exitT,adr:{...Object.fromEntries(Object.keys(ADR).map(k=>[k,store.get("adr_"+k,{})]))}}}
+function showSteps(steps){$("deOut").innerHTML=steps.map(s=>`<li class="${s.ok?"ok":"bad"}">${s.ok?"✅":"❌"} ${s.step}${s.detail?" — "+s.detail:""}</li>`).join("")}
+function download(p){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(p,null,2)],{type:"application/json"}));
+ a.download="askit_"+SESSION+"_xp.json";document.body.appendChild(a);a.click();a.remove()}
+$("dayEnd").onclick=async e=>{const b=e.target;b.disabled=true;b.textContent="⏳ Saving & pushing…";const p=payload();
+ try{
+  if(!location.protocol.startsWith("http"))throw new Error("offline");
+  const r=await fetch("/api/dayend",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
+  const res=await r.json();showSteps(res.steps||[]);
+  b.textContent=res.ok?"✅ Done — see you next session!":"⚠️ Try again or call the trainer";
+ }catch(err){download(p);$("deHelp").style.display="block";
+  showSteps([{ok:true,step:"XP file downloaded",detail:"askit_"+SESSION+"_xp.json"},{ok:false,step:"Not pushed yet",detail:"run DAY_END.bat"}]);
+  b.textContent="🏁 Day End · Save & Push"}
+ b.disabled=false};
+
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
+/* ---- loop simulator ---- */
+{const SC=[
+ {steps:[["🔧","Act","get_ticket(TKT-0004)"],["👁️","Observe","VPN not connecting, priority Medium, status Open"]],ans:"Ticket TKT-0004 (VPN not connecting) is Open, priority Medium."},
+ {steps:[["🔧","Act","get_ticket(TKT-0046)"],["👁️","Observe","Lost laptop at airport, priority Critical"],["🔧","Act","search_kb(lost laptop device)"],["👁️","Observe","KB-014: call the helpdesk, always Critical, device locked and wiped"],["🔧","Act","search_kb(critical priority response time)"],["👁️","Observe","KB-016: Critical, first response in 15 minutes"]],ans:"Call the helpdesk now; the device will be locked and wiped [KB-014]. First response in 15 minutes [KB-016]."},
+ {steps:null}];
+ let n=0;const out=$("lpOut");
+ const draw=()=>{const s=+$("lpS").value,L=+$("lpL").value;$("oLpL").textContent=L;const sc=SC[s];let html="",endTxt="",endCls="";
+  const per=sc.steps?2:2;let modelCalls=n;
+  for(let i=1;i<=n;i++){
+   if(s<2){const pair=sc.steps.slice((i-1)*2,(i-1)*2+2);
+     if(pair.length){html+=`<div class="tl-item show" style="display:flex"><div class="yr">Step ${i}</div><div>${pair.map(p=>p[0]+" <b>"+p[1]+":</b> "+esc(p[2])).join("<br>")}</div></div>`}
+     else{html+=`<div class="tl-item show" style="display:flex"><div class="yr">Step ${i}</div><div>✅ <b>Final answer:</b> ${esc(sc.ans)}</div></div>`;endTxt="Finished by the model's own answer. Normal exit.";endCls="ok"}
+   }else{html+=`<div class="tl-item show" style="display:flex"><div class="yr">Step ${i}</div><div>🔧 <b>Act:</b> get_ticket(TKT-0004)<br>👁️ <b>Observe:</b> status SYNCING, "please call get_ticket again"</div></div>`}
+  }
+  if(s===2&&n>=L){html+=`<div class="tl-item show" style="display:flex;border-left-color:var(--bad)"><div class="yr">🛑 Limit</div><div>${L} steps used. Hand over to a human.</div></div>`;endTxt=`Stopped by the step limit after ${L} identical calls. Safe, but you paid for ${L} steps. A repeat guard would have stopped it at step 2.`;endCls="bad"}
+  if(s<2&&n>=L&&!endTxt){html+=`<div class="tl-item show" style="display:flex;border-left-color:var(--bad)"><div class="yr">🛑 Limit</div><div>Only ${L} steps allowed: the agent was cut off before it could answer.</div></div>`;endTxt="The limit was set too low for this question: it hands over without an answer.";endCls="bad"}
+  out.innerHTML=`<div class="timeline">${html||"<span class='muted'>Press Next step.</span>"}</div>`;
+  $("lpN").textContent=n;let t=0;for(let i=1;i<=n;i++)t+=500+300*(i-1);$("lpT").textContent=t.toLocaleString();
+  const e=$("lpEnd");if(endTxt){e.style.display="block";e.className="alert "+endCls;e.textContent=endTxt}else e.style.display="none";
+  const done=!!endTxt;$("lpNext").disabled=done;if(n>0)addXP("lp",2)};
+ $("lpNext").onclick=()=>{n++;draw()};$("lpReset").onclick=()=>{n=0;draw()};$("lpS").onchange=()=>{n=0;draw()};$("lpL").oninput=()=>{n=Math.min(n,+$("lpL").value);draw()};draw();}
+/* ---- cost of a loop ---- */
+{const f=()=>{const s=+$("ccS").value,g=+$("ccG").value;$("oCcS").textContent=s;$("oCcG").textContent=g;
+  let t=0;for(let i=0;i<s;i++)t+=500+g*i;const cost=(t/1e6*0.035+s*60/1e6*0.14)*1000;
+  $("ccT").textContent=t.toLocaleString();$("ccC").textContent="$"+cost.toFixed(3);$("ccOne").textContent="$"+((500/1e6*0.035+60/1e6*0.14)*1000).toFixed(3);addXP("cc",2)};
+ $("ccS").oninput=f;$("ccG").oninput=f;f();}
+/* ---- approval switch ---- */
+{const f=()=>{const on=$("apOn").checked,vip=$("apWho").value==="v";let html;
+  if(!on)html=`<div class="alert bad">Approval OFF: the model asked, the tool ran, ${vip?"an executive's account was changed by software alone (KB-018 broken).":"the password was reset with nobody watching."}</div>`;
+  else if(vip)html=`<div class="alert ok">Approval ON: the action is paused. In the stretch (VIP rule) it is blocked completely and handed to a human, as KB-018 requires.</div>`;
+  else html=`<div class="alert ok">Approval ON: the agent shows "reset_password(EMP-1021)" and waits. A person types y or n. Only y runs the tool.</div>`;
+  $("apOut").innerHTML=html;addXP("ap",2)};
+ $("apOn").onchange=f;$("apWho").onchange=f;f();}
+/* ---- model cost ---- */
+{const P=[[0.035,0.14],[0.06,0.24],[0.25,2.0]];
+ const f=()=>{const m=+$("mcM").value,s=+$("mcS").value;$("oMcS").textContent=s;let t=0;for(let i=0;i<s;i++)t+=500+300*i;
+  const c=t/1e6*P[m][0]+s*60/1e6*P[m][1];$("mcOne").textContent="$"+c.toFixed(5);$("mcK").textContent="$"+(c*1000).toFixed(2);addXP("mc",2)};
+ $("mcM").onchange=f;$("mcS").oninput=f;f();}
+
+</script>
+</body>
+</html>

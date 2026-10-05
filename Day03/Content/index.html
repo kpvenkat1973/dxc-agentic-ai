@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3 · Embeddings, Chunking & Naive RAG</title>
+<style>
+
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --surface2:#eef1f7; --ink:#141a2a; --muted:#5a6478; --line:#dde2ec;
+  --accent:#0f7c8c; --accent-soft:#d8f0f3; --warn:#b45309; --warn-soft:#fdecd3;
+  --ok:#157f3b; --ok-soft:#dcf3e4; --bad:#b42318; --bad-soft:#fbe0dd;
+  --basic:#157f3b; --inter:#b45309; --adv:#6d3fc0;
+  --shadow:0 2px 10px rgba(20,26,42,.07);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17;
+  --basic:#4ccf7c; --inter:#f0a44b; --adv:#b494ff; --shadow:none;}}
+:root[data-theme="dark"]{
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17;
+  --basic:#4ccf7c; --inter:#f0a44b; --adv:#b494ff; --shadow:none;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Aptos Narrow","Aptos","Segoe UI",system-ui,-apple-system,sans-serif;font-size:18px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer}
+header{position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar{max-width:1200px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:.2px}
+.brand small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.steps{display:flex;gap:6px;flex-wrap:wrap;flex:1;justify-content:center;align-items:center}
+.step{border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:4px 12px;font-size:14px}
+.step.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.step.lab{border-style:dashed}
+.xp{font-weight:700;background:var(--warn-soft);color:var(--warn);border-radius:999px;padding:4px 12px;font-size:15px;white-space:nowrap}
+.theme{border:1px solid var(--line);background:var(--surface2);border-radius:8px;padding:4px 10px;font-size:14px}
+main{max-width:1200px;margin:0 auto;padding:24px 16px 90px}
+section{display:none;animation:fade .25s ease}
+section.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+h1{font-size:40px;line-height:1.15;margin:.2em 0 .3em}
+h2{font-size:30px;margin:.2em 0 .4em}
+h3{font-size:22px;margin:1.4em 0 .5em}
+.kicker{color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:14px}
+.lead{font-size:21px;color:var(--muted);max-width:820px}
+.chip{display:inline-block;font-size:13px;font-weight:700;border-radius:6px;padding:2px 8px;margin-right:6px;vertical-align:middle;border:1px solid currentColor}
+.chip.b{color:var(--basic)} .chip.i{color:var(--inter)} .chip.a{color:var(--adv)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+/* flip cards */
+.flip{perspective:1000px;min-height:170px;border:0;background:none;padding:0;text-align:left;width:100%}
+.flip .in{position:relative;width:100%;height:100%;min-height:170px;transition:transform .5s;transform-style:preserve-3d}
+.flip.flipped .in{transform:rotateY(180deg)}
+.flip .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;padding:16px;border:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}
+.flip .front{background:var(--surface);box-shadow:var(--shadow)}
+.flip .front b{font-size:21px}
+.flip .front .hint{font-size:13px;color:var(--muted);margin-top:8px}
+.flip .back{background:var(--accent-soft);transform:rotateY(180deg);font-size:16px}
+.big-emoji{font-size:30px;line-height:1}
+/* stepper */
+.timeline{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.tl-item{display:none;gap:14px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:10px;padding:12px 16px}
+.tl-item.show{display:flex;animation:fade .3s}
+.tl-item .yr{font-weight:700;color:var(--accent);min-width:110px}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:9px 18px;font-weight:700}
+.btn.ghost{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+/* quiz */
+.q{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:12px 0}
+.q .qt{font-weight:700;margin-bottom:10px}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--surface2);border-radius:10px;padding:9px 14px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:var(--ok-soft);border-color:var(--ok)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.why{display:none;margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--surface2);font-size:16px}
+.why.show{display:block}
+/* classify */
+.cls{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line)}
+.cls select{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--ink)}
+.cls .res{grid-column:1/-1;font-size:15px;display:none}
+.cls .res.show{display:block}
+/* lab card */
+.lab{border:2px dashed var(--accent);background:var(--accent-soft);border-radius:16px;padding:22px}
+.lab h2{margin-top:0}
+.lab ol{margin:.4em 0 0;padding-left:1.3em}
+.lab li{margin:4px 0}
+.path{font-family:Consolas,"Cascadia Mono",monospace;font-size:15px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+.openpath{margin-top:14px;font-weight:700}
+.steplist{list-style:none;padding:0;margin:12px 0 0}
+.steplist li{padding:6px 10px;border-radius:8px;margin:4px 0;background:var(--surface2)}
+.steplist li.ok{background:var(--ok-soft)} .steplist li.bad{background:var(--bad-soft)}
+.who{font-size:14px;color:var(--muted);white-space:nowrap}
+.tag{font-size:13px;font-weight:700;border-radius:6px;padding:1px 8px;background:var(--surface);border:1px solid var(--line);margin-left:6px}
+/* widgets */
+textarea{width:100%;min-height:110px;font:inherit;font-size:16px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--ink)}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+.stat{background:var(--surface2);border-radius:10px;padding:8px 14px;min-width:130px}
+.stat b{display:block;font-size:26px}
+.slider{display:grid;grid-template-columns:200px 1fr 70px;gap:10px;align-items:center;margin:8px 0}
+.slider input{width:100%}
+.slider output{font-weight:700;text-align:right}
+.ctxbar{display:flex;height:40px;border-radius:10px;overflow:hidden;border:2px solid var(--line);margin-top:12px;background:var(--surface2)}
+.ctxbar div{height:100%;transition:width .25s}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;margin-top:8px}
+.legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;background:var(--c);vertical-align:-1px}
+.alert{margin-top:10px;padding:10px 14px;border-radius:10px;font-weight:700}
+.alert.ok{background:var(--ok-soft);color:var(--ok)} .alert.bad{background:var(--bad-soft);color:var(--bad)}
+.bars{margin-top:12px}
+.pb{display:grid;grid-template-columns:120px 1fr 64px;gap:10px;align-items:center;margin:5px 0;font-size:16px}
+.pb .track{background:var(--surface2);border-radius:6px;height:22px;overflow:hidden}
+.pb .fill{height:100%;background:var(--accent);transition:width .25s}
+.pb.cut{opacity:.35}
+.pb.cut .fill{background:var(--muted)}
+.samples{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+.samples span{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:2px 10px;font-size:15px}
+.matrix{display:grid;grid-template-columns:120px 1fr 1fr;gap:8px}
+.matrix .hd{font-weight:700;color:var(--muted);display:flex;align-items:center;justify-content:center;text-align:center;font-size:15px}
+.cell{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px;min-height:110px;text-align:left}
+.cell .rv{display:none;font-size:15px;margin-top:6px}
+.cell.open .rv{display:block}
+.cell .t{font-weight:700}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ticket{font-style:italic;background:var(--surface2);border-left:4px solid var(--warn);padding:12px 16px;border-radius:8px}
+table.kv{border-collapse:collapse;width:100%;font-size:16px}
+table.kv td{border-bottom:1px solid var(--line);padding:6px 8px}
+table.kv td:first-child{color:var(--muted);width:40%}
+.agenda{display:grid;gap:6px}
+.ag{display:grid;grid-template-columns:120px 1fr;gap:10px;padding:8px 12px;border-radius:8px;background:var(--surface)}
+.ag.lab{background:var(--accent-soft);border:1px dashed var(--accent)}
+.ag b{font-variant-numeric:tabular-nums}
+.score{font-size:48px;font-weight:800;color:var(--accent)}
+footer.nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line)}
+footer .bar{justify-content:space-between}
+.hidden{display:none!important}
+@media (max-width:700px){
+  body{font-size:16px} h1{font-size:30px} h2{font-size:24px}
+  .brand small{display:none} .steps{order:3;flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding-bottom:4px}
+  .step{white-space:nowrap;flex:none}
+  .compare{grid-template-columns:1fr} .slider{grid-template-columns:1fr 60px} .slider label{grid-column:1/-1}
+  .matrix{grid-template-columns:80px 1fr 1fr} .ag{grid-template-columns:90px 1fr} .pb{grid-template-columns:90px 1fr 54px}
+}
+
+.wwho{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 16px}
+.wwho div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:17px;line-height:1.4}
+.wwho b{display:block;color:var(--accent);font-size:14px;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+@media(max-width:800px){.wwho{grid-template-columns:1fr}}
+/* ---- added for Day 3/4 ---- */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
+.tabs button{border:1px solid var(--line);background:var(--surface2);border-radius:10px 10px 0 0;padding:8px 14px;font-weight:700;font-size:16px}
+.tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tabpanel{display:none;background:var(--surface);border:1px solid var(--line);border-radius:0 12px 12px 12px;padding:16px;box-shadow:var(--shadow)}
+.tabpanel.on{display:block;animation:fade .25s}
+.say{background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:8px;padding:10px 14px;margin:10px 0;font-size:17px}
+.vrow{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;margin:4px 0;font-size:15px}
+.vbars{display:flex;gap:3px;align-items:center;height:64px}
+.vb{flex:1;position:relative;height:100%;background:var(--surface2);border-radius:4px}
+.vb i{position:absolute;left:0;right:0;border-radius:3px}
+.vb span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:11px;color:var(--muted)}
+.simtable{width:100%;border-collapse:collapse;font-size:16px;margin-top:8px}
+.simtable th,.simtable td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+.simtable th{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.5px}
+.simtable tr.top td{background:var(--ok-soft)}
+.num{font-variant-numeric:tabular-nums;font-weight:700}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--surface2);padding:6px 14px;font-weight:700}
+.seg button.on{background:var(--accent);color:#fff}
+select.pick{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);max-width:100%}
+.kw{display:inline-block;font-size:13px;border-radius:6px;padding:1px 7px;background:var(--warn-soft);color:var(--warn);font-weight:700}
+.sm{display:inline-block;font-size:13px;border-radius:6px;padding:1px 7px;background:var(--ok-soft);color:var(--ok);font-weight:700}
+.adr label{display:block;font-weight:700;margin-top:10px}
+.adr textarea{min-height:70px}
+.adr pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:12px;white-space:pre-wrap;font-size:14px;max-height:340px;overflow:auto}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.pill{border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:3px 12px;font-size:15px}
+.doc{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;margin:6px 0;display:grid;grid-template-columns:90px 1fr auto;gap:10px;align-items:center;transition:all .3s}
+.doc.rel{border-color:var(--ok);background:var(--ok-soft)}
+.doc.out{opacity:.35}
+.doc b{font-variant-numeric:tabular-nums}
+.node{cursor:pointer}
+@media(max-width:700px){.vrow{grid-template-columns:1fr}.doc{grid-template-columns:70px 1fr}}
+
+/* ===== top navigation (cleaner): brand + XP on row 1, one scrollable step row below ===== */
+header .bar{flex-wrap:wrap;row-gap:8px}
+.brand{margin-right:auto}
+.steps{order:3;flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;gap:8px;padding:2px 0 6px;scrollbar-width:thin}
+.step{flex:none;white-space:nowrap;font-size:16px;padding:6px 14px;border-radius:999px;line-height:1.2}
+.step.lab{padding:6px 14px;border-radius:999px;background:var(--accent-soft);border:1.5px dashed var(--accent);color:var(--ink)}
+.step.lab::before{content:"🧪 "}
+.step.on,.step.lab.on{background:var(--accent);border:1.5px solid var(--accent);color:#fff;font-weight:700}
+.step.seen:not(.on){border-color:var(--accent)}
+.step.seen:not(.on)::after{content:" ✓";color:var(--accent);font-weight:700}
+@media(max-width:700px){.step{font-size:14px;padding:5px 11px}}
+header .bar{max-width:1700px}
+.step{font-size:15px;padding:5px 11px}.step.lab{padding:5px 11px}
+.steps{gap:6px}
+
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <div class="brand">AskIT Program · Session 3<small>Agentic AI · DevPro Academy</small></div>
+  <nav class="steps" id="steps"></nav>
+  <span class="who" id="who"></span><span class="xp" id="xp">⭐ 0 XP</span>
+  <button class="theme" id="theme" aria-label="Toggle theme">◐</button>
+</div></header>
+
+<main>
+<!-- ============ 0. WELCOME ============ -->
+<section data-title="Welcome">
+  <div class="kicker">Session 3 · Embeddings &amp; Naive RAG</div>
+  <h1>Teach AskIT to read Orbit's knowledge base</h1>
+  <p class="lead">So far AskIT answered from memory, and sometimes made things up. Today it learns to <b>find</b> the right policy and <b>answer from it</b>, with sources. We build it in three labs, each preceded by the idea behind it.</p>
+
+  <h3>Where we are, in 3 cards</h3>
+  <div class="grid g3">
+    <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">📞</span><b>Converse API</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>One call: model ID + system + messages + inferenceConfig. Tokens in <b>response["usage"]</b>.</div></div></div></button>
+    <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🧾</span><b>Structured output</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>Force a tool call with <b>toolChoice</b> → the model fills your schema → <b>Pydantic</b> validates it.</div></div></div></button>
+    <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🧠</span><b>The problem today</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>The model has never read Orbit's IT policies. Ask it about the VPN gateway and it guesses. RAG gives it the right pages <b>at question time</b>.</div></div></div></button>
+  </div>
+
+  <h3>Today's flow · concept, lab, concept, lab</h3>
+  <div class="agenda">
+    <div class="ag"><b>9:00</b><span>Recap quiz (AhaSlides)</span></div>
+    <div class="ag"><b>9:10</b><span>① Embeddings: meaning as numbers (25 min)</span></div>
+    <div class="ag lab"><b>9:35</b><span>🧪 Lab 2A: Titan embeddings and similarity (35 min)</span></div>
+    <div class="ag"><b>10:10</b><span>② Chunking and vector stores (20 min)</span></div>
+    <div class="ag lab"><b>10:30</b><span>🧪 Lab 2B: build your own vector index (40 min)</span></div>
+    <div class="ag"><b>11:10</b><span>Break</span></div>
+    <div class="ag"><b>11:20</b><span>③ RAG: retrieve, augment, generate (15 min)</span></div>
+    <div class="ag lab"><b>11:35</b><span>🧪 Lab 2C: the AskIT RAG app, experiments (40 min)</span></div>
+    <div class="ag"><b>12:15</b><span>🏛️ ADR breakout: chunk size and top-k (20 min) · team readouts (15 min)</span></div>
+    <div class="ag"><b>12:50</b><span>🏁 Sum-up and Day End</span></div>
+  </div>
+</section>
+
+<!-- ============ 1. EMBEDDINGS ============ -->
+<section data-title="① Embeddings">
+  <div class="kicker">Concept 1 · <span class="chip b">BASIC</span> → <span class="chip i">INTERMEDIATE</span></div>
+  <h2>Embeddings: meaning as numbers</h2>
+  <p class="lead">An embedding model turns text into a list of numbers. Texts with <b>similar meaning</b> get <b>similar numbers</b>, even when they share no words. That one trick is how search can match meaning.</p>
+
+  <div class="grid g3">
+    <div class="card"><div class="big-emoji">1️⃣</div><b>Text → numbers</b><br>"I'm locked out" becomes a list of 512 numbers (a <i>vector</i>).</div>
+    <div class="card"><div class="big-emoji">2️⃣</div><b>Similar meaning → close together</b><br>"Can't sign in" gets almost the same numbers. "Printer jammed" gets very different ones.</div>
+    <div class="card"><div class="big-emoji">3️⃣</div><b>Measure the closeness</b><br>A small formula (cosine similarity) turns "close" into a score we can sort by.</div>
+  </div>
+
+  <h3>The meaning map explorer <span class="chip b">BASIC</span></h3>
+  <p class="muted">Four short steps, about 6 minutes. Do them in order. Everything here is a cartoon: real Titan vectors have 512 numbers, not 2.</p>
+  <div data-tabs="mm">
+    <div class="tabs"><button>① Words become numbers</button><button>② The map</button><button>③ Measuring "close"</button><button>④ Semantic search</button></div>
+
+    <!-- step 1 -->
+    <div class="tabpanel">
+      <div class="say"><b>Idea:</b> a computer cannot compare meanings, but it can compare numbers. The embedding model reads a sentence and writes down numbers that describe its meaning.</div>
+      <div class="row" style="margin-top:0"><span>Compare</span><select class="pick" id="vA"></select><span>with</span><select class="pick" id="vB"></select></div>
+      <div id="vOut" style="margin-top:12px"></div>
+      <p class="muted" style="font-size:15px;margin-bottom:0">We show only 8 of the numbers (blue = positive, orange = negative). The bars are illustrative: they are invented to show the idea, not output from Titan. Notice that "I'm locked out" and "Can't sign in" share <b>no words</b> but have almost the same pattern.</p>
+    </div>
+
+    <!-- step 2 -->
+    <div class="tabpanel">
+      <div class="say"><b>Idea:</b> if each text is a point in space, <b>distance = difference in meaning</b>. Here is a 2-D version: circles are helpdesk tickets, squares are KB articles. Click any point. The lines from the centre show each text's direction: the smaller the angle between two lines, the closer the meaning.</div>
+      <div class="row" style="margin-top:0"><label><input type="checkbox" id="mmCl" checked> show the 4 topic areas</label></div>
+      <div class="card" style="padding:8px;margin-top:10px"><svg id="emap" viewBox="0 0 640 420" style="width:100%;height:auto;display:block" role="img" aria-label="Meaning map of helpdesk tickets and KB articles"></svg></div>
+      <div id="emapOut" class="muted" style="margin-top:8px">Click a point to see its 3 nearest neighbours.</div>
+    </div>
+
+    <!-- step 3 -->
+    <div class="tabpanel">
+      <div class="say"><b>Idea:</b> we measure "close" with <b>cosine similarity</b>. It asks one question: "do the two arrows point the same way?" Same direction = same meaning.</div>
+      <div class="grid g2" style="align-items:center">
+        <svg id="angSvg" viewBox="0 0 400 230" style="width:100%;max-width:440px;height:auto" role="img" aria-label="Two vectors and the angle between them"></svg>
+        <div>
+          <div class="slider" style="grid-template-columns:110px 1fr 56px"><label>Angle</label><input type="range" id="ang" min="0" max="180" step="5" value="30"><output id="oAng"></output></div>
+          <div class="stats"><div class="stat"><span class="muted">Cosine (high = close)</span><b id="cosVal">0.87</b></div></div>
+          <div id="cosTxt" style="font-weight:700;margin-top:8px"></div>
+        </div>
+      </div>
+      <div class="say" style="margin-top:12px"><b>Remember:</b> cosine near <b>1</b> = same meaning, near <b>0</b> = unrelated. Titan gives us the vectors; cosine ranks the KB articles. That is all Lab 2A needs. (Other measures exist, but we do not need them today.)</div>
+    </div>
+
+    <!-- step 4 -->
+    <div class="tabpanel">
+      <div class="say"><b>Idea:</b> semantic search is just steps 1 to 3 in a row: embed the question, measure closeness to every KB article, sort, take the top few. <b>This is exactly what Lab 2A makes you write.</b></div>
+      <div class="row" style="margin-top:0"><span>Pick a ticket:</span><select class="pick" id="tkSel"></select></div>
+      <div class="grid g3" style="margin-top:10px">
+        <div class="card"><b>① Embed the ticket</b><div class="muted" id="tkVec" style="font-size:14px;margin-top:6px"></div></div>
+        <div class="card"><b>② Compare with every article</b><div class="muted" style="font-size:14px;margin-top:6px">One cosine score per article. Highest = best match.</div></div>
+        <div class="card"><b>③ Return the top 3</b><div class="muted" style="font-size:14px;margin-top:6px">These go to the LLM later, in step ③ of the day.</div></div>
+      </div>
+      <table class="simtable" id="tkTbl"></table>
+      <div id="tkVerdict" class="alert ok"></div>
+      <p class="muted" style="font-size:15px;margin-bottom:0"><span class="kw">keyword</span> counts words shared with the article (what plain search does). <span class="sm">semantic</span> is cosine similarity. Pick "My tunnel to the office keeps dropping": keyword search finds nothing, semantic search finds the VPN article.</p>
+    </div>
+  </div>
+
+  <h3>Click to reveal</h3>
+  <div class="grid g3">
+    <button class="flip"><div class="in"><div class="face front"><b>Titan Text Embeddings v2</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>Amazon's embedding model on Bedrock. Output size: <b>256, 512 or 1,024</b> numbers. We use 512: smaller is cheaper to store and search.</div></div></div></button>
+    <button class="flip"><div class="in"><div class="face front"><b>Same model, both sides</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>Documents and questions <b>must</b> be embedded with the <b>same model and size</b>. Otherwise the numbers are not comparable.</div></div></div></button>
+    <button class="flip"><div class="in"><div class="face front"><b>Not a chat model</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>An embedding model never writes answers. It only measures meaning. It is fast and very cheap per call.</div></div></div></button>
+  </div>
+
+  <h3>Quick check</h3>
+  <div data-quiz="m1"></div>
+</section>
+
+<!-- ============ LAB 2A ============ -->
+<section data-title="Lab 2A" data-lab="1">
+  <div class="lab">
+    <div class="kicker">🧪 Lab 2A · 35 min</div>
+    <h2>Titan embeddings and similarity</h2>
+    <div class="wwho"><div><b>What we do</b>Convert text into embeddings with Titan and measure similarity to find the best KB article for a ticket.</div><div><b>Why</b>Embeddings let search match meaning, not just keywords. This is the foundation of RAG.</div><div><b>Outcome / learning</b>You know what an embedding is, how cosine similarity ranks results, and where it gets fooled.</div><div><b>How</b>Call Titan v2 (TODO-1) &rarr; write cosine similarity (TODO-2) &rarr; return top-k (TODO-3) &rarr; run it and study the misses.</div></div>
+    <ol>
+      <li><b>Get ready:</b> Command Prompt &rarr; <span class="path">cd /d C:\AskIT\dxc-agentic-ai</span> &rarr; <span class="path">cd Day03\Labs\lab02-naive-rag</span>. (START_DAY already installed the packages: no venv to activate. If you see <b>No module named</b>, run <span class="path">python -m pip install -r requirements.txt</span> from <span class="path">C:\AskIT\dxc-agentic-ai</span>.)</li>
+      <li><b>Open the file:</b> <span class="path">notepad lab02a_embeddings.py</span> (or VS Code). Search for <b>TODO</b>.</li>
+      <li><b>Fill 3 TODOs</b>. Each has a <b>WHY</b>, <b>STEPS</b> and a <b>skeleton with blanks (___)</b>. Write your <b>prediction</b> first, then run: <b>TODO-1</b> call Titan v2 through Bedrock <span class="tag">AWS</span> &middot; <b>TODO-2</b> cosine similarity &middot; <b>TODO-3</b> top-k most similar.</li>
+      <li><b>Run:</b> <span class="path">python lab02a_embeddings.py</span></li>
+      <li><b>Look:</b> do the scores match your intuition? Which ticket got the wrong KB article?</li>
+      <li><b>Check:</b> <span class="path">pytest -k "challenge_1 or challenge_2 or challenge_3"</span></li>
+      <li><span class="tag">stretch</span> Change dimensions to 256 and 1,024: do the rankings change? Then add 3 tickets of your own that should match a KB article.</li>
+    </ol>
+    <div class="card"><b>Stuck?</b> <b>No module named ...</b> &rarr; run <span class="path">python -m pip install -r requirements.txt</span> from the repo folder &middot; <b>AccessDenied</b> on Titan &rarr; tell the trainer &middot; <b>Throttling</b> &rarr; wait 30 s, run again &middot; <b>IndentationError</b> &rarr; every line inside a function starts with the same 4 spaces &middot; Still stuck after 5 min &rarr; open <span class="path">Day03\Hints\lab02-naive-rag</span>, copy ONE TODO only, then explain it to your neighbour in one sentence.</div>
+    <div class="openpath">📂 Open in VS Code: <span class="path">C:\AskIT\dxc-agentic-ai\Day03\Labs\lab02-naive-rag\README.md</span></div>
+    <div class="row"><button class="btn" data-done="lab2a">🏁 I completed Lab 2A: run my checks and push</button></div>
+  </div>
+</section>
+
+<!-- ============ 2. CHUNKING ============ -->
+<section data-title="② Chunking">
+  <div class="kicker">Concept 2 · <span class="chip i">INTERMEDIATE</span></div>
+  <h2>Chunking and vector stores</h2>
+  <p class="lead">In Lab 2A you embedded short tickets. KB articles are longer. We don't embed whole documents: we cut them into <b>chunks</b>, embed each one, and store the vectors so we can search them fast.</p>
+
+  <h3>Why chunk? Click each card</h3>
+  <div class="grid g3">
+    <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🎯</span><b>Precision</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>One vector for a 20-page policy blurs every topic together. Small chunks = sharp meaning = better matches.</div></div></div></button>
+    <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">💸</span><b>Cost</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>We send only the best 3–5 chunks to the LLM, not whole documents. Fewer input tokens on every question.</div></div></div></button>
+    <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">⚖️</span><b>The trade-off</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>Too small → the answer is split across chunks. Too big → noisy matches. <b>Overlap</b> keeps sentences from being cut in half.</div></div></div></button>
+  </div>
+
+  <h3>Chunk it yourself <span class="chip i">INTERMEDIATE</span></h3>
+  <p class="muted">A real Orbit KB article. Move the sliders. Each colour is a chunk; <u>underlined</u> words appear in two chunks (overlap).</p>
+  <div class="card">
+    <div class="slider"><label>Chunk size (words)</label><input type="range" id="chSize" min="10" max="80" step="5" value="30"><output id="oChSize"></output></div>
+    <div class="slider"><label>Overlap (words)</label><input type="range" id="chOv" min="0" max="20" step="1" value="5"><output id="oChOv"></output></div>
+    <div class="stats"><div class="stat"><span class="muted">Chunks</span><b id="chCount">0</b></div><div class="stat"><span class="muted">Words stored</span><b id="chWords">0</b></div></div>
+    <div id="chOut" style="margin-top:12px;line-height:2;font-size:16px"></div>
+  </div>
+
+  <h3>Where do vectors live?</h3>
+  <div class="grid g3">
+    <button class="flip"><div class="in"><div class="face front"><b>In memory (Lab 2B)</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>A Python list + a numpy matrix. Perfect for learning and for a few thousand chunks.</div></div></div></button>
+    <button class="flip"><div class="in"><div class="face front"><b>Chroma · FAISS (Lab 2C)</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>Open-source libraries with fast approximate search for millions of vectors. The Lab 2C app uses <b>Chroma</b> on your own machine.</div></div></div></button>
+    <button class="flip"><div class="in"><div class="face front"><b>pgvector · OpenSearch</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>Vectors inside a database you may already run, with filters, security and backups.</div></div></div></button>
+    <button class="flip"><div class="in"><div class="face front"><b>Amazon S3 Vectors</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>Vector storage in S3: low cost for large, less frequently queried collections.</div></div></div></button>
+    <button class="flip"><div class="in"><div class="face front"><b>Bedrock Knowledge Bases</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>Fully managed RAG on AWS: chunking, embedding, storage and retrieval done for you.</div></div></div></button>
+    <button class="flip"><div class="in"><div class="face front"><b>How to choose?</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>Volume, latency, filters, who operates it, and where your data must live. Record it in an <b>ADR</b>.</div></div></div></button>
+  </div>
+
+  <h3>Quick check</h3>
+  <div data-quiz="m2"></div>
+</section>
+
+<!-- ============ LAB 2B ============ -->
+<section data-title="Lab 2B" data-lab="1">
+  <div class="lab">
+    <div class="kicker">🧪 Lab 2B · 40 min</div>
+    <h2>Build your own vector index</h2>
+    <div class="wwho"><div><b>What we do</b>Split the 20 KB articles into chunks, embed them and build a searchable index.</div><div><b>Why</b>The model can't read the whole KB for every question. Retrieval quality, starting with chunking, decides answer quality.</div><div><b>Outcome / learning</b>Your own working vector index and a measured hit rate @3 that you can improve.</div><div><b>How</b>Chunk with overlap (TODO-4) &rarr; embed every chunk (TODO-5) &rarr; search (TODO-6) &rarr; run it and study the misses.</div></div>
+    <ol>
+      <li><b>Same window</b> as Lab 2A, in <span class="path">Day03\Labs\lab02-naive-rag</span>.</li>
+      <li><b>Open the file:</b> <span class="path">notepad lab02b_index.py</span>. Search for <b>TODO</b>.</li>
+      <li><b>Fill 3 TODOs</b> (read the WHY, write your prediction, fill the ___): <b>TODO-4</b> split text into overlapping chunks &middot; <b>TODO-5</b> build the index (id, doc_id, text, vector) <span class="tag">AWS</span> &middot; <b>TODO-6</b> search the index.</li>
+      <li><b>Run:</b> <span class="path">python lab02b_index.py</span> &rarr; you get your <b>hit rate @3</b>. (First run embeds every chunk: about a minute.)</li>
+      <li><b>Look:</b> which questions MISS? Why do you think so?</li>
+      <li><b>Check:</b> <span class="path">pytest -k "challenge_4 or challenge_5 or challenge_6"</span></li>
+      <li><span class="tag">stretch</span> Try chunk sizes 40, 80 and 200 words and note the hit rates in <span class="path">submission\stretch_chunking.md</span>. Which wins, and why?</li>
+    </ol>
+    <div class="card"><b>Stuck?</b> Still stuck after 5 min &rarr; open <span class="path">Day03\Hints\lab02-naive-rag</span>, copy ONE TODO only, then explain it to your neighbour in one sentence.</div>
+    <div class="openpath">📂 Open in VS Code: <span class="path">C:\AskIT\dxc-agentic-ai\Day03\Labs\lab02-naive-rag\README.md</span></div>
+    <div class="row"><button class="btn" data-done="lab2b">🏁 I completed Lab 2B: run my checks and push</button></div>
+  </div>
+</section>
+
+<!-- ============ 3. RAG ============ -->
+<section data-title="③ RAG">
+  <div class="kicker">Concept 3 · <span class="chip i">INTERMEDIATE</span></div>
+  <h2>RAG: retrieve, augment, generate</h2>
+  <p class="lead">Put it together: find the right chunks (you built that), put them in the prompt, and let the model answer <b>only</b> from them.</p>
+
+  <h3>The RAG pipeline: click Next step</h3>
+  <div data-stepper="rag">
+    <div class="timeline">
+      <div class="tl-item"><div class="yr">1 · Load</div><div><b>Read the documents</b>: KB articles, PDFs, wiki pages. <i>(once, offline)</i></div></div>
+      <div class="tl-item"><div class="yr">2 · Chunk</div><div><b>Cut into chunks</b> with overlap. <i>(Lab 2B)</i></div></div>
+      <div class="tl-item"><div class="yr">3 · Embed</div><div><b>Titan turns each chunk into a vector.</b> <i>(Lab 2A, 2B)</i></div></div>
+      <div class="tl-item"><div class="yr">4 · Store</div><div><b>Save chunks + vectors</b> in a vector store (a list today, Chroma in Lab 2C). <i>— indexing done —</i></div></div>
+      <div class="tl-item"><div class="yr">5 · Retrieve</div><div><b>Embed the question, find the top-k chunks.</b> <i>(every question)</i></div></div>
+      <div class="tl-item"><div class="yr">6 · Augment</div><div><b>Build a grounded prompt:</b> context + rules + question.</div></div>
+      <div class="tl-item"><div class="yr">7 · Generate</div><div><b>The LLM answers from the context</b>, with sources, or "I don't know".</div></div>
+    </div>
+    <div class="row"><button class="btn stNext">Next step ▶</button><button class="btn ghost stReset">Reset</button></div>
+  </div>
+
+  <h3>Exercise · RAG, fine-tuning, or neither? <span class="chip i">INTERMEDIATE</span></h3>
+  <div class="card" data-classify="rft"></div>
+
+  <h3>Anatomy of a grounded prompt: reveal each part</h3>
+  <div class="grid g2">
+    <button class="cell"><div class="t">1 · Role</div><div class="rv">"You are AskIT, the Orbit Corp IT helpdesk assistant." Sets tone and scope.</div></button>
+    <button class="cell"><div class="t">2 · Context with IDs</div><div class="rv">Each chunk labelled <b>[KB-004]</b> so the model can cite it and you can check it.</div></button>
+    <button class="cell"><div class="t">3 · Rules</div><div class="rv">Answer <b>only</b> from context · cite ids · if it's not there, say <b>"I don't know"</b> and route to a human.</div></button>
+    <button class="cell"><div class="t">4 · Question</div><div class="rv">The user's question, last, so it is freshest in the model's attention.</div></button>
+  </div>
+
+  <h3>What you will see in the Lab 2C app</h3>
+  <div class="grid g3">
+    <div class="card"><b>Sidebar knobs</b><br>Chunk size, overlap and Top-K. Change one, reload the KB, measure again.</div>
+    <div class="card"><b>🔍 Retrieved chunks</b><br>Under every answer. Always check them before you trust the answer.</div>
+    <div class="card"><b>🧪 Mini eval</b><br>12 questions scored for doc hit and answer hit, with no LLM cost. Your numbers go into the ADR.</div>
+  </div>
+
+  <h3>Quick check</h3>
+  <div data-quiz="m3"></div>
+</section>
+
+<!-- ============ LAB 2C ============ -->
+<section data-title="Lab 2C" data-lab="1">
+  <div class="lab">
+    <div class="kicker">🧪 Lab 2C · 40 min</div>
+    <h2>The AskIT RAG app: run it, then break it</h2>
+    <div class="wwho"><div><b>What we do</b>Run a complete RAG app (Chroma + Titan + Nova on Bedrock) on the AskIT KB, then run measured experiments on chunk size and Top-K.</div><div><b>Why</b>You built the engine in 2A and 2B. Here you see it wired to an LLM, and learn which settings matter before the team ADR.</div><div><b>Outcome / learning</b>A table of experiments (doc hit, answer hit) that proves which setting is best, and a list of questions naive RAG still gets wrong.</div><div><b>How</b>Load the KB &rarr; ask 3 questions &rarr; run the Mini eval for 4 settings &rarr; write what you learned.</div></div>
+    <ol>
+      <li><b>Start the app:</b> <span class="path">cd /d C:\AskIT\dxc-agentic-ai</span> &rarr; <span class="path">python -m pip install -r Day03\Labs\lab02-askit-rag-app\requirements.txt</span> &rarr; <span class="path">cd Day03\Labs\lab02-askit-rag-app</span> &rarr; <span class="path">streamlit run app.py</span> <span class="tag">AWS Bedrock is the default</span></li>
+      <li><b>Load the KB:</b> sidebar &rarr; <b>Load AskIT KB (20 articles)</b>. Wait for the green message.</li>
+      <li><b>Ask 3 questions</b> and open <b>🔍 Retrieved chunks</b> each time: <i>minimum password length</i> &middot; <i>VPN error 809</i> &middot; <i>vegan food on Fridays</i> (not in the KB: what does AskIT say?).</li>
+      <li><b>Experiment:</b> <b>🧪 Mini eval</b> &rarr; <b>Run</b>. Change ONE setting, click <b>Load AskIT KB</b> again, run again. Fill the 4 rows in <span class="path">submission\experiment.md</span> and write what you learned.</li>
+      <li><b>Check:</b> <span class="path">pytest Day03\Labs\lab02-askit-rag-app</span> &rarr; aim for 3 passed.</li>
+      <li><span class="tag">stretch</span> <b>Break it.</b> Write 3 questions the app answers badly and add them to <span class="path">experiment.md</span>. Also try your own PDF. Day 4 starts from your list. Fast finisher? Do the stretch in <span class="path">lab02c_rag.py</span>: write the RAG loop yourself.</li>
+    </ol>
+    <div class="card"><b>Stuck?</b> "No provider available" &rarr; the course <span class="path">.env</span> lacks the AWS keys or model id: tell the trainer, or paste an OpenAI key in the sidebar (backup) &middot; <b>Throttling</b> &rarr; the app retries by itself, wait a few seconds &middot; Answers odd after changing chunk size &rarr; click <b>Load AskIT KB</b> again.</div>
+    <div class="openpath">📂 Open in VS Code: <span class="path">C:\AskIT\dxc-agentic-ai\Day03\Labs\lab02-askit-rag-app\README.md</span></div>
+    <div class="row"><button class="btn" data-done="lab2c">🏁 I completed Lab 2C: run my checks and push</button></div>
+  </div>
+</section>
+
+<!-- ============ ADR ============ -->
+<section data-title="🏛️ ADR">
+  <div class="kicker">Breakout · 20 min, then team readouts · 15 min</div>
+  <h2>ADR-002: how should AskIT chunk and retrieve?</h2>
+  <p class="lead">Your team makes the decision with <b>evidence from Lab 2C</b>: the experiment table, not opinions. Write it as an Architecture Decision Record, then present it (2 minutes + 1 minute questions).</p>
+  <div class="grid g2">
+    <div class="card"><h3 style="margin-top:0">Your decision</h3>
+      Choose chunk size, overlap and Top-K for AskIT v1. Say what you give up: cost, speed or accuracy.<br><br>
+      <b>Must include:</b> at least 2 numbers from your experiments · one question the app still gets wrong · what you would try next (hint: Day 4).</div>
+    <div class="card"><h3 style="margin-top:0">Rules of the room</h3>
+      1. Pick one writer, one presenter.<br>2. Everyone adds one risk.<br>3. Reviewers from another team ask one hard question.<br>4. Save the file as <span class="path">teams\&lt;your team&gt;\ADR-002.md</span> (the Download button names it).</div>
+  </div>
+  <h3>ADR builder</h3>
+  <div class="card" data-adr="adr002"></div>
+  <div class="card" style="text-align:center;margin-top:14px">
+    <div class="muted">Presenter timer</div><div class="score" id="tmr">4:00</div>
+    <div class="row" style="justify-content:center"><button class="btn" id="tmrGo">▶ Start</button><button class="btn ghost" id="tmrReset">Reset</button></div>
+  </div>
+</section>
+
+<!-- ============ BOSS QUIZ ============ -->
+<section data-title="🏆 Boss Quiz">
+  <div class="kicker">Boss Quiz · Basic → Advanced</div>
+  <h2>10 questions. How far can you go?</h2>
+  <p class="lead">Basic 5 · Intermediate 10 · Advanced 15 XP.</p>
+  <div data-quiz="boss"></div>
+  <div class="card" style="text-align:center;margin-top:16px">
+    <div class="muted">Boss Quiz score</div><div class="score" id="bossScore">0 / 10</div>
+    <div id="bossBadge" class="muted">Answer all questions to earn your badge.</div>
+  </div>
+</section>
+
+<!-- ============ WRAP ============ -->
+<section data-title="Sum-up">
+  <div class="kicker">Sum-up</div>
+  <h2>What we built today</h2>
+  <div class="grid g3">
+    <div class="card"><b>Concept → lab, three times</b><br>Embeddings → 2A. Chunking and stores → 2B. RAG → 2C app.</div>
+    <div class="card"><b>What naive RAG does well</b><br>Finds the right article by meaning and answers with sources.</div>
+    <div class="card"><b>What it gets wrong</b><br>Look at your "3 questions it answers badly". That list is tomorrow's agenda.</div>
+  </div>
+
+  <h3>Coming next · Session 4</h3>
+  <div class="card">Tomorrow we fix retrieval and measure the lift: <b>metadata filters</b> (old versions, contractor vs employee), <b>hybrid search</b>, a <b>reranker</b>, and an <b>abstain guard</b>. Then we turn the pipeline into an <b>agentic RAG loop</b> with a critic, and the review board decides what ships.</div>
+
+  <h3>Exit ticket (saved with your Day End)</h3>
+  <div class="grid g3">
+    <div class="card">💡 One thing that <b>surprised</b> you today<textarea class="et" data-k="surprised" style="min-height:80px;margin-top:8px"></textarea></div>
+    <div class="card">❓ One thing still <b>unclear</b><textarea class="et" data-k="unclear" style="min-height:80px;margin-top:8px"></textarea></div>
+    <div class="card">🎯 Confidence today (1 = lost, 5 = could teach it)<div class="row" id="conf"></div></div>
+  </div>
+
+  <h3>🏁 Day End: do this before you leave</h3>
+  <div class="lab">
+    <p>One click: saves your XP, quiz answers, ADR and exit ticket, checks your labs, and <b>pushes everything to your GitHub fork</b>. You can click again if you finish more later.</p>
+    <button class="btn" id="dayEnd">🏁 Day End · Save &amp; Push</button>
+    <ul class="steplist" id="deOut"></ul>
+    <p class="muted" id="deHelp" style="display:none">Page not opened via <b>START_DAY.bat</b>? Your file was downloaded instead. Now double-click <span class="path">C:\AskIT\dxc-agentic-ai\DAY_END.bat</span>.</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="nav"><div class="bar">
+  <button class="btn ghost" id="prev">◀ Back</button>
+  <span class="muted" id="where"></span>
+  <button class="btn" id="next">Next ▶</button>
+</div></footer>
+
+<script>
+const SESSION="S03", PFX="s3_";
+const Q={
+ m1:[
+  {l:"b",q:"An embedding is…",o:["A summary of the text","A list of numbers that captures the text's meaning","A compressed zip of the text","The model's answer"],a:1,w:"Embeddings are vectors; similar meaning → nearby vectors."},
+  {l:"b",q:"\"I can't sign in\" vs \"I'm locked out of my account\" will likely have…",o:["Low similarity: different words","High similarity: same meaning","Zero similarity","An error"],a:1,w:"Embeddings capture meaning, not exact words. That is why they beat keyword search here."},
+  {l:"i",q:"You embed KB docs with 1,024 dims and questions with 512 dims. Result?",o:["Works, just slower","Cannot compare: vectors must come from the same model and size","Better accuracy","Cheaper"],a:1,w:"Same model, same size, both sides. Always."},
+  {l:"i",q:"Two tickets use completely different words but mean the same thing. What will their cosine score be?",o:["Close to 1: embeddings capture meaning","Close to 0 because the words differ","An error","Always exactly 0.5"],a:0,w:"Embeddings place similar meanings close together even when no words are shared."}
+ ],
+ m2:[
+  {l:"i",q:"Why add overlap between chunks?",o:["To use more storage","So sentences at chunk borders are not cut off from their meaning","Required by Titan","To make chunks smaller"],a:1,w:"Overlap keeps context that sits on a boundary in at least one full chunk."},
+  {l:"i",q:"Chunks are too BIG. Most likely symptom?",o:["The right doc is found but the answer is buried in noise and matches get fuzzy","Nothing: bigger is always better","The model refuses","Embeddings fail"],a:0,w:"Big chunks mix topics; similarity gets blurry and prompts get longer (cost)."},
+  {l:"a",q:"You have 50 million chunks and need filters by department. Best fit?",o:["A Python list","A database or vector engine with filtering (e.g. OpenSearch, pgvector)","Excel","Re-embed on every question"],a:1,w:"At scale you need approximate search, metadata filters and operations: a real vector store."}
+ ],
+ m3:[
+  {l:"b",q:"In RAG, what goes into the prompt?",o:["The whole KB","The top-k retrieved chunks + rules + question","Only the question","The embeddings"],a:1,w:"Only the best chunks: relevant and cheap."},
+  {l:"i",q:"AskIT answered a question that is NOT in the KB, confidently. First fix?",o:["Bigger model","Add a rule: answer only from context, otherwise say \"I don't know\"","More chunks","Higher temperature"],a:1,w:"Give the model an explicit, allowed way out."},
+  {l:"a",q:"In the Lab 2C Mini eval, a question outside the KB still shows a best similarity of 0.4. What does that tell you?",o:["The KB has the answer","Retrieval always returns its closest chunks, so a score alone cannot say \"not in the KB\"","The model is broken","Chunks are too small"],a:1,w:"Nearest is not the same as relevant. We need a guard, and a model told it may say \"I don't know\"."}
+ ],
+ boss:[
+  {l:"b",q:"RAG stands for…",o:["Rapid AI Generation","Retrieval-Augmented Generation","Random Answer Guard","Retrieve And Guess"],a:1,w:"Retrieve relevant text, augment the prompt, generate the answer."},
+  {l:"b",q:"Which AWS model did we use to create embeddings?",o:["Claude Haiku","Amazon Titan Text Embeddings v2","Amazon Nova Pro","Llama"],a:1,w:"Titan Text Embeddings v2 on Bedrock."},
+  {l:"b",q:"Cosine similarity of 1.0 means…",o:["Opposite meaning","Unrelated","Same direction: very similar meaning","An error"],a:2,w:"1 = same direction; around 0 = unrelated."},
+  {l:"i",q:"Why do we compare vectors with cosine similarity?",o:["It compares direction (meaning), not length","It is faster than calling the model","It does not need embeddings","It only works on short text"],a:0,w:"Cosine ignores vector length and looks only at direction, which carries the meaning."},
+  {l:"i",q:"Hit rate @3 = 70% means…",o:["70% of answers are correct","For 70% of test questions, the right doc was in the top 3 results","70% of chunks were used","Latency is 70 ms"],a:1,w:"It measures retrieval, not the final answer. Both matter."},
+  {l:"i",q:"Why is RAG usually preferred over fine-tuning for company policies?",o:["Fine-tuning is illegal","Policies change often; RAG updates instantly and shows sources","RAG is always cheaper per token","Fine-tuning cannot learn text"],a:1,w:"Update the documents, not the model, and get citations."},
+  {l:"i",q:"Indexing (chunk + embed + store) happens…",o:["On every question","Once, and again when documents change","Never","Only in the browser"],a:1,w:"Offline indexing; online retrieval per question."},
+  {l:"a",q:"Top-k = 20 instead of 3. Likely effect?",o:["Always better answers","More tokens, higher cost, and more noise for the model","No change","Faster"],a:1,w:"More context is not free, and irrelevant chunks can distract the model."},
+  {l:"a",q:"A question's answer is split across two chunks and retrieval finds only one. First thing to try?",o:["Increase overlap or adjust chunk size","Raise temperature","Change region","Remove citations"],a:0,w:"Chunking strategy is the first lever. Smarter fixes come tomorrow."},
+  {l:"a",q:"Your KB says 'VPN' everywhere, but users write 'tunnel to the office keeps dropping'. Which search copes better?",o:["Keyword (exact match)","Embedding (semantic) search","Neither","Regex"],a:1,w:"Semantic search matches meaning. Tomorrow we combine both (hybrid)."}
+ ]
+};
+const CLS={rft:{opts:["RAG","Fine-tuning","Neither: plain prompt"],items:[
+  ["AskIT must answer from Orbit's 20 IT policies, which change every month.",0,"Knowledge that changes → retrieve it at question time. Update the KB, not the model."],
+  ["AskIT should always reply in Orbit's very specific ticket-note style and format.",1,"Style and format consistency at huge volume is a fine-tuning use case (few-shot prompting often suffices first)."],
+  ["Translate a user's ticket from German to English.",2,"The model already knows how to translate: no extra knowledge needed."],
+  ["\"What's the SLA for a High priority ticket?\"",0,"A fact in Orbit's documents (KB-016) → RAG."]]}};
+const ADR={adr002:{title:"ADR-002: Chunking and retrieval settings for AskIT v1",file:"ADR-002.md",fields:[
+  ["context","Context","What problem are we solving? Who asks which kind of questions? (2-3 lines)"],
+  ["options","Options considered","At least 2 settings you tested, e.g. chunk 800/overlap 150/top-k 4 vs chunk 300/overlap 100/top-k 4."],
+  ["evidence","Evidence","Paste 2+ rows from your Lab 2C 'Your experiments' table (doc hit, answer hit)."],
+  ["decision","Decision","Chunk size, overlap and top-k we choose, and why."],
+  ["consequences","Consequences and trade-offs","What do we give up? Cost, speed, accuracy? Which questions still fail (your 'break it' list)?"],
+  ["next","What we try next","One improvement for tomorrow (filter? hybrid? rerank?)."]]}};
+
+/* ===== storage (safe) ===== */
+const store = {
+  get(k,d){try{const v=localStorage.getItem(PFX+k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(PFX+k,JSON.stringify(v))}catch(e){}}
+};
+const $=id=>document.getElementById(id);
+/* ===== theme ===== */
+$("theme").onclick=()=>{
+  const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
+  r.dataset.theme=dark?"light":"dark";store.set("theme",r.dataset.theme)};
+{const t=store.get("theme",null);if(t)document.documentElement.dataset.theme=t;}
+/* ===== XP ===== */
+let earned=store.get("xp",{});
+function renderXP(){const t=Object.values(earned).reduce((a,b)=>a+b,0);$("xp").textContent="⭐ "+t+" XP"}
+function addXP(key,n){if(earned[key]!==undefined)return;earned[key]=n;store.set("xp",earned);renderXP()}
+renderXP();
+/* ===== navigation ===== */
+const secs=[...document.querySelectorAll("main section")];
+const stepsEl=$("steps");
+secs.forEach((s,i)=>{const b=document.createElement("button");b.className="step"+(s.dataset.lab?" lab":"");b.textContent=s.dataset.title;b.onclick=()=>go(i);stepsEl.appendChild(b)});
+let cur=0;
+function go(i){cur=Math.max(0,Math.min(secs.length-1,i));secs.forEach((s,j)=>s.classList.toggle("on",j===cur));
+  [...stepsEl.children].forEach((b,j)=>{b.classList.toggle("on",j===cur);if(j<cur)b.classList.add("seen")});const on=stepsEl.children[cur];if(on&&on.scrollIntoView)on.scrollIntoView({inline:"center",block:"nearest"});
+  $("where").textContent=(cur+1)+" / "+secs.length;
+  $("prev").disabled=cur===0;$("next").disabled=cur===secs.length-1;
+  store.set("cur",cur);window.scrollTo({top:0,behavior:"smooth"})}
+$("prev").onclick=()=>go(cur-1);$("next").onclick=()=>go(cur+1);
+document.addEventListener("keydown",e=>{if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;if(e.key==="ArrowRight")go(cur+1);if(e.key==="ArrowLeft")go(cur-1)});
+go(store.get("cur",0));
+/* ===== flip cards, reveal cells ===== */
+document.querySelectorAll(".flip").forEach((f,i)=>f.addEventListener("click",()=>{f.classList.toggle("flipped");addXP("flip_"+i,1)}));
+document.querySelectorAll(".cell").forEach((c,i)=>c.onclick=()=>{c.classList.toggle("open");addXP("cell"+i,1)});
+/* ===== "I completed the lab": run tests + collect evidence + push to GitHub (via local portal) ===== */
+document.querySelectorAll("[data-done]").forEach(b=>{const k=b.dataset.done,label=b.dataset.label||b.textContent;
+  const out=document.createElement("div");out.className="labres";out.style.cssText="margin-top:8px;width:100%";b.parentNode.after(out);
+  const idle=again=>{b.disabled=false;b.textContent=again?"🔁 Re-check & push again":label};
+  const show=(html,cls)=>{out.innerHTML=`<div class="alert ${cls}">${html}</div>`};
+  if(earned["sub_"+k]!==undefined){idle(true);show("Submitted earlier. Press again after more work to re-check.","ok")}
+  b.onclick=async()=>{
+    if(!location.protocol.startsWith("http")){show("Open this page through <b>START_DAY.bat</b> (http://localhost:8765) so your lab tests can run and be pushed.","bad");return}
+    b.disabled=true;b.textContent="⏳ Running your tests and pushing… (up to a minute)";out.innerHTML="";
+    try{const r=await fetch("/api/labdone",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({session:SESSION,lab:k})});
+      const res=await r.json(),s=res.summary||{},steps=(res.steps||[]).map(x=>`<li>${x.ok?"✅":"❌"} ${x.step}${x.detail?" — "+x.detail:""}</li>`).join("");
+      if(s.total!==undefined){addXP("sub_"+k,5);const all=s.total>0&&s.passed===s.total;if(all)addXP("pass_"+k,15);
+        const fl=(s.failed||[]).map(f=>`<li><code>${f.name}</code> ${f.msg?"— "+f.msg:""}</li>`).join("");
+        show(`<b>${all?"🎉 All "+s.total+" checks pass.":"Result: "+s.passed+"/"+s.total+" checks pass."}</b>${s.stretch?" Stretch: "+s.stretch[0]+"/"+s.stretch[1]+".":""}${fl?"<ul>"+fl+"</ul>Fix these and press the button again. Your trainer can already see this result.":""}<ul>${steps}</ul>`,all&&res.ok?"ok":"bad");beat()}
+      else show(`<ul>${steps||"<li>Something went wrong. Call the trainer.</li>"}</ul>`,"bad");
+    }catch(e){show("Could not reach the portal. Is the START_DAY window still open?","bad")}
+    idle(true)}});
+function labsDone(){const o={};Object.keys(earned).forEach(k=>{if(k.startsWith("sub_"))o[k.slice(4)]=true});
+  document.querySelectorAll("[data-done]").forEach(b=>{if(!(b.dataset.done in o))o[b.dataset.done]=false});return o}
+/* ===== sub tabs ===== */
+document.querySelectorAll("[data-tabs]").forEach(host=>{const bs=[...host.querySelectorAll(":scope > .tabs > button")],ps=[...host.querySelectorAll(":scope > .tabpanel")];
+  const show=i=>{bs.forEach((b,j)=>b.classList.toggle("on",j===i));ps.forEach((p,j)=>p.classList.toggle("on",j===i));addXP("tab_"+host.dataset.tabs+i,1)};
+  bs.forEach((b,i)=>b.onclick=()=>show(i));show(0)});
+/* ===== timeline steppers (id tl*) ===== */
+document.querySelectorAll("[data-stepper]").forEach(host=>{const items=[...host.querySelectorAll(".tl-item")];let n=0;
+  const nx=host.querySelector(".stNext"),rs=host.querySelector(".stReset");
+  nx.onclick=()=>{if(n<items.length){items[n].classList.add("show");n++}if(n===items.length){nx.disabled=true;addXP("st_"+host.dataset.stepper,3)}};
+  rs.onclick=()=>{items.forEach(i=>i.classList.remove("show"));n=0;nx.disabled=false}});
+/* ===== classify exercises ===== */
+document.querySelectorAll("[data-classify]").forEach(box=>{const cfg=CLS[box.dataset.classify];
+ cfg.items.forEach(it=>{const d=document.createElement("div");d.className="cls";
+  d.innerHTML=`<div>${it[0]}</div><select><option value="">Choose…</option>${cfg.opts.map((o,j)=>`<option value="${j}">${o}</option>`).join("")}</select><div class="res"></div>`;box.appendChild(d)});
+ const btn=document.createElement("button");btn.className="btn";btn.textContent="Check answers";btn.style.marginTop="12px";box.appendChild(btn);
+ btn.onclick=()=>{let right=0;[...box.querySelectorAll(".cls")].forEach((d,i)=>{const v=d.querySelector("select").value;const r=d.querySelector(".res");
+   const ok=v!==""&&+v===cfg.items[i][1];if(ok)right++;r.className="res show";r.style.color=ok?"var(--ok)":"var(--bad)";
+   r.textContent=(ok?"✔ Correct — ":"✘ Answer: "+cfg.opts[cfg.items[i][1]]+" — ")+cfg.items[i][2]});
+   if(right===cfg.items.length)addXP("cls_"+box.dataset.classify,10)}});
+/* ===== quizzes ===== */
+const PTS={b:5,i:10,a:15};const LBL={b:"BASIC",i:"INTERMEDIATE",a:"ADVANCED"};
+let bossRight=0,bossDone=0;let answers=store.get("answers",{});
+document.querySelectorAll("[data-quiz]").forEach(host=>{const set=host.dataset.quiz;
+ Q[set].forEach((it,qi)=>{const d=document.createElement("div");d.className="q";
+  d.innerHTML=`<div class="qt"><span class="chip ${it.l}">${LBL[it.l]}</span>${qi+1}. ${it.q}</div><div class="opts">${it.o.map((o,oi)=>`<button class="opt" data-i="${oi}">${o}</button>`).join("")}</div><div class="why"></div>`;
+  host.appendChild(d);
+  d.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{const ok=+b.dataset.i===it.a;
+   d.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(+x.dataset.i===it.a)x.classList.add("right")});
+   if(!ok)b.classList.add("wrong");
+   const w=d.querySelector(".why");w.className="why show";w.innerHTML=(ok?"✔ <b>Correct.</b> ":"✘ <b>Not quite.</b> ")+it.w+(ok?` <b>+${PTS[it.l]} XP</b>`:"");
+   answers[set+"_"+qi]={correct:ok,level:it.l};store.set("answers",answers);
+   if(ok)addXP("q_"+set+"_"+qi,PTS[it.l]);
+   if(set==="boss"){bossDone++;if(ok)bossRight++;updBoss()}});
+ })});
+function updBoss(){const n=Q.boss.length;$("bossScore").textContent=bossRight+" / "+n;
+ if(bossDone===n){const b=$("bossBadge"),p=bossRight/n;
+  b.innerHTML=p>=.9?"🥇 <b>RAG Architect</b> — outstanding!":p>=.7?"🥈 <b>RAG Builder</b> — strong grip.":p>=.45?"🥉 <b>RAG Explorer</b> — review the modules tonight.":"🔁 <b>Rookie</b> — revisit the modules and retry."}}
+/* ===== presenter timer ===== */
+if($("tmr")){let left=240,t=null;const el=$("tmr");
+ const show=()=>{el.textContent=Math.floor(left/60)+":"+String(left%60).padStart(2,"0");el.style.color=left<=30?"var(--bad)":"var(--accent)"};
+ $("tmrGo").onclick=()=>{if(t)return;t=setInterval(()=>{left=Math.max(0,left-1);show();if(!left){clearInterval(t);t=null}},1000)};
+ $("tmrReset").onclick=()=>{clearInterval(t);t=null;left=240;show()};show();}
+/* ===== ADR builder (data-adr="key"): fields -> markdown, copy / download ===== */
+document.querySelectorAll("[data-adr]").forEach(host=>{const cfg=ADR[host.dataset.adr];const saved=store.get("adr_"+host.dataset.adr,{});
+ host.classList.add("adr");
+ host.innerHTML=cfg.fields.map(f=>`<label>${f[1]}</label><div class="muted" style="font-size:14px">${f[2]}</div><textarea data-k="${f[0]}"></textarea>`).join("")+
+  `<div class="row"><button class="btn" data-a="make">Build ADR text</button><button class="btn ghost" data-a="copy">Copy</button><button class="btn ghost" data-a="dl">Download .md</button></div><pre class="hidden"></pre>`;
+ const ta=[...host.querySelectorAll("textarea")],pre=host.querySelector("pre");
+ ta.forEach(t=>{t.value=saved[t.dataset.k]||"";t.addEventListener("input",()=>{saved[t.dataset.k]=t.value;store.set("adr_"+host.dataset.adr,saved)})});
+ const md=()=>`# ${cfg.title}\n\nStatus: Proposed · Team: ${ME?ME.team:"?"} · Date: ${new Date().toISOString().slice(0,10)}\n\n`+cfg.fields.map(f=>`## ${f[1]}\n${saved[f[0]]||"(empty)"}\n`).join("\n");
+ host.querySelector('[data-a="make"]').onclick=()=>{pre.textContent=md();pre.classList.remove("hidden");addXP("adr_"+host.dataset.adr,15)};
+ host.querySelector('[data-a="copy"]').onclick=async e=>{try{await navigator.clipboard.writeText(md());e.target.textContent="Copied ✔"}catch(x){pre.textContent=md();pre.classList.remove("hidden")}};
+ host.querySelector('[data-a="dl"]').onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([md()],{type:"text/markdown"}));a.download=cfg.file;document.body.appendChild(a);a.click();a.remove()}});
+/* ===== participant identity (served by local portal) ===== */
+let ME=null;
+if(location.protocol.startsWith("http")){fetch("/api/me").then(r=>r.ok?r.json():null).then(m=>{if(m){ME=m;$("who").textContent="👤 "+m.name+" · Team "+m.team}}).catch(()=>{})}
+/* ===== exit ticket ===== */
+let exitT=store.get("exit",{});
+document.querySelectorAll(".et").forEach(t=>{t.value=exitT[t.dataset.k]||"";t.addEventListener("input",()=>{exitT[t.dataset.k]=t.value;store.set("exit",exitT)})});
+{const c=$("conf");for(let i=1;i<=5;i++){const b=document.createElement("button");b.className="btn ghost";b.textContent=i;
+ if(exitT.confidence===i)b.className="btn";
+ b.onclick=()=>{exitT.confidence=i;store.set("exit",exitT);[...c.children].forEach((x,j)=>x.className=j===i-1?"btn":"btn ghost")};c.appendChild(b)}}
+/* ===== heartbeat: live progress ===== */
+let lastAct=Date.now();["click","keydown","scroll","input","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{lastAct=Date.now()},{passive:true}));
+let activeMin=store.get("activeMin",0);
+function beat(){if(!location.protocol.startsWith("http"))return;
+ fetch("/api/heartbeat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({session:SESSION,section:secs[cur].dataset.title,section_idx:cur,sections_total:secs.length,
+  xp_total:Object.values(earned).reduce((a,b)=>a+b,0),active_minutes:activeMin,quiz_answered:Object.keys(answers).length,quiz_correct:Object.values(answers).filter(v=>v.correct).length,
+  labs_self_reported:labsDone()})}).catch(()=>{})}
+setInterval(()=>{if(document.visibilityState==="visible"&&Date.now()-lastAct<120000){activeMin++;store.set("activeMin",activeMin)}beat()},60000);
+$("prev").addEventListener("click",()=>setTimeout(beat,300));$("next").addEventListener("click",()=>setTimeout(beat,300));
+stepsEl.addEventListener("click",()=>setTimeout(beat,300));setTimeout(beat,2000);
+/* ===== Day End ===== */
+function payload(){const xpTotal=Object.values(earned).reduce((a,b)=>a+b,0);
+ const bossAns=Object.entries(answers).filter(([k])=>k.startsWith("boss_"));
+ return {session:SESSION,timestamp:new Date().toISOString(),participant:ME,xp_total:xpTotal,xp:earned,
+  active_minutes:activeMin,quiz:answers,boss:{answered:bossAns.length,correct:bossAns.filter(([k,v])=>v.correct).length,of:Q.boss.length},
+  labs_self_reported:labsDone(),exit_ticket:exitT,adr:{...Object.fromEntries(Object.keys(ADR).map(k=>[k,store.get("adr_"+k,{})]))}}}
+function showSteps(steps){$("deOut").innerHTML=steps.map(s=>`<li class="${s.ok?"ok":"bad"}">${s.ok?"✅":"❌"} ${s.step}${s.detail?" — "+s.detail:""}</li>`).join("")}
+function download(p){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(p,null,2)],{type:"application/json"}));
+ a.download="askit_"+SESSION+"_xp.json";document.body.appendChild(a);a.click();a.remove()}
+$("dayEnd").onclick=async e=>{const b=e.target;b.disabled=true;b.textContent="⏳ Saving & pushing…";const p=payload();
+ try{
+  if(!location.protocol.startsWith("http"))throw new Error("offline");
+  const r=await fetch("/api/dayend",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
+  const res=await r.json();showSteps(res.steps||[]);
+  b.textContent=res.ok?"✅ Done — see you next session!":"⚠️ Try again or call the trainer";
+ }catch(err){download(p);$("deHelp").style.display="block";
+  showSteps([{ok:true,step:"XP file downloaded",detail:"askit_"+SESSION+"_xp.json"},{ok:false,step:"Not pushed yet",detail:"run DAY_END.bat"}]);
+  b.textContent="🏁 Day End · Save & Push"}
+ b.disabled=false};
+
+/* ===== meaning map explorer ===== */
+const dot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0), nrm=a=>Math.sqrt(dot(a,a)), cosv=(a,b)=>dot(a,b)/(nrm(a)*nrm(b));
+const STOP=new Set("a an the to of in on at is are was be and or my me i it its for with by as that this from not your you can't cant do does did have has had so if then than but".split(" "));
+const toks=t=>t.toLowerCase().replace(/[^a-z0-9 ]+/g," ").split(/\s+/).filter(w=>w&&!STOP.has(w));
+const shared=(a,b)=>{const B=new Set(toks(b));return [...new Set(toks(a))].filter(w=>B.has(w))};
+
+/* step 1: words become numbers */
+{const PH=[
+ ["I'm locked out of my account",[.82,-.35,.10,.55,-.20,.05,.60,-.12]],
+ ["Can't sign in",[.78,-.30,.15,.50,-.25,.10,.55,-.08]],
+ ["Forgot my password",[.70,-.25,.05,.62,-.15,0,.50,-.20]],
+ ["VPN keeps dropping",[.05,.10,-.70,.10,.20,.65,-.30,-.55]],
+ ["Printer is jammed",[-.30,.70,.45,-.40,.60,.35,-.15,.50]]];
+ const A=$("vA"),B=$("vB");PH.forEach((p,i)=>{A.add(new Option(p[0],i));B.add(new Option(p[0],i))});A.value=0;B.value=1;
+ const bars=v=>`<div class="vbars">${v.map(x=>`<div class="vb"><i style="${x>=0?"bottom:50%;height:"+(x*50)+"%;background:var(--accent)":"top:50%;height:"+(-x*50)+"%;background:var(--warn)"}"></i></div>`).join("")}</div>`;
+ const f=()=>{const a=PH[+A.value],b=PH[+B.value],c=cosv(a[1],b[1]),sw=shared(a[0],b[0]);
+  $("vOut").innerHTML=`<div class="vrow"><b>${a[0]}</b>${bars(a[1])}</div><div class="vrow" style="margin-top:8px"><b>${b[0]}</b>${bars(b[1])}</div>
+  <div class="stats"><div class="stat"><span class="muted">Cosine similarity</span><b>${c.toFixed(2)}</b></div><div class="stat"><span class="muted">Words in common</span><b>${sw.length}</b></div></div>
+  <div class="alert ${c>0.8?"ok":"bad"}">${c>0.8?"Similar meaning → similar numbers":c>0.3?"Somewhat related":"Different meaning → different numbers"}${sw.length===0&&c>0.8?" (and they share no words: keyword search would miss this)":""}</div>`;addXP("mm1",2)};
+ A.onchange=f;B.onchange=f;f();}
+
+/* shared data: tickets (circles) and KB articles (squares) on the 2-D map */
+const KB=[
+ ["KB-001","Password Reset",-.95,.15,"Employees can reset their own password at the portal 24x7. Enter your employee ID, approve the MFA prompt, choose a new password of at least 14 characters."],
+ ["KB-002","Account Lockout",-.62,.62,"Accounts lock after 5 failed sign-in attempts and unlock automatically after 30 minutes. Common cause: an old password saved on a phone."],
+ ["KB-003","MFA",-.85,-.45,"MFA is mandatory. Lost phone with MFA: call the helpdesk. After identity verification a temporary access code valid for 24 hours is issued."],
+ ["KB-004","Connecting to VPN",.30,.82,"Use OrbitConnect VPN for all remote access to internal systems. Error 809 or gateway timeout: switch gateway, then restart the OrbitConnect service."],
+ ["KB-007","Laptop Not Working",.78,.45,"First try a full shutdown. Blue screen, swollen battery, liquid damage or broken screen: raise a Hardware ticket, priority High. A loaner laptop is available."],
+ ["KB-011","Printing",.92,-.05,"Office printers use Follow-Me printing: print to Orbit-Print, then tap your ID card at any printer. Printer offline or jammed: raise a ticket."],
+ ["KB-012","Wi-Fi in Offices",-.30,.80,"Orbit-Corp Wi-Fi is for Orbit laptops. Orbit-Guest is for visitors and personal phones. Laptop not connecting: forget the network and restart."],
+ ["KB-014","Lost or Stolen Device",-.18,-.88,"Report a lost or stolen laptop or phone immediately. Always priority Critical. The helpdesk will lock and remotely wipe the device and reset your password."],
+ ["KB-019","Reporting Phishing",-.55,-.86,"Use the Report Phishing button in Outlook. If you clicked a link or entered your password: report immediately (priority Critical), then reset your password. Orbit IT will never ask for your password or MFA code by email."]];
+const TK=[
+ ["I'm locked out","I'm locked out",-.76,.52,"KB-002"],
+ ["Forgot my password","I forgot my password",-.78,.05,"KB-001"],
+ ["Tunnel keeps dropping","My tunnel to the office keeps dropping",.18,.55,"KB-004"],
+ ["Handset left in taxi","I left my handset in a taxi",.02,-.55,"KB-014"],
+ ["Scammed by email","I think I got scammed by an email",-.36,-.42,"KB-019"],
+ ["Blue screen, restarts","The screen went blue and my laptop keeps restarting",.62,.28,"KB-007"],
+ ["Can't print","I can't release my print job at the floor machine",.68,-.12,"KB-011"],
+ ["Wi-Fi not connecting","Wi-Fi is not connecting",-.36,.66,"KB-012"]];
+
+/* step 2: the map */
+{const svg=$("emap"),out=$("emapOut");const W=640,H=420,cx=320,cy=210,sx=270,sy=165;let metric="cos",sel=null;
+ const CLN=["Account","Account","Network","Security","Security","Hardware","Hardware","Network"];
+ const KCL={"KB-001":"Account","KB-002":"Account","KB-003":"Security","KB-004":"Network","KB-007":"Hardware","KB-011":"Hardware","KB-012":"Network","KB-014":"Security","KB-019":"Security"};
+ const TCL=["Account","Account","Network","Security","Security","Hardware","Hardware","Network"];
+ const P=[...TK.map((t,i)=>({n:t[0],x:t[2],y:t[3],k:"t",c:TCL[i]})),...KB.map(k=>({n:k[0]+" "+k[1],x:k[2],y:k[3],k:"k",c:KCL[k[0]]}))];
+ const pos=p=>[cx+p.x*sx,cy-p.y*sy];
+ const cs=(a,b)=>cosv([a.x,a.y],[b.x,b.y]),ds=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+ const clusters=["Account","Network","Hardware","Security"].map(n=>{const ps=P.filter(p=>p.c===n).map(pos);const xs=ps.map(q=>q[0]),ys=ps.map(q=>q[1]);
+   return {n,x:(Math.min(...xs)+Math.max(...xs))/2,y:(Math.min(...ys)+Math.max(...ys))/2,rx:(Math.max(...xs)-Math.min(...xs))/2+62,ry:(Math.max(...ys)-Math.min(...ys))/2+36}});
+ const top3=m=>P.map((p,i)=>({i,c:cs(P[sel],p),d:ds(P[sel],p)})).filter(o=>o.i!==sel).sort((a,b)=>m==="cos"?b.c-a.c:a.d-b.d).slice(0,3);
+ function draw(){let h="";
+  if($("mmCl").checked)clusters.forEach(c=>{h+=`<ellipse cx="${c.x}" cy="${c.y}" rx="${c.rx}" ry="${c.ry}" fill="var(--accent-soft)" opacity=".5" stroke="var(--accent)" stroke-dasharray="4 4" style="pointer-events:none"/><text style="pointer-events:none" x="${c.x}" y="${Math.max(14,c.y-c.ry-4)}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent)">${c.n.toUpperCase()}</text>`});
+  h+=`<line x1="${cx}" y1="6" x2="${cx}" y2="${H-6}" stroke="var(--line)"/><line x1="6" y1="${cy}" x2="${W-6}" y2="${cy}" stroke="var(--line)"/><circle cx="${cx}" cy="${cy}" r="3" fill="var(--muted)"/>`;
+  let near=[];
+  if(sel!==null){near=top3(metric);
+   if(metric==="cos"){[sel,...near.map(n=>n.i)].forEach((i,j)=>{const[x,y]=pos(P[i]);h+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--accent)" stroke-width="${j?1.5:2.5}" stroke-dasharray="${j?"5 4":"0"}" opacity="${j?.8:1}" style="pointer-events:none"/>`});}}
+  P.forEach((p,i)=>{const[x,y]=pos(p),on=i===sel,nb=near.some(n=>n.i===i),col=on||nb?"var(--accent)":"var(--muted)";
+   const anchor=x<130?"start":x>510?"end":"middle",tx=anchor==="start"?x-6:anchor==="end"?x+6:x,ty=p.k==="k"?y-13:y+22;
+   const shape=p.k==="t"?`<circle cx="${x}" cy="${y}" r="${on?9:7}" fill="${col}" stroke="var(--surface)" stroke-width="2"/>`:`<rect x="${x-7}" y="${y-7}" width="14" height="14" rx="3" fill="${on||nb?"var(--accent)":"var(--surface2)"}" stroke="${col}" stroke-width="2.5"/>`;
+   h+=`<g data-i="${i}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="16" fill="transparent"/>${shape}<text x="${tx}" text-anchor="${anchor}" y="${ty}" font-size="12" fill="var(--ink)" font-weight="${on?700:400}" paint-order="stroke" stroke="var(--surface)" stroke-width="3">${p.n}</text></g>`});
+  svg.innerHTML=h;svg.querySelectorAll("g[data-i]").forEach(g=>g.onclick=()=>{sel=+g.dataset.i;draw();addXP("mm2",3)});
+  if(sel!==null){
+   out.innerHTML=`<div style="margin-bottom:6px;color:var(--accent)">Cosine looks at the <b>angle</b> from the centre: lines pointing the same way = close in meaning.</div><b>${P[sel].n}</b> → 3 nearest by <b>cosine</b>:<table class="simtable"><tr><th>Neighbour</th><th>Cosine (1 = same meaning)</th></tr>`+near.map(n=>`<tr><td>${P[n.i].k==="k"?"▢ ":"● "}${P[n.i].n}</td><td class="num" style="color:var(--accent)">${n.c.toFixed(2)}</td></tr>`).join("")+`</table>`}}
+ $("mmCl").onchange=draw;
+ sel=0;draw();}
+
+/* step 3: measuring close */
+{const svg=$("angSvg"),ox=200,oy=205,U=95;
+ const f=()=>{const a=+$("ang").value,r=a*Math.PI/180;
+  $("oAng").textContent=a+"°";
+  const c=Math.cos(r);$("cosVal").textContent=c.toFixed(2);
+  $("cosTxt").textContent=c>0.8?"Very similar meaning":c>0.4?"Related":c>-0.2?"Unrelated":"Opposite direction";
+  const bx=ox+U*Math.cos(r),by=oy-U*Math.sin(r);
+  let arc="";{const R=30,x2=ox+R*Math.cos(r),y2=oy-R*Math.sin(r);arc=`<path d="M ${ox+R} ${oy} A ${R} ${R} 0 0 0 ${x2} ${y2}" fill="none" stroke="var(--muted)" stroke-width="2"/>`}
+  svg.innerHTML=`<circle cx="${ox}" cy="${oy}" r="${U}" fill="none" stroke="var(--line)" stroke-dasharray="4 4"/>${arc}
+   <line x1="${ox}" y1="${oy}" x2="${ox+U}" y2="${oy}" stroke="var(--accent)" stroke-width="5" stroke-linecap="round"/>
+   <line x1="${ox}" y1="${oy}" x2="${bx}" y2="${by}" stroke="var(--warn)" stroke-width="5" stroke-linecap="round"/>
+   <text x="${ox+U+8}" y="${oy+5}" font-size="14" fill="var(--accent)" font-weight="700">A</text><text x="${bx+8}" y="${by-4}" font-size="14" fill="var(--warn)" font-weight="700">B</text>
+   <text x="${ox+36}" y="${oy-8}" font-size="12" fill="var(--muted)">angle</text>`;
+ };
+ $("ang").addEventListener("input",()=>{f();addXP("mm3",3)});f();}
+
+/* step 4: semantic search */
+{const sel=$("tkSel");TK.forEach((t,i)=>sel.add(new Option(t[1],i)));sel.value=2;
+ const f=()=>{const t=TK[+sel.value],v=[t[2],t[3]];
+  $("tkVec").innerHTML=`In this toy space the ticket "vector" is just 2 numbers: <b>(${t[2].toFixed(2)}, ${t[3].toFixed(2)})</b>. Titan gives 512.`;
+  const rows=KB.map(k=>({id:k[0],title:k[1],text:k[4],c:cosv(v,[k[2],k[3]]),kw:shared(t[1],k[1]+" "+k[4])})).sort((a,b)=>b.c-a.c);
+  $("tkTbl").innerHTML=`<tr><th>#</th><th>KB article</th><th>Semantic (cosine)</th><th>Keyword (shared words)</th></tr>`+rows.map((r,i)=>`<tr class="${i<3?"top":""}"><td>${i+1}</td><td><b>${r.id}</b> ${r.title}<div class="muted" style="font-size:13px">${r.text.slice(0,70)}…</div></td><td><span class="sm">${r.c.toFixed(2)}</span></td><td>${r.kw.length?`<span class="kw">${r.kw.length}: ${r.kw.join(", ")}</span>`:`<span class="muted">0</span>`}</td></tr>`).join("");
+  const bestKw=[...rows].sort((a,b)=>b.kw.length-a.kw.length)[0],bs=rows[0];
+  $("tkVerdict").className="alert "+(bs.id===t[4]?"ok":"bad");
+  $("tkVerdict").innerHTML=`Semantic search puts <b>${bs.id}</b> first (${bs.c.toFixed(2)}). ${bestKw.kw.length?`Keyword search's best guess: <b>${bestKw.id}</b> (${bestKw.kw.length} shared word${bestKw.kw.length>1?"s":""}).`:`<b>Keyword search found nothing</b>: no shared words.`}`;
+  addXP("mm4",3)};
+ sel.onchange=f;f();}
+
+/* ===== chunk visualizer ===== */
+{const TXT="Accounts lock after 5 failed sign-in attempts and unlock automatically after 30 minutes. Common cause: an old password saved on a phone email app or mapped drive retrying in the background. Fix: update the password on every device, or remove and re-add the email account on your phone. If you cannot wait 30 minutes, raise a ticket. The helpdesk can unlock after identity verification. Priority is High if it blocks client work. Employees can reset their own password 24x7 at the reset portal. Enter your employee ID and approve the MFA prompt. Choose a new password of at least 14 characters that is not one of your last 5 passwords.";
+ const W=TXT.split(/\s+/);const cols=["#2a78d6","#157f3b","#b45309","#6d3fc0","#0f7c8c","#b42318"];
+ const f=()=>{let size=+$("chSize").value,ov=Math.min(+$("chOv").value,size-1);
+  $("oChSize").textContent=size;$("oChOv").textContent=ov;
+  const step=size-ov,starts=[];for(let i=0;;i+=step){starts.push(i);if(i+size>=W.length)break}
+  const owner=W.map(()=>-1),count=W.map(()=>0);starts.forEach((s,ci)=>{for(let j=s;j<Math.min(s+size,W.length);j++){if(owner[j]<0)owner[j]=ci;count[j]++}});
+  $("chCount").textContent=starts.length;$("chWords").textContent=count.reduce((a,b)=>a+b,0);
+  $("chOut").innerHTML=W.map((w,j)=>`<span style="background:${cols[owner[j]%cols.length]}22;border-bottom:${count[j]>1?"3px solid "+cols[(owner[j]+1)%cols.length]:"0"};padding:1px 2px;border-radius:3px">${w}</span>`).join(" ")};
+ ["chSize","chOv"].forEach(id=>$(id).addEventListener("input",()=>{f();addXP("chunk",3)}));f();}
+
+</script>
+</body>
+</html>

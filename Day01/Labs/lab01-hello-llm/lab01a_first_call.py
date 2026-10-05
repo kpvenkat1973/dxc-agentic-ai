@@ -37,14 +37,14 @@ def ask(client, model_id, prompt, system=SYSTEM, temperature=0.2, max_tokens=300
     #       inferenceConfig={"temperature": ..., "maxTokens": ...},
     #   )
     #   The reply text is in: response["output"]["message"]["content"][0]["text"]
-    response = None
-    text = None
+    response = client.converse(modelId=model_id, system=[{"text": system}], messages=[{"role": "user", "content": [{"text": prompt}]}], inferenceConfig={"temperature": temperature, "maxTokens": max_tokens})
+    text = response["output"]["message"]["content"][0]["text"]
 
     latency_ms = round((time.perf_counter() - start) * 1000)
 
     # TODO-2: Read the token counts from response["usage"]  (keys: "inputTokens", "outputTokens")
-    input_tokens = None
-    output_tokens = None
+    input_tokens = response["usage"]["inputTokens"]
+    output_tokens = response["usage"]["outputTokens"]
 
     return {"text": text, "input_tokens": input_tokens, "output_tokens": output_tokens, "latency_ms": latency_ms}
 
@@ -55,6 +55,10 @@ def compare_models(client, model_ids, tickets):
     # TODO-3: For each model_id in model_ids, and each ticket in tickets:
     #   - result = ask(client, model_id, build_prompt(ticket))
     #   - rows.append({"model_id": model_id, "ticket_id": ticket["ticket_id"], **result})
+
+
+
+
     return rows
 
 

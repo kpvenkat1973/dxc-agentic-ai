@@ -8,13 +8,111 @@
     ],
     "labs_dir": "Day01/Labs"
   },
-  "S02": {
-    "title": "Embeddings & Naive RAG",
-    "date": "2026-10-01",
-    "html": "Day02/Content/index.html",
-    "labs_dir": "Day02/Labs",
+  "S03": {
+    "title": "Embeddings, Chunking & Naive RAG",
+    "date": "2026-10-05",
+    "html": "Day03/Content/index.html",
+    "labs_dir": "Day03/Labs",
     "labs": [
-      "lab02-naive-rag"
-    ]
+      "lab02-naive-rag",
+      "lab02-askit-rag-app"
+    ],
+    "lab_keys": {
+      "lab2a": {
+        "title": "Lab 2A",
+        "lab": "lab02-naive-rag",
+        "k": "challenge_1 or challenge_2 or challenge_3"
+      },
+      "lab2b": {
+        "title": "Lab 2B",
+        "lab": "lab02-naive-rag",
+        "k": "challenge_4 or challenge_5 or challenge_6",
+        "stretch_k": "challenge_7 or challenge_8 or challenge_9"
+      },
+      "lab2c": {
+        "title": "Lab 2C",
+        "lab": "lab02-askit-rag-app"
+      }
+    }
+  },
+  "S04": {
+    "title": "Advanced & Agentic RAG",
+    "date": "2026-10-06",
+    "html": "Day04/Content/index.html",
+    "labs_dir": "Day04/Labs",
+    "labs": [
+      "lab03-askit-advanced-rag",
+      "lab04-askit-agentic-rag"
+    ],
+    "lab_keys": {
+      "lab3": {
+        "title": "Lab 3",
+        "lab": "lab03-askit-advanced-rag"
+      },
+      "lab4": {
+        "title": "Lab 4",
+        "lab": "lab04-askit-agentic-rag"
+      }
+    }
+  },
+  "S05": {
+    "title": "Agents, ReAct & Tool Calling",
+    "date": "2026-10-07",
+    "html": "Day05/Content/index.html",
+    "labs_dir": "Day05/Labs",
+    "labs": [
+      "lab05-askit-agent-loop"
+    ],
+    "lab_keys": {
+      "lab5a": {
+        "title": "Lab 5A",
+        "lab": "lab05-askit-agent-loop",
+        "k": "challenge_1 or challenge_2 or challenge_3",
+        "stretch_k": "stretch_a"
+      },
+      "lab5b": {
+        "title": "Lab 5B",
+        "lab": "lab05-askit-agent-loop",
+        "k": "challenge_4 or challenge_5 or challenge_6"
+      },
+      "lab5c": {
+        "title": "Lab 5C",
+        "lab": "lab05-askit-agent-loop",
+        "k": "challenge_7 or challenge_8",
+        "stretch_k": "stretch_b"
+      },
+      "lab5i": {
+        "title": "Incident",
+        "lab": "lab05-askit-agent-loop",
+        "k": "challenge_9"
+      }
+    }
+  },
+  "S06": {
+    "title": "LangChain Agents, Middleware & Streaming",
+    "date": "2026-10-08",
+    "html": "Day06/Content/index.html",
+    "labs_dir": "Day06/Labs",
+    "labs": [
+      "lab06-askit-langchain-agent"
+    ],
+    "lab_keys": {
+      "lab6a": {
+        "title": "Lab 6A",
+        "lab": "lab06-askit-langchain-agent",
+        "k": "challenge_1 or challenge_2 or challenge_3"
+      },
+      "lab6b": {
+        "title": "Lab 6B",
+        "lab": "lab06-askit-langchain-agent",
+        "k": "challenge_4 or challenge_5 or challenge_6"
+      },
+      "lab6c": {
+        "title": "Lab 6C",
+        "lab": "lab06-askit-langchain-agent",
+        "k": "challenge_7 or challenge_8",
+        "stretch_k": "stretch_c"
+      }
+    }
   }
 }

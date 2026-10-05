@@ -1,0 +1,4 @@
+boto3
+openai>=1.40
+python-dotenv
+pytest

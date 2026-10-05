@@ -67,7 +67,7 @@ Double-click **`C:\AskIT\dxc-agentic-ai\SETUP.bat`** (see setup\SETUP_GUIDE.md).
 
 ## PART 2 — Every morning: get the day's code and HTML
 
-**Easy way:** in Command Prompt run **`START_DAY.bat 1`** (Day 1 page) or **`START_DAY.bat 2`** (Day 2 page). Double-click also works: it asks "Which day?". It pulls the new content and opens that day's page. Keep the black window open.
+**Easy way:** in Command Prompt run **`START_DAY.bat 3`** (or 4, 5 ...). Double-click also works: it asks "Which day?". It **saves your work, gets the trainer's new content, fixes any clash by itself** and opens that day's page. You never need `git stash`, even if you forgot Day End. Keep the black window open.
 
 **Manual way** (if START_DAY says "could not update"):
 ```
@@ -111,6 +111,7 @@ Check on GitHub: open your fork → you should see your latest commit and the `p
 | Want to see what changed | `git status` and `git log --oneline -5` |
 
 ## Rules
+0. Forgot Day End or edited a wrong file? Do nothing special: START_DAY handles it. Your lab code is always kept; trainer files (`tools\`, `DayNN\Content\`, `tests\`) are always reset to the trainer's version.
 1. Edit **only** files in the `DayNN\Labs\` folders and your own `teams\team-x\` folder.
 2. Never put keys in code or push `.env` (it is ignored automatically).
 3. Pull every morning **before** you start; push at the end of every day.

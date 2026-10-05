@@ -18,10 +18,10 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from datetime import datetime, timezone
 from pathlib import Path
 
-from day_end import PROGRESS, ROOT, SESSIONS, load_me, push_heartbeat, run_day_end, today_session
+from day_end import PROGRESS, ROOT, SESSIONS, aggregate_labs, load_me, push_heartbeat, run_day_end, submit_lab, today_session
 
 PORT = 8765
-HEARTBEAT_PUSH_MIN = 15  # live progress pushed to GitHub every 15 min
+HEARTBEAT_PUSH_MIN = 5  # live progress pushed to GitHub every 5 min (feeds the trainer dashboard)
 LIVE_SESSIONS = set()
 
 
@@ -70,6 +70,12 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json({"error": "bad json"}, 400)
         if self.path == "/api/heartbeat":
             return self._heartbeat(payload)
+        if self.path == "/api/labdone":
+            print(f"Lab submit: {payload.get('session')} {payload.get('lab')} ... (running tests, ~20-60 s)")
+            ok, steps, summary = submit_lab(payload.get("session"), payload.get("lab"))
+            for st in steps:
+                print(("  [OK] " if st["ok"] else "  [!!] ") + st["step"], st.get("detail", ""))
+            return self._json({"ok": ok, "steps": steps, "summary": summary})
         if self.path != "/api/dayend":
             return self._json({"error": "not found"}, 404)
         print(f"Day End requested for {payload.get('session')} ... (this can take a minute)")
@@ -103,8 +109,9 @@ class Handler(SimpleHTTPRequestHandler):
         rows, tot_pts, tot_xp, tot_pass, tot_lab = "", 0, 0, 0, 0
         details = ""
         for k, v in SESSIONS.items():
-            xp, lab, live = rd(f"{k}_xp.json"), rd(f"{k}_lab.json"), rd(f"{k}_live.json")
-            if not (xp or lab or live):
+            xp, live = rd(f"{k}_xp.json"), rd(f"{k}_live.json")
+            lab = {"labs": aggregate_labs(k)} if v.get("lab_keys") else rd(f"{k}_lab.json")
+            if not (xp or lab.get("labs") or live):
                 rows += f'<tr class="dim"><td>{k}</td><td>{esc(v["title"])}</td><td colspan="6">not started</td></tr>'
                 continue
             xpv = xp.get("xp_total", live.get("xp_total", 0)) or 0
@@ -134,7 +141,7 @@ th{{background:#eef}}tr.dim td{{color:#888}}</style>
 <p><b>Total: {tot_pts} points</b> &nbsp;({tot_xp} XP + 10 &times; {tot_pass} challenges passed of {tot_lab})</p>
 <table><tr><th>Session</th><th>Topic</th><th>XP</th><th>Quiz</th><th>Challenges</th><th>Active min</th><th>Day End</th><th>Points</th></tr>{rows}</table>
 <h2>Still to do</h2>{details}
-<p style="font-size:16px;color:#555">Shows what is saved on your VM. Press <b>Day End</b> on the last page of each session to save and push. AhaSlides quiz scores are added by the trainer on the class leaderboard. <a href="/">Home</a></p>
+<p style="font-size:16px;color:#555">Shows what is saved on your VM. Press <b>I completed the lab</b> on each lab page and <b>Day End</b> on the last page of the session. AhaSlides quiz scores are added by the trainer on the class leaderboard. <a href="/">Home</a></p>
 </body>"""
         body = page.encode()
         self.send_response(200)

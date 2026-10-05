@@ -1,0 +1,116 @@
+{
+  "pairs": [
+    {
+      "a": "I'm locked out of my account",
+      "b": "I can't sign in to my laptop",
+      "score": 0.371
+    },
+    {
+      "a": "I'm locked out of my account",
+      "b": "The printer on floor 3 is jammed",
+      "score": 0.13
+    },
+    {
+      "a": "VPN keeps dropping",
+      "b": "Remote connection disconnects every few minutes",
+      "score": 0.36
+    },
+    {
+      "a": "My phone was stolen",
+      "b": "Lost device with company data",
+      "score": 0.335
+    }
+  ],
+  "tickets": [
+    {
+      "ticket_id": "TKT-0001",
+      "subject": "Locked out of laptop",
+      "top3": [
+        {
+          "id": "KB-002",
+          "score": 0.503927535095852
+        },
+        {
+          "id": "KB-014",
+          "score": 0.36052038298799083
+        },
+        {
+          "id": "KB-001",
+          "score": 0.3478633237389974
+        }
+      ]
+    },
+    {
+      "ticket_id": "TKT-0002",
+      "subject": "Account locked again",
+      "top3": [
+        {
+          "id": "KB-002",
+          "score": 0.6318536842072506
+        },
+        {
+          "id": "KB-001",
+          "score": 0.29335397597924956
+        },
+        {
+          "id": "KB-003",
+          "score": 0.2711718200195745
+        }
+      ]
+    },
+    {
+      "ticket_id": "TKT-0003",
+      "subject": "Forgot password",
+      "top3": [
+        {
+          "id": "KB-001",
+          "score": 0.4512760106481233
+        },
+        {
+          "id": "KB-003",
+          "score": 0.24778219881749936
+        },
+        {
+          "id": "KB-012",
+          "score": 0.23283392285508042
+        }
+      ]
+    },
+    {
+      "ticket_id": "TKT-0004",
+      "subject": "VPN not connecting",
+      "top3": [
+        {
+          "id": "KB-004",
+          "score": 0.4886410371229111
+        },
+        {
+          "id": "KB-005",
+          "score": 0.2525013292126296
+        },
+        {
+          "id": "KB-002",
+          "score": 0.24021150769731145
+        }
+      ]
+    },
+    {
+      "ticket_id": "TKT-0005",
+      "subject": "VPN keeps dropping",
+      "top3": [
+        {
+          "id": "KB-004",
+          "score": 0.3560083940643826
+        },
+        {
+          "id": "KB-005",
+          "score": 0.32810809039569994
+        },
+        {
+          "id": "KB-018",
+          "score": 0.18569307293038165
+        }
+      ]
+    }
+  ]
+}

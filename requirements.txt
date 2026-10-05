@@ -4,3 +4,7 @@ langfuse>=3,<4
 python-dotenv>=1.0
 pytest>=8.0
 numpy>=1.26
+openai>=1.40
+langchain>=1.0
+langchain-aws>=1.0
+langchain-openai>=1.0

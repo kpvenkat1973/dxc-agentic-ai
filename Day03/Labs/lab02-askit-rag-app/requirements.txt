@@ -1,0 +1,7 @@
+streamlit>=1.50
+boto3
+openai
+chromadb
+pypdf
+python-docx
+python-dotenv
