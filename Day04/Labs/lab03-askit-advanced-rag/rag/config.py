@@ -12,6 +12,14 @@ DEFAULT_EMBED_MODEL = "text-embedding-3-small"
 
 CHAT_MODEL_OPTIONS = ["gpt-5-mini", "gpt-5-nano", "gpt-4.1-mini", "gpt-4o-mini"]
 
+import re
+
+
+def price_for(model, default=(0.25, 2.0)):
+    """Price tuple for a model id. Bedrock ids may carry a region prefix such as 'us.amazon.nova-micro-v1:0'."""
+    return PRICES.get(model) or PRICES.get(re.sub(r"^(us|eu|apac)\.", "", model or ""), default)
+
+
 PRICES = {
     # Bedrock (check the pricing page; ids may carry a "us." prefix, see price_for())
     "amazon.nova-micro-v1:0": (0.035, 0.14),

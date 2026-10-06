@@ -10,6 +10,9 @@ import numpy as np
 from .config import PRICES, DEFAULT_CHAT_MODEL, DEFAULT_EMBED_MODEL, DEFAULT_BEDROCK_MODEL, DEFAULT_BEDROCK_EMBED
 
 
+_DEFAULT_CACHE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".cache"))
+
+
 class UsageLog:
     def __init__(self):
         self.rows = []
@@ -50,7 +53,7 @@ def _extract_json(text):
 class LLM:
     """provider: "bedrock" | "openai" | None. None = "openai" if an api_key is given, else offline."""
 
-    def __init__(self, api_key=None, chat_model=None, embed_model=None, prices=None, log=None, cache_dir=".cache",
+    def __init__(self, api_key=None, chat_model=None, embed_model=None, prices=None, log=None, cache_dir=None,
                  provider=None):
         self.provider = provider or ("openai" if api_key else "offline")
         self.offline = self.provider == "offline"
@@ -64,8 +67,8 @@ class LLM:
         self.embed_model = embed_model
         self.prices = prices or PRICES
         self.log = log or UsageLog()
-        self.cache_dir = cache_dir
-        os.makedirs(cache_dir, exist_ok=True)
+        self.cache_dir = cache_dir or _DEFAULT_CACHE   # inside the lab folder, whatever the current folder is
+        os.makedirs(self.cache_dir, exist_ok=True)
         self.client = None
         if self.provider == "openai":
             from openai import OpenAI
@@ -75,11 +78,16 @@ class LLM:
 
     # ---------- embeddings (cached on disk: re-runs cost nothing) ----------
     def _cache_path(self):
-        return os.path.join(self.cache_dir, f"emb_{self.embed_model if not self.offline else 'offline'}.json")
+        name = "offline" if self.offline else re.sub(r"[^A-Za-z0-9._-]", "_", self.embed_model)   # Windows: no ':' in file names
+        return os.path.join(self.cache_dir, f"emb_{name}.json")
 
     def embed(self, texts, op="embed"):
         path = self._cache_path()
-        cache = json.load(open(path)) if os.path.exists(path) else {}
+        try:
+            with open(path, encoding="utf-8") as f:
+                cache = json.load(f)
+        except (OSError, ValueError):   # no cache yet, or a half-written one
+            cache = {}
         keys = [hashlib.sha1(t.encode()).hexdigest() for t in texts]
         missing = [(k, t) for k, t in zip(keys, texts) if k not in cache]
         if missing:
@@ -107,7 +115,10 @@ class LLM:
                     cache[k] = d.embedding
                 self.log.add(op, self.embed_model, resp.usage.prompt_tokens, 0,
                              (time.perf_counter() - t0) * 1000, self.prices, f"{len(missing)} texts")
-            json.dump(cache, open(path, "w"))
+            tmp = path + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(cache, f)
+            os.replace(tmp, path)
         return np.array([cache[k] for k in keys], dtype=float)
 
     # ---------- chat ----------

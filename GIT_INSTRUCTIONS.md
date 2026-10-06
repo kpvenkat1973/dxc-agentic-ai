@@ -65,35 +65,19 @@ Double-click **`C:\AskIT\dxc-agentic-ai\SETUP.bat`** (see setup\SETUP_GUIDE.md).
 
 ---
 
-## PART 2 — Every morning: get the day's code and HTML
+## PART 2 — Every sync (morning, end of day, or when told "sync")
 
-**Easy way:** in Command Prompt run **`START_DAY.bat 3`** (or 4, 5 ...). Double-click also works: it asks "Which day?". It **saves your work, gets the trainer's new content, fixes any clash by itself** and opens that day's page. You never need `git stash`, even if you forgot Day End. Keep the black window open.
+**One command does both directions** (trainer's new files → your VM, your work → your GitHub). Safe to repeat.
 
-**Manual way** (if START_DAY says "could not update"):
+If `C:\AskIT\dxc-agentic-ai\SYNC.bat` exists, just double-click it. **First time only** (or if it is missing), paste this ONE line in Command Prompt:
+
 ```
-cd /d C:\AskIT\dxc-agentic-ai
-git status
-git fetch upstream
-git merge upstream/main --no-edit
+cd /d C:\AskIT\dxc-agentic-ai & git add -A & git commit -q -m save & git fetch upstream & git checkout upstream/main -- SYNC.bat & SYNC.bat
 ```
-(Same result as `git pull upstream main --no-edit`.)
 
-A new `DayNN` folder appears: `DayNN\Content\index.html` (today's page) and `DayNN\Labs\` (today's lab code).
+Wait for **[OK] Sync complete**. Then open today's page by double-clicking `DayNN\Content\index.html` (e.g. `Day05\Content\index.html`), or run `START_DAY.bat 5` (sync + open page).
 
----
-
-## PART 3 — During and end of class: push your results
-
-**Easy way:** last page of the session → click **🏁 Day End · Save & Push**. It saves your XP, checks your labs, commits and pushes.
-
-**Manual way** (if the button fails, or you want to save mid-day):
-```
-cd /d C:\AskIT\dxc-agentic-ai
-git add .
-git commit -m "Day 1 - your name"
-git push origin HEAD
-```
-Check on GitHub: open your fork → you should see your latest commit and the `progress\` folder.
+No portal, no Day End button, no heartbeat any more. Labs: run your code and tests in VS Code as shown in the lab README.
 
 ---
 
@@ -111,8 +95,8 @@ Check on GitHub: open your fork → you should see your latest commit and the `p
 | Want to see what changed | `git status` and `git log --oneline -5` |
 
 ## Rules
-0. Forgot Day End or edited a wrong file? Do nothing special: START_DAY handles it. Your lab code is always kept; trainer files (`tools\`, `DayNN\Content\`, `tests\`) are always reset to the trainer's version.
+0. Forgot to sync or edited a wrong file? Do nothing special: just run SYNC.bat. Your lab code is always kept; trainer files (`tools\`, `DayNN\Content\`, `tests\`) are always reset to the trainer's version.
 1. Edit **only** files in the `DayNN\Labs\` folders and your own `teams\team-x\` folder.
 2. Never put keys in code or push `.env` (it is ignored automatically).
-3. Pull every morning **before** you start; push at the end of every day.
+3. Run SYNC.bat every morning **before** you start and once more at the end of the day.
 4. Never use `git push --force`.

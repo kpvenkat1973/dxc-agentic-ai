@@ -112,7 +112,7 @@ def _offline_critic(index, question, hits):
     cl = _clauses(question) or [question]
     cover = [(_clause_cover(index, c, hits), c) for c in cl]
     worst = min(cover)
-    return {"enough": worst[0] >= 0.5, "missing": "" if worst[0] >= 0.5 else worst[1]}
+    return {"enough": worst[0] >= 0.4, "missing": "" if worst[0] >= 0.4 else worst[1]}
 
 
 def _offline_rewrite(question, missing):
@@ -215,6 +215,11 @@ def run(index, question, audience, max_rounds=MAX_ROUNDS):
         _step(res, "✏️", "Rewrite", f"“{new_query}”")
         query = new_query
     top = evidence
+    if index.llm.offline:   # offline stand-in: judge a multi-part question by how well each PART is covered, not the whole sentence
+        parts = _clauses(question) or [question]
+        for h in top:
+            h["coverage"] = round(max(_clause_cover(index, c, [h]) for c in parts), 2)
+        top.sort(key=lambda h: -h["coverage"])   # the best-covered passage leads the answer
     cfg = dataclasses.replace(cfg, top_k=len(evidence))   # the answer step sees all the evidence
     res.hits = top
     pipeline.generate(index, question, cfg, audience, res)

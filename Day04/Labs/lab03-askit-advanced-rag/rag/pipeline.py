@@ -16,8 +16,12 @@ def stem(w):
     return w
 
 
+# tiny synonym table (offline stand-in for query expansion): words that mean the same thing in this KB
+SAME = {"response": "respond", "responses": "respond", "responding": "respond", "responded": "respond"}
+
+
 def tokens(s):
-    return [stem(w) for w in re.sub(r"[^a-z0-9%]+", " ", s.lower()).split() if w not in STOP]
+    return [stem(SAME.get(w, w)) for w in re.sub(r"[^a-z0-9%]+", " ", s.lower()).split() if w not in STOP]
 
 
 @dataclass
@@ -166,8 +170,11 @@ def rerank(index, q, cfg, res):
             scores = {int(s["id"]): float(s["score"]) / 10 for s in json.loads(msg.content)["scores"]}
         except Exception:
             scores = {}
+        if scores and 0 not in scores and min(scores) == 1:   # the model counted from 1: shift to 0-based
+            scores = {k - 1: v for k, v in scores.items()}
         for k, h in enumerate(res.hits):
-            h["score"] = round(scores.get(k, 0.0), 3)
+            # unparsable reply: keep the retrieval score so one bad JSON reply does not make AskIT say "I don't know" everywhere
+            h["score"] = round(scores.get(k, 0.0 if scores else h["retrieval_score"]), 3)
     res.hits.sort(key=lambda h: -h["score"])
     res.timings["rerank_ms"] = int((time.perf_counter() - t0) * 1000)
 

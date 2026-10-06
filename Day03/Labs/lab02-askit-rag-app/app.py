@@ -1,6 +1,6 @@
 """
 AskIT RAG Lab — load the Orbit Corp IT knowledge base, chunk + embed + store it, then chat with it.
-Stack: Streamlit | AWS Bedrock (main: Nova chat + Titan embeddings) or OpenAI (backup) | ChromaDB (local vector store)
+Stack: Streamlit | AWS Bedrock (main: Nova chat + Titan embeddings) or OpenAI (backup) | numpy + JSON (local vector store)
 Run:   streamlit run app.py
 """
 import hashlib
@@ -11,13 +11,19 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-import chromadb
+import numpy as np
 import streamlit as st
 from docx import Document
-from dotenv import load_dotenv
+from dotenv import dotenv_values, load_dotenv
 from pypdf import PdfReader
 
-load_dotenv(Path(__file__).resolve().parents[3] / ".env")   # the course .env (AWS keys, Bedrock model id)
+# the course .env (AWS keys, Bedrock model id): search upward from this file, then the current folder
+_envs = [d / ".env" for d in Path(__file__).resolve().parents if (d / ".env").is_file()]
+ENV_FOUND = " + ".join(str(e) for e in _envs)
+for _e in reversed(_envs):                      # farthest (course .env) first, nearest last; empty values never win
+    for _k, _v in dotenv_values(_e).items():
+        if _v:
+            os.environ[_k] = _v
 load_dotenv()
 st.set_page_config(page_title="AskIT RAG Lab", page_icon="🔎", layout="wide")
 
@@ -25,22 +31,33 @@ BEDROCK_EMBED = "amazon.titan-embed-text-v2:0"
 OPENAI_EMBED = "text-embedding-3-small"
 BEDROCK_MODELS = ["amazon.nova-micro-v1:0", "amazon.nova-lite-v1:0"]   # small = cheap
 OPENAI_PREFERRED = ["gpt-5-mini", "gpt-4.1-mini", "gpt-4o-mini"]
-DB_PATH = "chroma_db"
+DB_PATH = Path(__file__).resolve().parent / "vector_store"   # next to app.py, whatever folder you launch from
 MODES = ["Auto (Bedrock → OpenAI)", "Bedrock only", "OpenAI only"]
 
 # ---------------------------------------------------------------- Sidebar: keys & mode
-def bedrock_ready():
+def bedrock_status():
+    """(ready, reason) - the reason is shown in the sidebar when not ready."""
     try:
         import boto3
-        return bool(os.getenv("BEDROCK_SMALL_MODEL_ID")) and boto3.Session().get_credentials() is not None
-    except Exception:
-        return False
+    except Exception as e:
+        return False, f"boto3 not installed in this Python ({e}). Run: pip install boto3"
+    if not ENV_FOUND:
+        return False, "no .env file found above this folder"
+    if not os.getenv("BEDROCK_SMALL_MODEL_ID"):
+        return False, f"BEDROCK_SMALL_MODEL_ID empty in {ENV_FOUND}"
+    if boto3.Session().get_credentials() is None:
+        return False, f"AWS keys empty in {ENV_FOUND}"
+    return True, ""
+
+
+def bedrock_ready():
+    return bedrock_status()[0]
 
 
 with st.sidebar:
     st.header("🔑 Providers")
     br_ok = bedrock_ready()
-    st.caption("🟢 AWS Bedrock ready (main)" if br_ok else "🔴 AWS Bedrock: keys or BEDROCK_SMALL_MODEL_ID missing in the course .env")
+    st.caption("🟢 AWS Bedrock ready (main)" if br_ok else "🔴 AWS Bedrock not ready: " + bedrock_status()[1])
     openai_key = st.text_input("OpenAI API key (backup, optional)", value=os.getenv("OPENAI_API_KEY", ""), type="password")
     mode = st.radio("Provider", MODES, index=0)
     if mode.startswith("Auto"):
@@ -75,11 +92,62 @@ def openai_client(key):
     return OpenAI(api_key=key)
 
 
+class Store:
+    """Tiny local vector store: vectors in memory (numpy), saved to a JSON file. Same idea as Lab 2B's index."""
+
+    def __init__(self, path):
+        self.path = Path(path)
+        self.ids, self.docs, self.metas, self.vecs = [], [], [], np.zeros((0, 0))
+        if self.path.is_file():
+            try:
+                d = json.loads(self.path.read_text(encoding="utf-8"))
+                self.ids, self.docs, self.metas = d["ids"], d["docs"], d["metas"]
+                self.vecs = np.array(d["vecs"], dtype=float) if self.ids else np.zeros((0, 0))
+            except Exception:
+                self.ids, self.docs, self.metas, self.vecs = [], [], [], np.zeros((0, 0))
+
+    def _save(self):
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path.write_text(json.dumps({"ids": self.ids, "docs": self.docs, "metas": self.metas,
+                                         "vecs": self.vecs.tolist()}), encoding="utf-8")
+
+    def count(self):
+        return len(self.ids)
+
+    def add(self, ids, documents, embeddings, metadatas):
+        new = np.array(embeddings, dtype=float)
+        self.vecs = new if not self.ids else np.vstack([self.vecs, new])
+        self.ids += list(ids)
+        self.docs += list(documents)
+        self.metas += list(metadatas)
+        self._save()
+
+    def delete(self, where=None, ids=None):
+        drop = set(ids or [])
+        keep = [i for i, (cid, m) in enumerate(zip(self.ids, self.metas))
+                if cid not in drop and not (where and all(m.get(k) == v for k, v in where.items()))]
+        self.ids = [self.ids[i] for i in keep]
+        self.docs = [self.docs[i] for i in keep]
+        self.metas = [self.metas[i] for i in keep]
+        self.vecs = self.vecs[keep] if keep else np.zeros((0, 0))
+        self._save()
+
+    def get(self, include=None):
+        return {"ids": list(self.ids), "documents": list(self.docs), "metadatas": list(self.metas)}
+
+    def query(self, query_embeddings, n_results):
+        q = np.array(query_embeddings[0], dtype=float)
+        norms = np.linalg.norm(self.vecs, axis=1) * (np.linalg.norm(q) or 1.0)
+        sims = (self.vecs @ q) / np.where(norms == 0, 1.0, norms)
+        top = np.argsort(-sims)[:n_results]
+        return {"documents": [[self.docs[i] for i in top]], "metadatas": [[self.metas[i] for i in top]],
+                "distances": [[float(1 - sims[i]) for i in top]]}   # distance = 1 - cosine
+
+
 @st.cache_resource
 def get_collection(provider):
-    # One collection per embedding provider: Bedrock and OpenAI vectors are not compatible.
-    db = chromadb.PersistentClient(path=DB_PATH)
-    return db.get_or_create_collection(f"rag_lab_{provider}", metadata={"hnsw:space": "cosine"})
+    # One store per embedding provider: Bedrock and OpenAI vectors are not compatible.
+    return Store(DB_PATH / f"rag_lab_{provider}.json")
 
 
 SKIP = ("tts", "image", "live", "audio", "embedding", "realtime", "transcribe", "search", "native")
@@ -314,6 +382,7 @@ with st.sidebar:
     if kb_folder is None:
         st.warning("askit_data/kb not found. Run the app from inside your cloned repo, or upload the KB files below.")
     elif st.button("Load AskIT KB (20 articles)", type="primary", width="stretch"):
+        st.session_state.messages = []          # new knowledge = fresh chat
         paths = sorted(kb_folder.glob("*.md"))
         bar = st.progress(0.0, text="Indexing…")
         problems = []
@@ -330,6 +399,7 @@ with st.sidebar:
     st.caption("Changed chunk size or overlap? Click **Load AskIT KB** again: it replaces the old chunks.")
     files = st.file_uploader("…or upload your own documents", type=["pdf", "txt", "md", "docx"], accept_multiple_files=True)
     if files and st.button("Index documents", type="primary", width="stretch"):
+        st.session_state.messages = []          # new documents = fresh chat
         for f in files:
             with st.spinner(f"Indexing {f.name}…"):
                 for line in ingest(f):
@@ -397,6 +467,9 @@ with st.expander("🧪 Mini eval — how good is my retrieval? (12 AskIT questio
         st.dataframe(st.session_state.experiments, hide_index=True, width="stretch")
 
 # ---------------------------------------------------------------- UI: Chat
+if st.button("🧹 Clear chat"):
+    st.session_state.messages = []
+    st.rerun()
 st.markdown("**Try a sample question**")
 sq1, sq2 = st.columns([5, 1])
 sample = sq1.selectbox("Sample question", [q for q, _, _ in QUESTIONS], label_visibility="collapsed")
@@ -425,7 +498,7 @@ if question:
                 with st.expander("🔍 Retrieved chunks"):
                     for doc, m, dist in hits:
                         st.markdown(f"**{m['source']} #{m['chunk']}** — similarity {1 - dist:.3f}")
-                        st.caption(doc)
+                        st.text(doc)   # plain text: chunks start with "# Heading", markdown would render it huge
         except Exception as e:
             reply = f"⚠️ {e}"
             st.error(reply)

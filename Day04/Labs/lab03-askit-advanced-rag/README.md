@@ -11,12 +11,12 @@
 ## Set up (once, ~5 min)
 ```
 cd /d C:\AskIT\dxc-agentic-ai
-.venv\Scripts\activate
-pip install -r Day04\Labs\lab03-askit-advanced-rag\requirements.txt
+python -m pip install -r Day04\Labs\lab03-askit-advanced-rag\requirements.txt
 cd Day04\Labs\lab03-askit-advanced-rag
 python check_setup.py
-streamlit run app.py
+python -m streamlit run app.py
 ```
+(There is no virtual environment to activate. The `pip install` line installs everything this lab needs, including `pytest`.)
 The app opens at http://localhost:8501. **AWS Bedrock is the default**: it uses the same `.env` as the earlier labs (AWS keys + `BEDROCK_SMALL_MODEL_ID`). Nothing to configure.
 *Bedrock not working?* In the sidebar choose **OpenAI (backup)** and paste the key the trainer shares. *No keys at all?* **Offline** mode runs with stand-in models: good for exploring, but the numbers will differ.
 
@@ -39,7 +39,7 @@ Every article has metadata (version, audience, status). The sidebar **Preset** s
 | Challenge 2 | 📊 Evals dashboard → run **all 4 presets** (Baseline, + Metadata filter, + Section chunks + hybrid, FDE-grade). Then fill section 1 of `submission\lab03_report.md` | `test_challenge_2` |
 | ⭐ Stretch | Turn on **LLM-as-judge** and run FDE-grade again. Which questions score below 5, and why? | — |
 
-Restart the app (or press **R**) after you edit `evals.py`.
+Restart the app (stop it with Ctrl+C, run it again) after you edit `evals.py`.
 
 ## Part C — The poisoned article (security)
 1. 🧩 Ingestion → **Load new files** → upload `sample_uploads\KB-022_new_hire_laptop_setup.md` → **Ingest files**. Ask *How long does new-hire laptop setup take?*
@@ -60,7 +60,8 @@ Restart the app (or press **R**) after you edit `evals.py`.
 ## Stuck?
 | Symptom | Fix |
 |---|---|
-| `streamlit` not recognised | `.venv\Scripts\activate`, then the `pip install` line again |
+| `streamlit` not recognised, or `No module named ...` | Run the `python -m pip install -r ...` line again, and start the app with `python -m streamlit run app.py` |
+| Red box "The keys were rejected" / `UnrecognizedClientException` | The AWS keys in the course `.env` are wrong or a session token is missing (key starts with `ASIA`: add `AWS_SESSION_TOKEN`). Fix `.env`, restart the app. Or pick **Offline** in the sidebar |
 | Sidebar says Bedrock keys not found | The course `.env` is missing `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` or `BEDROCK_SMALL_MODEL_ID`. Restart the app after fixing it |
 | `AccessDeniedException` on Bedrock | The model is not enabled for your user: tell the trainer. Switch to OpenAI (backup) meanwhile |
 | `ThrottlingException` | The whole class is calling at once. Wait 30 seconds and retry (retries are automatic) |

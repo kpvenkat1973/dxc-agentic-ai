@@ -110,10 +110,10 @@ with st.sidebar:
         price_note = "Verify at openai.com/api/pricing"
     with st.expander("Prices (USD per 1M tokens)"):
         st.caption(price_note)
-        pin, pout = config.PRICES.get(chat_model, (0.25, 2.0))
+        pin, pout = config.price_for(chat_model)
         pin = st.number_input(f"{chat_model} input", value=float(pin), format="%.3f")
         pout = st.number_input(f"{chat_model} output", value=float(pout), format="%.3f")
-        pemb = st.number_input(f"{embed_model} input", value=float(config.PRICES.get(embed_model, (0.02, 0))[0]),
+        pemb = st.number_input(f"{embed_model} input", value=float(config.price_for(embed_model, (0.02, 0))[0]),
                                format="%.3f")
     prices = dict(config.PRICES)
     prices[chat_model] = (pin, pout)
@@ -166,11 +166,30 @@ def get_index(c: pipeline.Config, docs=None):
     return idx
 
 
+def explain_error(e):
+    """Turn a provider error into one plain sentence that says what to do."""
+    text = f"{type(e).__name__}: {e}"
+    low = text.lower()
+    if any(w in low for w in ("unrecognizedclient", "security token", "invalidsignature", "invalidclienttokenid",
+                              "expiredtoken", "no credentials", "authenticationerror", "incorrect api key")):
+        hint = ("The keys were rejected. Check AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (and AWS_SESSION_TOKEN if your key starts "
+                "with ASIA) in the course .env, then restart the app. Or switch Provider to Offline in the sidebar.")
+    elif "accessdenied" in low or "not authorized" in low:
+        hint = "This AWS user cannot use that model yet. Tell the trainer. Switch Provider to OpenAI (backup) or Offline meanwhile."
+    elif "throttl" in low or "ratelimit" in low or "too many requests" in low:
+        hint = "The whole class is calling at once. Wait 30 seconds and click again."
+    elif "validationexception" in low or "model" in low and ("not found" in low or "invalid" in low):
+        hint = "The model id was not accepted. Check BEDROCK_SMALL_MODEL_ID in .env (for example us.amazon.nova-micro-v1:0)."
+    else:
+        hint = "Click again in a few seconds. If it keeps failing, switch Provider to Offline in the sidebar and tell the trainer."
+    return f"{hint}\n\nDetails: {text[:300]}"
+
+
 def safe(fn, *a, **k):
     try:
         return fn(*a, **k)
     except Exception as e:
-        st.error(f"API call failed: {type(e).__name__}: {e}. Check the key, model name, or switch to offline mode.")
+        st.error(explain_error(e))
         st.stop()
 
 
@@ -245,12 +264,12 @@ with tabs[1]:
     if not DOCS:
         st.info("No documents in the current knowledge source. Upload files in the 🧩 Ingestion tab, or switch the source in the sidebar.")
     elif st.button("Ask", type="primary"):
-        idx = get_index(cfg)
+        idx = safe(get_index, cfg)
         res = safe(pipeline.run, idx, q, cfg, audience)
         out = [(res, "Current pipeline")]
         if compare:
             base = pipeline.PRESETS["Baseline (naive RAG)"]
-            out.insert(0, (safe(pipeline.run, get_index(base), q, base, audience), "Baseline (naive RAG)"))
+            out.insert(0, (safe(pipeline.run, safe(get_index, base), q, base, audience), "Baseline (naive RAG)"))
         ss.ask_results = out
         ss.query_costs.append(res.cost)
     if ss.ask_results:
@@ -352,7 +371,7 @@ with tabs[3]:
         for name in chosen:
             c = cfg if name == "Current settings" else pipeline.PRESETS[name]
             bar = st.progress(0.0, text=f"Evaluating {name}...")
-            rows = safe(evals.evaluate, get_index(c, PRELOADED), c, audience, judge, lambda p: bar.progress(p, text=f"Evaluating {name}..."))
+            rows = safe(evals.evaluate, safe(get_index, c, PRELOADED), c, audience, judge, lambda p: bar.progress(p, text=f"Evaluating {name}..."))
             evals.save_run(evals.summarize(c, rows, chat_model if not llm.offline else "offline"))
             bar.empty()
     runs = evals.load_runs()
@@ -390,7 +409,10 @@ with tabs[3]:
         cc1, cc2 = st.columns(2)
         cc1.download_button("Download runs (JSON)", json.dumps(runs, indent=1), "eval_runs.json")
         if cc2.button("Clear history"):
-            os.remove(evals.RUNS_FILE)
+            try:
+                os.remove(evals.RUNS_FILE)
+            except OSError:
+                pass
             st.rerun()
 
 # ---------------- Agent ----------------
@@ -410,7 +432,7 @@ with tabs[5]:
                              "Shows that the code boundary still blocks the action.")
     if st.button("Run agent", type="primary"):
         n0 = len(ss.log.rows)
-        steps, ms = safe(agent.run_agent, llm, get_index(pipeline.PRESETS["FDE-grade (all on)"], PRELOADED), eid, msg,
+        steps, ms = safe(agent.run_agent, llm, safe(get_index, pipeline.PRESETS["FDE-grade (all on)"], PRELOADED), eid, msg,
                          redteam=redteam)
         ss.agent_steps = (steps, ms, ss.log.rows[n0:])
     if ss.agent_steps:

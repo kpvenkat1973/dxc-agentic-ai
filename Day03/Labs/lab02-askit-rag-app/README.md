@@ -12,10 +12,9 @@ You built embeddings and an index in Parts A and B. This app wires them to an LL
 ## Set up (once, 3 minutes)
 ```
 cd /d C:\AskIT\dxc-agentic-ai
-.venv\Scripts\activate
-pip install -r Day03\Labs\lab02-askit-rag-app\requirements.txt
+python -m pip install -r Day03\Labs\lab02-askit-rag-app\requirements.txt
 cd Day03\Labs\lab02-askit-rag-app
-streamlit run app.py
+python -m streamlit run app.py
 ```
 The app opens at http://localhost:8501. **AWS Bedrock is the default** (Nova for answers, Titan for embeddings) and uses the same `.env` as the earlier labs.
 *Bedrock not working?* Paste an OpenAI key in the sidebar (backup) and choose **OpenAI only**.
@@ -48,14 +47,14 @@ The app opens at http://localhost:8501. **AWS Bedrock is the default** (Nova for
 | Extract | Pull text from the file | `extract_text()` |
 | Chunk | Split into overlapping pieces | `chunk_text()` |
 | Embed | Turn each chunk into a vector (Titan) | `embed()` |
-| Store | Save vectors in local ChromaDB (`chroma_db\` folder, not pushed) | `ingest()` |
+| Store | Save vectors in a local file (`vector_store\` folder, not pushed) | `ingest()` |
 | Retrieve | Embed the question, find the Top-K nearest chunks | `retrieve()` |
 | Generate | Send question + chunks to the model with a grounding prompt | `generate()` |
 
 ## Stuck?
 | Symptom | Fix |
 |---|---|
-| `streamlit` not recognised | Run `.venv\Scripts\activate` first, then the `pip install` line again |
+| `streamlit` not recognised | Use `python -m streamlit run app.py` (and run the `python -m pip install` line again) |
 | Page says "No provider available" | The course `.env` is missing the AWS keys or `BEDROCK_SMALL_MODEL_ID`. Fix it, restart the app. Or paste an OpenAI key |
 | `ThrottlingException` / `429` | The whole class is calling at once. The app retries by itself: wait a few seconds |
 | `AccessDeniedException` | The model is not enabled for your user: tell the trainer |

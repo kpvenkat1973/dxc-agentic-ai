@@ -6,3 +6,5 @@ pandas
 python-dotenv
 pypdf
 python-docx
+streamlit>=1.50
+pytest>=8.0

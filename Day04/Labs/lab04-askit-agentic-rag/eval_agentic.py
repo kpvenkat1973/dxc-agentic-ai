@@ -70,11 +70,16 @@ def summarize(config, rows, model):
 
 
 def load_runs():
-    return json.load(open(RUNS_FILE)) if os.path.exists(RUNS_FILE) else []
+    try:
+        with open(RUNS_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):   # no file yet, or a half-written one: start fresh
+        return []
 
 
 def save_run(summary):
     runs = load_runs() + [summary]
     os.makedirs(os.path.dirname(RUNS_FILE), exist_ok=True)
-    json.dump(runs, open(RUNS_FILE, "w"), indent=1)
+    with open(RUNS_FILE, "w", encoding="utf-8") as f:
+        json.dump(runs, f, indent=1)
     return runs

@@ -12,10 +12,12 @@ question → ROUTER → retrieve → rerank → CRITIC → not enough? → rewri
 
 ## Setup (2 minutes)
 ```
-cd C:\AskIT\dxc-agentic-ai\Participants\Day04\Labs\lab04-askit-agentic-rag
-(activate the same venv you used in Lab 3)
-streamlit run app.py
+cd /d C:\AskIT\dxc-agentic-ai
+python -m pip install -r Day04\Labs\lab03-askit-advanced-rag\requirements.txt
+cd Day04\Labs\lab04-askit-agentic-rag
+python -m streamlit run app.py
 ```
+(Lab 3 must be in the same `Day04\Labs` folder: this lab reuses its code and KB. No virtual environment to activate.)
 It uses **AWS Bedrock** by default (the course `.env`, same as Lab 3). Sidebar: switch to **OpenAI (backup)** and paste a key if Bedrock fails. **Offline** runs with stand-ins.
 
 ## Step 1: See the problem (5 min)
@@ -28,7 +30,7 @@ Open **Ask**. Pick the first sample question and click **Ask**. The left side is
 | 2 | `rewrite_query(...)` | Ask the LLM for a new search query for what is missing. Strip it, log the usage, fall back to the original question. |
 | 3 | `should_continue(...)` | Go again only if the critic is not satisfied **and** rounds are left. |
 
-Check yourself any time: `pytest tests` (from this folder). Stuck? See `Day04\Hints\lab04_hints.md`.
+Check yourself any time: `python -m pytest tests` (from this folder). Stuck? See `Day04\Hints\lab04_hints.md`.
 
 ## Step 3: Measure it (10 min)
 Open **Compare** and click **Run both pipelines**. Then fill `submission\lab04_report.md`: the numbers, one traced loop, and your ship / don't-ship decision. Challenge 4 in `pytest` checks the report and the saved run.

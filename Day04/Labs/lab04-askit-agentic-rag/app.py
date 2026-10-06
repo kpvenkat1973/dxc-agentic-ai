@@ -55,7 +55,14 @@ def get_index(provider, key):
     return pipeline.Index(chunk_documents(docs, "section"), llm)
 
 
-index = get_index(provider, api_key)
+try:
+    index = get_index(provider, api_key)
+except Exception as e:
+    st.error(f"Could not build the search index with {provider}: {type(e).__name__}: {str(e)[:250]}\n\n"
+             "Check the AWS keys in the course .env (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN if your key "
+             "starts with ASIA), restart the app, or pick **Offline** in the sidebar.")
+    get_index.clear()   # do not remember the failure
+    st.stop()
 st.title("🔁 AskIT Agentic RAG")
 st.caption("Single pass: retrieve → answer.  Agentic: retrieve → critic → rewrite → retrieve again → answer → answer check.")
 
@@ -71,8 +78,13 @@ with tab_ask:
     if st.button("Ask", type="primary") and q.strip():
         audience = who
         left, right = st.columns(2)
-        single = agentic.run_single(index, q, audience)
-        agent_res = agentic.run(index, q, audience, max_rounds)
+        try:
+            single = agentic.run_single(index, q, audience)
+            agent_res = agentic.run(index, q, audience, max_rounds)
+        except Exception as e:
+            st.error(f"The model call failed: {type(e).__name__}: {str(e)[:250]}\n\nWait 30 seconds and click Ask again "
+                     "(throttling when the whole class calls at once), or pick **Offline** in the sidebar.")
+            st.stop()
         with left:
             st.subheader("Single pass (Lab 3)")
             st.write(single.answer)
@@ -91,7 +103,11 @@ with tab_cmp:
     if st.button("Run both pipelines"):
         bar = st.progress(0.0)
         for i, cfg in enumerate(ev.CONFIGS):
-            rows = ev.evaluate(index, cfg, max_rounds, lambda p, i=i: bar.progress((i + p) / len(ev.CONFIGS), text=cfg))
+            try:
+                rows = ev.evaluate(index, cfg, max_rounds, lambda p, i=i: bar.progress((i + p) / len(ev.CONFIGS), text=cfg))
+            except Exception as e:
+                st.error(f"The run stopped: {type(e).__name__}: {str(e)[:250]}. Wait 30 seconds and run again.")
+                st.stop()
             ev.save_run(ev.summarize(cfg, rows, "offline" if index.llm.offline else index.llm.chat_model))
             ss[f"rows_{i}"] = rows
         bar.empty()

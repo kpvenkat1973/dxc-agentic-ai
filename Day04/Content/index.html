@@ -204,7 +204,7 @@ header .bar{max-width:1700px}
 .steps{gap:6px}
 
 </style>
-</head>
+<style>[data-done],#dayEnd{display:none!important}</style></head>
 <body>
 <header><div class="bar">
   <div class="brand">AskIT Program · Session 4<small>Agentic AI · DevPro Academy</small></div>
@@ -315,7 +315,7 @@ header .bar{max-width:1700px}
     <h2>Advanced RAG: measure the lift</h2>
     <div class="wwho"><div><b>What we do</b>Run the same 15 golden questions through four pipelines: baseline, + metadata filter, + section chunks and hybrid search, and FDE-grade (reranker + abstain guard).</div><div><b>Why</b>"It feels better" is not evidence. A board approves numbers.</div><div><b>Outcome / learning</b>A measured lift for every fix, 2 golden questions of your own, and a view on the poisoned-article risk.</div><div><b>How</b>Part A compare and switch audience (15 min) &rarr; Part B evals, 4 presets (30 min) &rarr; Part C poisoned article (15 min).</div></div>
     <ol>
-      <li><b>Start:</b> <span class="path">cd /d C:\AskIT\dxc-agentic-ai</span> &rarr; <span class="path">.venv\Scripts\activate</span> &rarr; <span class="path">pip install -r Day04\Labs\lab03-askit-advanced-rag\requirements.txt</span> &rarr; <span class="path">cd Day04\Labs\lab03-askit-advanced-rag</span> &rarr; <span class="path">python check_setup.py</span> &rarr; <span class="path">streamlit run app.py</span> <span class="tag">AWS Bedrock is the default</span></li>
+      <li><b>Start:</b> <span class="path">cd /d C:\AskIT\dxc-agentic-ai</span> &rarr; <span class="path">python -m pip install -r Day04\Labs\lab03-askit-advanced-rag\requirements.txt</span> &rarr; <span class="path">cd Day04\Labs\lab03-askit-advanced-rag</span> &rarr; <span class="path">python check_setup.py</span> &rarr; <span class="path">python -m streamlit run app.py</span> <span class="tag">AWS Bedrock is the default</span></li>
       <li><b>Part A, compare (15 min):</b> 💬 Ask with <b>Compare with baseline</b> on. Ask <i>minimum password length</i>, then <i>personal laptop for VPN</i> as Employee and as Contractor, then <i>vegan food on Fridays</i>. Which article did each pipeline use?</li>
       <li><b>Part B, evals (30 min):</b> <b>TODO-1</b> in <span class="path">rag\evals.py</span>: add 2 golden questions of your own. Then 📊 Evals &rarr; run <b>all 4 presets</b>. Fill section 1 of <span class="path">submission\lab03_report.md</span>.</li>
       <li><b>Part C, the poisoned article (15 min):</b> 🧩 Ingestion &rarr; upload <span class="path">sample_uploads\KB-022_...</span> then <span class="path">KB-099_..._POISONED.md</span>. Ask <i>Where did the floor 3 printers move to?</i> with Compare on. Fill section 2 of the report.</li>
@@ -388,7 +388,7 @@ header .bar{max-width:1700px}
     <h2>Agentic RAG: add the critic loop</h2>
     <div class="wwho"><div><b>What we do</b>Finish three small functions so AskIT can critique its own evidence, rewrite its query, and loop (at most 2 rounds) before answering.</div><div><b>Why</b>Multi-part questions need evidence from more than one article. One search often finds only one.</div><div><b>Outcome / learning</b>Single pass vs agentic loop compared on the same 8 questions: pass rate, LLM calls, cost, latency, and your ship / don't-ship decision.</div><div><b>How</b>See the problem (5 min) &rarr; TODO-1..3 in <span class="path">agentic.py</span> (30 min) &rarr; Compare and report (15 min) &rarr; stretch.</div></div>
     <ol>
-      <li><b>Start:</b> <span class="path">cd /d C:\AskIT\dxc-agentic-ai\Day04\Labs\lab04-askit-agentic-rag</span> (venv active) &rarr; <span class="path">streamlit run app.py</span>. It reuses Lab 3's code and KB, and the same Bedrock <span class="path">.env</span>.</li>
+      <li><b>Start:</b> <span class="path">cd /d C:\AskIT\dxc-agentic-ai\Day04\Labs\lab04-askit-agentic-rag</span> &rarr; <span class="path">python -m streamlit run app.py</span>. It reuses Lab 3's code and KB, and the same Bedrock <span class="path">.env</span>.</li>
       <li><b>See the problem:</b> <b>Ask</b> tab &rarr; pick the first sample question &rarr; <b>Ask</b>. With the starter code both sides are identical: the loop never runs.</li>
       <li><b>Fill 3 TODOs in <span class="path">agentic.py</span>:</b> <b>TODO-1</b> <span class="path">parse_critic</span> (read the critic's messy reply) &middot; <b>TODO-2</b> <span class="path">rewrite_query</span> (ask the LLM for a new query) &middot; <b>TODO-3</b> <span class="path">should_continue</span> (not enough AND rounds left).</li>
       <li><b>Watch it work:</b> ask again. The trace on the right shows router, rounds, critic, rewrite and answer check.</li>

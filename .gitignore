@@ -20,3 +20,5 @@ Day*/Labs/*/index/
 Day*/Labs/*/.cache/
 Day*/Labs/*/chroma_db/
 Day*/Labs/*/evals_agentic/
+
+Day*/Labs/*/vector_store/
