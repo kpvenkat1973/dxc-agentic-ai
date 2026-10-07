@@ -1,6 +1,6 @@
 """
 AskIT RAG Lab — load the Orbit Corp IT knowledge base, chunk + embed + store it, then chat with it.
-Stack: Streamlit | AWS Bedrock (main: Nova chat + Titan embeddings) or OpenAI (backup) | numpy + JSON (local vector store)
+Stack: Streamlit | AWS Bedrock (main: Nova chat + Titan embeddings), Azure AI Foundry (GPT / any Foundry deployment) or OpenAI (backup) | numpy + JSON (local vector store)
 Run:   streamlit run app.py
 """
 import hashlib
@@ -32,7 +32,16 @@ OPENAI_EMBED = "text-embedding-3-small"
 BEDROCK_MODELS = ["amazon.nova-micro-v1:0", "amazon.nova-lite-v1:0"]   # small = cheap
 OPENAI_PREFERRED = ["gpt-5-mini", "gpt-4.1-mini", "gpt-4o-mini"]
 DB_PATH = Path(__file__).resolve().parent / "vector_store"   # next to app.py, whatever folder you launch from
-MODES = ["Auto (Bedrock → OpenAI)", "Bedrock only", "OpenAI only"]
+MODES = ["Auto (Bedrock → Azure → OpenAI)", "Bedrock only", "Azure Foundry only", "OpenAI only"]
+
+# Azure AI Foundry: key + endpoint come from the course .env (like the AWS keys). Chat model = a *deployment name*.
+#   AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT (e.g. https://myres.openai.azure.com  or  https://myres.services.ai.azure.com),
+#   AZURE_OPENAI_CHAT_DEPLOYMENTS (comma list, first = default, e.g. gpt-5-mini,gpt-4.1-mini,DeepSeek-V3),
+#   AZURE_OPENAI_EMBED_DEPLOYMENT (OPTIONAL: an Azure embedding deployment, e.g. text-embedding-3-small.
+#       Leave it empty and embeddings run locally on your laptop with fastembed: nothing to deploy on Azure)
+LOCAL_EMBED = os.getenv("LOCAL_EMBED_MODEL", "BAAI/bge-small-en-v1.5")
+AZURE_PREFERRED = ["gpt-5-mini", "gpt-4o-mini"]
+AZURE_OTHER = "✏️ other (type a deployment name)"
 
 # ---------------------------------------------------------------- Sidebar: keys & mode
 def bedrock_status():
@@ -54,26 +63,49 @@ def bedrock_ready():
     return bedrock_status()[0]
 
 
+def azure_status():
+    """(ready, reason) for Azure AI Foundry."""
+    if not os.getenv("AZURE_OPENAI_API_KEY"):
+        return False, "AZURE_OPENAI_API_KEY empty" + (f" in {ENV_FOUND}" if ENV_FOUND else " (no .env found)")
+    if not os.getenv("AZURE_OPENAI_ENDPOINT"):
+        return False, "AZURE_OPENAI_ENDPOINT empty"
+    return True, ""
+
+
+def azure_embed_label():
+    d = os.getenv("AZURE_OPENAI_EMBED_DEPLOYMENT")
+    return f"Azure · {d}" if d else f"local · {LOCAL_EMBED}"
+
+
+def azure_chat_deployments():
+    raw = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENTS") or os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT") or ""
+    return [d.strip() for d in raw.split(",") if d.strip()]
+
+
 with st.sidebar:
     st.header("🔑 Providers")
     br_ok = bedrock_ready()
     st.caption("🟢 AWS Bedrock ready (main)" if br_ok else "🔴 AWS Bedrock not ready: " + bedrock_status()[1])
+    az_ok, az_why = azure_status()
+    st.caption("🟢 Azure AI Foundry ready" if az_ok else "⚪ Azure AI Foundry not ready: " + az_why)
     openai_key = st.text_input("OpenAI API key (backup, optional)", value=os.getenv("OPENAI_API_KEY", ""), type="password")
     mode = st.radio("Provider", MODES, index=0)
     if mode.startswith("Auto"):
-        st.caption("Auto: Bedrock does everything. OpenAI is used only if Bedrock fails, and nothing is sent to it before that.")
+        st.caption("Auto: the first ready provider (Bedrock → Azure → OpenAI) does everything. The others are used only if it fails, and nothing is sent to them before that.")
 
-use_bedrock = br_ok and mode != "OpenAI only"
-use_openai = bool(openai_key) and mode != "Bedrock only"
-# ONE provider does all indexing and retrieval (the "primary"). In Auto mode OpenAI stays dormant: it is only
-# used if Bedrock fails, and its index is then built on demand from the chunks already stored.
-primary = "bedrock" if use_bedrock else ("openai" if use_openai else None)
+use_bedrock = br_ok and mode in (MODES[0], MODES[1])
+use_azure = az_ok and mode in (MODES[0], MODES[2])
+use_openai = bool(openai_key) and mode in (MODES[0], MODES[3])
+# ONE provider does all indexing and retrieval (the "primary"). The others stay dormant: they are used only
+# if the primary fails, and their index is then built on demand from the chunks already stored.
+ORDER = [p for p, on in (("bedrock", use_bedrock), ("azure", use_azure), ("openai", use_openai)) if on]
+primary = ORDER[0] if ORDER else None
 providers = [primary] if primary else []
-FALLBACK = "openai" if (use_bedrock and use_openai) else None
+FALLBACKS = ORDER[1:]
 
 if not providers:
     st.title("🔎 AskIT · RAG Lab")
-    st.warning("No provider available. Check the course .env (AWS keys + BEDROCK_SMALL_MODEL_ID), or paste an OpenAI key in the sidebar.")
+    st.warning("No provider available. Check the course .env (AWS keys + BEDROCK_SMALL_MODEL_ID, or the AZURE_OPENAI_* values), or paste an OpenAI key in the sidebar.")
     st.stop()
 
 
@@ -90,6 +122,23 @@ def bedrock_client():
 def openai_client(key):
     from openai import OpenAI
     return OpenAI(api_key=key)
+
+
+@st.cache_resource
+def azure_client(key, endpoint):
+    """Azure AI Foundry through its OpenAI-compatible /openai/v1 route (no api-version; the model = deployment name)."""
+    from openai import OpenAI
+    return OpenAI(base_url=azure_host(endpoint) + "/openai/v1/", api_key=key)
+
+
+def azure_host(endpoint):
+    """Resource root only: pasting the Foundry *project* endpoint (…/api/projects/xyz) or a longer URL still works."""
+    import azure_foundry
+    return azure_foundry.host(endpoint)
+
+
+def az():
+    return azure_client(os.environ["AZURE_OPENAI_API_KEY"], os.environ["AZURE_OPENAI_ENDPOINT"])
 
 
 class Store:
@@ -146,7 +195,9 @@ class Store:
 
 @st.cache_resource
 def get_collection(provider):
-    # One store per embedding provider: Bedrock and OpenAI vectors are not compatible.
+        # Bedrock, Azure and OpenAI vectors are not compatible: one file each.
+    if provider == "azure" and not os.getenv("AZURE_OPENAI_EMBED_DEPLOYMENT"):
+        provider = "azure_local"      # local vectors are a different space from Azure-deployment vectors
     return Store(DB_PATH / f"rag_lab_{provider}.json")
 
 
@@ -174,6 +225,11 @@ with st.sidebar:
     o_models = openai_models(openai_key) if use_openai else []
     b_opts = list(dict.fromkeys([os.getenv("BEDROCK_SMALL_MODEL_ID", BEDROCK_MODELS[1])] + BEDROCK_MODELS))
     bedrock_model = st.selectbox("Bedrock chat model (small = cheap)", b_opts) if use_bedrock else None
+    azure_model = None
+    if use_azure:
+        a_opts = list(dict.fromkeys(azure_chat_deployments() or AZURE_PREFERRED))
+        pick = st.selectbox("Azure Foundry chat model (deployment)", a_opts + [AZURE_OTHER])
+        azure_model = st.text_input("Deployment name", value=a_opts[0]) if pick == AZURE_OTHER else pick
     openai_model = model_picker("OpenAI chat model", o_models, OPENAI_PREFERRED) if use_openai else None
     chunk_size = st.slider("Chunk size (characters)", 100, 2000, 800, 50)
     overlap = st.slider("Chunk overlap (characters)", 0, 400, 150, 50)
@@ -263,7 +319,18 @@ def chunk_text(text: str, size: int, overlap: int) -> list[str]:
 
 
 # ---------------------------------------------------------------- Step 3: Embed
+@st.cache_resource
+def local_embedder():
+    try:
+        from fastembed import TextEmbedding
+    except Exception as e:
+        raise RuntimeError(f"fastembed not installed ({e}). Run: pip install fastembed") from e
+    return TextEmbedding(LOCAL_EMBED)       # small ONNX model, downloaded once (~130 MB), runs on CPU
+
+
 def embed(provider, texts, task=None):
+    if provider == "azure" and not os.getenv("AZURE_OPENAI_EMBED_DEPLOYMENT"):
+        return [v.tolist() for v in local_embedder().embed(texts)]
     if provider == "bedrock":
         def one(t):
             body = json.dumps({"inputText": t[:20000], "dimensions": 512, "normalize": True})
@@ -272,10 +339,16 @@ def embed(provider, texts, task=None):
         with ThreadPoolExecutor(max_workers=4) as pool:   # a few at a time: kind to the shared account
             return list(pool.map(one, texts))
     vectors = []
-    for i in range(0, len(texts), 100):  # API batch limit
-        batch = texts[i : i + 100]
-        res = with_retry(lambda: openai_client(openai_key).embeddings.create(model=OPENAI_EMBED, input=batch))
-        vectors.extend(d.embedding for d in res.data)
+    for i in range(0, len(texts), 96):  # API batch limit (Cohere: 96)
+        batch = texts[i : i + 96]
+        if provider == "azure":
+            import azure_foundry
+            vectors.extend(with_retry(lambda: azure_foundry.embed_batch(
+                batch, os.getenv("AZURE_OPENAI_EMBED_DEPLOYMENT"), os.environ["AZURE_OPENAI_API_KEY"],
+                os.environ["AZURE_OPENAI_ENDPOINT"], query=(task == "query"))))
+        else:
+            res = with_retry(lambda: openai_client(openai_key).embeddings.create(model=OPENAI_EMBED, input=batch))
+            vectors.extend(d.embedding for d in res.data)
     return vectors
 
 
@@ -295,37 +368,37 @@ def ingest(file):
                     metadatas=[{"source": file.name, "chunk": i} for i in range(len(chunks))])
             status.append(f"✅ {file.name}: {len(chunks)} chunks → {p}")
         except Exception as e:
-            status.append(f"⚠️ {file.name}: {p} indexing failed — {str(e)[:150]}")
+            status.append(f"⚠️ {file.name}: {p} indexing failed — {str(e)[:600]}")
     return status
 
 
 # ---------------------------------------------------------------- Step 5: Retrieve (with fallback)
-def ensure_fallback_index():
-    """Build the OpenAI index from the chunks already stored by the primary provider (only when Bedrock failed)."""
-    src, dst = get_collection(primary), get_collection(FALLBACK)
+def ensure_fallback_index(fb):
+    """Build a fallback provider's index from the chunks already stored by the primary provider (only when it failed)."""
+    src, dst = get_collection(primary), get_collection(fb)
     data = src.get(include=["documents", "metadatas"])
     if not data["ids"]:
         return
     sig = hashlib.md5("".join(data["documents"]).encode()).hexdigest()
-    if st.session_state.get("fb_sig") == sig and dst.count() == len(data["ids"]):
+    if st.session_state.get(f"fb_sig_{fb}") == sig and dst.count() == len(data["ids"]):
         return
     if dst.count():
         dst.delete(ids=dst.get()["ids"])
-    vecs = embed(FALLBACK, data["documents"])
+    vecs = embed(fb, data["documents"])
     dst.add(ids=data["ids"], documents=data["documents"], embeddings=vecs, metadatas=data["metadatas"])
-    st.session_state.fb_sig = sig
+    st.session_state[f"fb_sig_{fb}"] = sig
 
 
 def retrieve(question, k):
     errors = []
-    for p in providers + ([FALLBACK] if FALLBACK else []):
+    for p in providers + FALLBACKS:
         try:
-            if p == FALLBACK:
-                ensure_fallback_index()
+            if p in FALLBACKS:
+                ensure_fallback_index(p)
             col = get_collection(p)
             if col.count() == 0:
                 continue
-            q_vec = embed(p, [question])[0]
+            q_vec = embed(p, [question], task="query")[0]
             res = col.query(query_embeddings=[q_vec], n_results=min(k, col.count()))
             return list(zip(res["documents"][0], res["metadatas"][0], res["distances"][0])), p
         except Exception as e:
@@ -345,6 +418,8 @@ def chat_chain():
     chain = []
     if use_bedrock:
         chain.append(("bedrock", bedrock_model))
+    if use_azure:
+        chain.append(("azure", azure_model))
     if use_openai:
         chain.append(("openai", openai_model))
     return chain
@@ -362,7 +437,8 @@ def generate(question, hits):
                     messages=[{"role": "user", "content": [{"text": prompt}]}],
                     inferenceConfig={"maxTokens": 800, "temperature": 0.2}))
                 return "".join(b.get("text", "") for b in res["output"]["message"]["content"]), model
-            res = with_retry(lambda: openai_client(openai_key).chat.completions.create(
+            client = az() if provider == "azure" else openai_client(openai_key)
+            res = with_retry(lambda: client.chat.completions.create(
                 model=model, messages=[{"role": "system", "content": SYSTEM_PROMPT},
                                        {"role": "user", "content": prompt}]))
             return res.choices[0].message.content, model
@@ -382,8 +458,8 @@ with st.expander("🏗️ Architecture: how this app works (follows your sidebar
         import arch_diagram
         _ad_html = arch_diagram.render(
             chunk_size=chunk_size, overlap=overlap, top_k=top_k, show_ctx=show_ctx,
-            embed_model=BEDROCK_EMBED if primary == "bedrock" else OPENAI_EMBED,
-            chat_model=chat_chain()[0][1], fallback=bool(FALLBACK))
+            embed_model={"bedrock": BEDROCK_EMBED, "azure": azure_embed_label()}.get(primary, OPENAI_EMBED),
+            chat_model=chat_chain()[0][1], fallback=bool(FALLBACKS))
         if hasattr(st, "iframe"):
             st.iframe(_ad_html, height=800)
         else:
@@ -427,7 +503,7 @@ with st.sidebar:
         for s in sorted({m["source"] for m in metas}):
             st.write(f"• {s}")
     if st.button("Clear knowledge base", width="stretch"):
-        for p in ("bedrock", "openai"):
+        for p in ("bedrock", "azure", "azure_local", "openai"):
             col = get_collection(p)
             if col.count():
                 col.delete(ids=col.get()["ids"])

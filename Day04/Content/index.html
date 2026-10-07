@@ -169,6 +169,15 @@ footer .bar{justify-content:space-between}
 .simtable th,.simtable td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
 .simtable th{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.5px}
 .simtable tr.top td{background:var(--ok-soft)}
+.fixtbl{width:100%;border-collapse:collapse;font-size:18px;margin-top:8px}
+.fixtbl th,.fixtbl td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.fixtbl th{color:var(--muted);font-size:14px;text-transform:uppercase;letter-spacing:.5px}
+.fixtbl td:first-child{white-space:nowrap;font-weight:700}
+.fixtbl td.bad{background:var(--bad-soft)}
+.fixtbl td.fix{background:var(--ok-soft)}
+.fixtbl .sw{display:inline-block;font-size:15px;font-weight:700;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:0 7px;margin-top:4px}
+.presetrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:8px 0}
+.presetrow .card b{display:block;margin-bottom:4px}
 .num{font-variant-numeric:tabular-nums;font-weight:700}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .seg button{border:0;background:var(--surface2);padding:6px 14px;font-weight:700}
@@ -203,6 +212,88 @@ header .bar{max-width:1700px}
 .step{font-size:15px;padding:5px 11px}.step.lab{padding:5px 11px}
 .steps{gap:6px}
 
+</style>
+<style>
+/* ---- Day 4 · Architecture & solutioning ---- */
+.lane{display:flex;align-items:center;gap:10px;margin:18px 0 6px;font-weight:700;font-size:18px}
+.lane small{font-weight:400;color:var(--muted);font-size:15px}
+.lane::after{content:"";flex:1;height:2px;background:var(--line)}
+.pl{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.act{text-align:left;background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px;transition:transform .15s,border-color .15s;width:100%}
+.act:hover{transform:translateY(-2px);border-color:var(--accent)}
+.act .ic{font-size:30px;line-height:1}
+.act .nm{font-weight:700;font-size:19px;line-height:1.25}
+.act .who{font-size:16px;color:var(--muted)}
+.act .more{display:none;font-size:16px;border-top:1px dashed var(--line);padding-top:6px;margin-top:2px}
+.act.open .more{display:block}
+.act .tap{font-size:13px;color:var(--muted)}
+.act.open .tap{display:none}
+.act.tok{border-left:8px solid var(--warn)}
+.act.inf{border-left:8px solid var(--adv)}
+.act.cmp{border-left:8px solid var(--ok)}
+.act.big{border-left:8px solid var(--bad);background:var(--bad-soft);grid-column:span 2}
+@media(max-width:700px){.act.big{grid-column:auto}}
+.cb{white-space:nowrap}
+.cb{display:inline-block;font-weight:700;font-size:15px;border-radius:999px;padding:2px 12px;align-self:flex-start}
+.cb.tok{background:var(--warn-soft);color:var(--warn)}
+.cb.inf{background:var(--surface2);color:var(--adv);border:1px solid var(--adv)}
+.cb.cmp{background:var(--ok-soft);color:var(--ok)}
+.cb.big{background:var(--bad);color:#fff}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 0}
+.calc{display:grid;grid-template-columns:minmax(260px,1fr) minmax(280px,1.2fr);gap:18px;align-items:start}
+@media(max-width:800px){.calc{grid-template-columns:1fr}}
+.cbar{display:flex;height:34px;border-radius:10px;overflow:hidden;border:1px solid var(--line);margin:8px 0}
+.cbar i{display:block;height:100%;transition:width .3s}
+.cbar .s-llm{background:var(--bad)} .cbar .s-st{background:var(--adv)} .cbar .s-em{background:var(--warn)}
+.crow{display:grid;grid-template-columns:18px 1fr auto;gap:8px;align-items:center;padding:4px 0;font-size:17px}
+.crow .dot{width:14px;height:14px;border-radius:4px}
+.crow b{font-variant-numeric:tabular-nums}
+.bigtake{font-size:22px;font-weight:700;margin:8px 0 0}
+/* chooser */
+.chipbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.cq{border:2px solid var(--line);background:var(--surface2);border-radius:999px;padding:8px 16px;font-size:17px;font-weight:700}
+.cq.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+@media(max-width:900px){.two{grid-template-columns:1fr}}
+.col h4{margin:0 0 8px;font-size:20px}
+.col.cn h4{color:var(--accent)} .col.nn h4{color:var(--adv)}
+.opt{background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;position:relative}
+.opt .nm{font-weight:700;font-size:19px}
+.opt .ex{font-size:15px;color:var(--muted);margin:2px 0 6px}
+.opt .pk{font-size:17px}
+.opt .sc{height:12px;background:var(--surface2);border-radius:6px;margin-top:8px;overflow:hidden}
+.opt .sc i{display:block;height:100%;width:0;background:var(--accent);transition:width .35s}
+.col.nn .opt .sc i{background:var(--adv)}
+.opt.best{border-color:var(--ok);background:var(--ok-soft)}
+.opt.best::after{content:"★ Best fit";position:absolute;top:10px;right:12px;font-weight:700;font-size:14px;color:var(--ok)}
+.effort{display:flex;justify-content:space-between;font-size:15px;color:var(--muted);margin:2px 2px 0}
+.effort i{flex:1;height:6px;margin:8px 10px 0;border-radius:3px;background:linear-gradient(90deg,var(--ok),var(--warn),var(--bad))}
+/* reference architecture */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:800px){.flow{grid-template-columns:repeat(2,1fr)}}
+.nd{border:2px solid var(--line);background:var(--surface);border-radius:12px;padding:10px;text-align:center;font-weight:700;font-size:17px;line-height:1.25;position:relative}
+.nd .ic{display:block;font-size:28px}
+.nd.on{border-color:var(--accent);background:var(--accent-soft)}
+.nd:not(:last-child)::after{content:"▶";position:absolute;right:-13px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);z-index:2}
+.flow .nd:nth-child(4)::after{content:"▼";right:auto;left:50%;top:auto;bottom:-16px;transform:translateX(-50%)}
+.flow .nd:nth-child(8)::after{display:none}
+@media(max-width:800px){.nd::after{display:none!important}}
+.dtl{margin-top:14px}
+.dtl .ask{font-size:21px;font-weight:700;margin:2px 0 10px}
+.maps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.maps div{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--surface2);font-size:16px}
+.maps b{display:block;font-size:13px;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.maps .aws b{color:#b45309} .maps .az b{color:#2563eb} .maps .gc b{color:#157f3b} .maps .os b{color:var(--adv)}
+.warnrow{margin-top:10px;background:var(--warn-soft);border-left:5px solid var(--warn);border-radius:8px;padding:8px 14px;font-size:17px}
+/* sales-call cards */
+.qc{text-align:left;background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:14px;width:100%;display:flex;flex-direction:column;gap:6px}
+.qc:hover{border-color:var(--accent)}
+.qc .q{font-weight:700;font-size:19px;line-height:1.3}
+.qc .n{color:var(--accent);font-size:26px;font-weight:800;line-height:1}
+.qc .a{display:none;border-top:1px dashed var(--line);padding-top:8px;font-size:17px}
+.qc.open .a{display:block}
+.qc.open{border-color:var(--accent);background:var(--accent-soft)}
+.qc .tap{font-size:13px;color:var(--muted)} .qc.open .tap{display:none}
 </style>
 <style>[data-done],#dayEnd{display:none!important}</style></head>
 <body>
@@ -306,6 +397,38 @@ header .bar{max-width:1700px}
 
   <h3>Quick check</h3>
   <div data-quiz="m1"></div>
+</section>
+
+<!-- ============ BASELINE TO FDE-GRADE ============ -->
+<section data-title="Baseline → FDE-grade">
+  <div class="kicker">Concept 1b · <span class="chip i">INTERMEDIATE</span></div>
+  <h2>Baseline to FDE-grade: what was missing, what we add</h2>
+  <p class="lead">In Lab 3 you run the same questions through four pipelines. This table is the map: each row is one failure of the baseline, the fix, the switch that turns it on, and what you will see.</p>
+
+  <table class="fixtbl">
+    <thead><tr><th>Failure</th><th>Baseline (naive RAG)</th><th>FDE-grade fix</th><th>What you will see</th></tr></thead>
+    <tbody>
+        <tr><td>🕰️ 1. Old versions</td><td class="bad">Treated every article as valid, so old and new answers competed</td><td class="fix"><b>Metadata filter:</b> drop <i>superseded</i> articles before searching<br><span class="sw">Metadata filter ON</span></td><td>&ldquo;N chunks removed by filter&rdquo; and one clear answer (14 characters, not 8)</td></tr>
+        <tr><td>👥 2. Wrong audience</td><td class="bad">Gave the same answer to an employee and a contractor</td><td class="fix"><b>Audience filter:</b> keep only articles for the person asking (or &ldquo;All&rdquo;)<br><span class="sw">Same filter + Audience choice</span></td><td>Contractor gets KB-005, employee gets KB-021</td></tr>
+        <tr><td>✂️ 3. Cut mid-sentence</td><td class="bad">Cut text every 180 characters, so an answer was split from its context</td><td class="fix"><b>Section chunking:</b> one chunk per heading<br><span class="sw">Chunking = section</span></td><td>Whole ideas in one chunk, no cut-off words</td></tr>
+        <tr><td>🔤 4. Missed wording</td><td class="bad">Keyword search only: missed a question worded differently</td><td class="fix"><b>Hybrid search:</b> keyword + meaning, merged<br><span class="sw">Search = hybrid</span></td><td>Right article found even when the words differ</td></tr>
+        <tr><td>🥈 5. Wrong order</td><td class="bad">Trusted the first search order</td><td class="fix"><b>LLM reranker:</b> an AI judge re-scores the best candidates<br><span class="sw">LLM reranker ON</span></td><td>Best chunk moves to rank #1</td></tr>
+        <tr><td>🤥 6. Guessing</td><td class="bad">Always answered, even from unrelated chunks</td><td class="fix"><b>Abstain guard:</b> weak evidence means &ldquo;I don&rsquo;t know&rdquo;<br><span class="sw">Abstain guard ON</span></td><td>&ldquo;I will route this to a human agent&rdquo;, no answer written</td></tr>
+        <tr><td>☠️ 7. Obeying documents</td><td class="bad">Plain prompt: &ldquo;answer using the context&rdquo;</td><td class="fix"><b>Grounded prompt:</b> cite sources, prefer the current version, treat sources as data, never ask for passwords<br><span class="sw">Automatic with the filter or section chunks</span></td><td>A hidden instruction inside a document is ignored</td></tr>
+        <tr><td>📏 8. No proof</td><td class="bad">Judged by &ldquo;it looks fine&rdquo;</td><td class="fix"><b>Evals:</b> 15 golden questions scored by pass rate, hit@1 and MRR<br><span class="sw">📊 Evals dashboard</span></td><td>The numbers go up at each step (you measure them in Lab 3)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>The four presets add the fixes in order</h3>
+  <div class="presetrow">
+    <div class="card"><b>Baseline (naive RAG)</b>None of the fixes.</div>
+    <div class="card"><b>+ Metadata filter</b>Rows 1 and 2 (the grounded prompt in row 7 comes with it).</div>
+    <div class="card"><b>+ Section chunks + hybrid</b>Rows 3 and 4.</div>
+    <div class="card"><b>FDE-grade (all on)</b>Rows 5 and 6: reranker and abstain guard.</div>
+  </div>
+
+  <div class="say"><b>Where you see each row in Lab 3:</b> Part A shows rows 1, 2 and 6 &middot; Part B measures row 8 (run all 4 presets) &middot; Part C shows row 7 (the poisoned article).</div>
+  <div class="say"><b>One line to remember:</b> each fix solves one failure, and the eval shows by how much.</div>
 </section>
 
 <!-- ============ LAB 3 ============ -->
@@ -429,6 +552,115 @@ header .bar{max-width:1700px}
 
   <h3>Quick check</h3>
   <div data-quiz="m3"></div>
+</section>
+
+<!-- ============ 4. ARCHITECTURE & SOLUTIONING ============ -->
+<section data-title="④ Architecture &amp; solutioning">
+  <div class="kicker">Concept 4 · <span class="chip a">ADVANCED</span> · for architects and sales-call solutioning</div>
+  <h2>From "it works" to "here is the proposal"</h2>
+  <p class="lead">Four clicks-first tabs: what you pay for, which RAG to pick, the reference architecture, and the questions to ask the client.</p>
+
+  <div data-tabs="ar">
+    <div class="tabs"><button>💰 What drives RAG cost</button><button>🧭 Choose your RAG</button><button>🗺️ Reference architecture</button><button>🎯 Ask on the sales call</button></div>
+
+    <!-- TAB 1: COST -->
+    <div class="tabpanel">
+      <div class="say"><b>Embeddings are pennies. Know what actually fills the bill.</b> Tap any card.</div>
+      <div class="legend"><span class="cb tok">💲 Token cost</span><span class="cb inf">🏗️ Infra / storage</span><span class="cb cmp">⚙️ Compute only, no token charge</span></div>
+
+      <div class="lane">📥 ONCE <small>when you load documents</small></div>
+      <div class="pl">
+        <button class="act tok"><span class="ic">📄➜🔢</span><span class="nm">Convert documents to embeddings</span><span class="who">Titan Embedding model</span><span class="cb tok">💲 Yes: input tokens</span><span class="tap">tap for detail</span><span class="more">Billed per input token. One-time per document, but <b>re-paid</b> if you change the embedding model or re-ingest.</span></button>
+        <button class="act inf"><span class="ic">🗄️</span><span class="nm">Store vectors</span><span class="who">Vector DB / index</span><span class="cb inf">🏗️ Possibly: infra</span><span class="tap">tap for detail</span><span class="more">Storage and instance cost. Some managed stores have a <b>monthly floor</b> even when idle.</span></button>
+      </div>
+
+      <div class="lane">💬 EVERY QUESTION <small>runs on each user query</small></div>
+      <div class="pl">
+        <button class="act tok"><span class="ic">❓➜🔢</span><span class="nm">Convert the question to an embedding</span><span class="who">Titan Embedding model</span><span class="cb tok">💲 Yes: tiny</span><span class="tap">tap for detail</span><span class="more">A question is ~20 to 50 tokens. Real, but tiny per query.</span></button>
+        <button class="act cmp"><span class="ic">⚖️</span><span class="nm">Compare vectors</span><span class="who">Vector DB / retrieval code</span><span class="cb cmp">⚙️ Compute / search</span><span class="tap">tap for detail</span><span class="more">Search compute. <b>Not</b> a token cost.</span></button>
+        <button class="act cmp"><span class="ic">📐</span><span class="nm">Calculate cosine similarity</span><span class="who">Vector DB / application code</span><span class="cb cmp">⚙️ Computation only</span><span class="tap">tap for detail</span><span class="more">Just maths. <b>No LLM token charge.</b></span></button>
+        <button class="act cmp"><span class="ic">🏆</span><span class="nm">Return Top-K</span><span class="who">Vector search engine</span><span class="cb cmp">⚙️ Usually inside DB pricing</span><span class="tap">tap for detail</span><span class="more">Covered by the DB or compute price. Bigger K costs more <b>later</b>, in the LLM prompt.</span></button>
+        <button class="act big"><span class="ic">🧠</span><span class="nm">LLM writes the answer <small>(not in the table!)</small></span><span class="who">Bedrock model: question + Top-K chunks + prompt</span><span class="cb big">💲💲💲 Usually the biggest line</span><span class="tap">tap for detail</span><span class="more">Input = system prompt + question + <b>K × chunk size</b>. Plus output tokens. Rerank, critic and answer-check loops add <b>more</b> calls.</span></button>
+      </div>
+
+      <h3>Try it: monthly bill estimate <span class="muted" style="font-size:16px;font-weight:400">(illustrative prices, check the current rate card)</span></h3>
+      <div class="calc card">
+        <div>
+          <div class="slider"><label>Document corpus (million tokens)</label><input type="range" id="ccC" min="1" max="200" value="5"><output id="occC"></output></div>
+          <div class="slider"><label>Questions per day</label><input type="range" id="ccQ" min="100" max="20000" step="100" value="2000"><output id="occQ"></output></div>
+          <div class="slider"><label>Top-K chunks sent to the LLM</label><input type="range" id="ccK" min="1" max="10" value="4"><output id="occK"></output></div>
+          <div class="slider"><label>Vector store ($ per month)</label><input type="range" id="ccS" min="0" max="1500" step="50" value="300"><output id="occS"></output></div>
+          <p class="muted" style="font-size:15px;margin:6px 0 0">Assumes: embeddings $0.02 / 1M tokens · LLM $3 in / $15 out per 1M tokens · 500-token chunks · 400-token prompt · 300-token answer · 30-token question · 30 days.</p>
+        </div>
+        <div>
+          <div class="muted">Monthly run cost</div>
+          <div class="cbar"><i class="s-llm" id="bLlm"></i><i class="s-st" id="bSt"></i><i class="s-em" id="bEm"></i></div>
+          <div class="crow"><span class="dot" style="background:var(--bad)"></span><span>🧠 LLM answers</span><b id="vLlm"></b></div>
+          <div class="crow"><span class="dot" style="background:var(--adv)"></span><span>🗄️ Vector store</span><b id="vSt"></b></div>
+          <div class="crow"><span class="dot" style="background:var(--warn)"></span><span>🔢 Question embeddings</span><b id="vEm"></b></div>
+          <div class="crow"><span class="dot" style="background:var(--line)"></span><span>📥 One-time: embed the corpus</span><b id="vOne"></b></div>
+          <div class="bigtake" id="vTake"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: CHOOSE -->
+    <div class="tabpanel">
+      <div class="say"><b>Tap what the client cares about.</b> The best fit lights up. Rule of thumb: <b>start managed</b>, leave only when a constraint forces you.</div>
+      <div class="chipbar" id="chQ">
+        <button class="cq" data-k="0">⚡ Live in weeks</button>
+        <button class="cq" data-k="1">🔒 Data residency / on-prem</button>
+        <button class="cq" data-k="2">📈 Huge scale, low latency</button>
+        <button class="cq" data-k="3">🎛️ Full control and tuning</button>
+        <button class="cq" data-k="4">🔓 No lock-in / multi-cloud</button>
+        <button class="cq" data-k="5">👥 Small team, little ops</button>
+        <button class="cq" data-k="6">💲 Low fixed cost</button>
+      </div>
+      <div class="effort"><span>Less effort</span><i></i><span>More control, more ops</span></div>
+      <div class="two">
+        <div class="col cn"><h4>☁️ Cloud-native</h4>
+          <div class="opt" data-s="2,1,1,0,0,2,1"><div class="nm">A · Managed RAG service</div><div class="ex">Bedrock Knowledge Bases · Azure AI Search + Azure OpenAI · Vertex AI RAG Engine</div><div class="pk"><b>Pick when:</b> fast PoC to prod, small team, client is all-in on one cloud.</div><div class="sc"><i></i></div></div>
+          <div class="opt" data-s="1,1,2,2,0,1,1"><div class="nm">B · Cloud building blocks</div><div class="ex">OpenSearch · Aurora / AlloyDB pgvector · Azure AI Search + your own pipeline</div><div class="pk"><b>Pick when:</b> you need custom chunking, hybrid and rerank tuning, but must stay in the cloud.</div><div class="sc"><i></i></div></div>
+        </div>
+        <div class="col nn"><h4>🧰 Non-cloud-native</h4>
+          <div class="opt" data-s="1,2,1,2,2,1,2"><div class="nm">C · Open source + Postgres</div><div class="ex">LangChain / LlamaIndex + pgvector</div><div class="pk"><b>Pick when:</b> client already runs Postgres, moderate scale, wants portability and low cost.</div><div class="sc"><i></i></div></div>
+          <div class="opt" data-s="1,1,2,2,2,0,0"><div class="nm">D · Dedicated vector DB</div><div class="ex">Qdrant · Milvus · Weaviate · Pinecone</div><div class="pk"><b>Pick when:</b> very large scale, tight latency, rich filtering, and someone can run it.</div><div class="sc"><i></i></div></div>
+          <div class="opt" data-s="0,2,1,2,2,0,0"><div class="nm">E · Self-hosted / air-gapped</div><div class="ex">Open models (vLLM, Ollama) + self-hosted vector DB</div><div class="pk"><b>Pick when:</b> regulated or on-prem data, nothing may leave the building.</div><div class="sc"><i></i></div></div>
+        </div>
+      </div>
+      <p class="muted" id="chHint" style="margin:8px 0 0">Pick one or more concerns above. Scores are a rule of thumb, not a verdict: validate with a PoC.</p>
+    </div>
+
+    <!-- TAB 3: REFERENCE ARCHITECTURE -->
+    <div class="tabpanel">
+      <div class="say"><b>Tap each box.</b> It shows the question to ask the client and the building block on each cloud. Top row = <b>ingest path</b>, bottom row = <b>query path</b>.</div>
+      <div class="flow" id="fl">
+        <button class="nd on"><span class="ic">📂</span>Sources</button>
+        <button class="nd"><span class="ic">✂️</span>Parse &amp; chunk</button>
+        <button class="nd"><span class="ic">🔢</span>Embed</button>
+        <button class="nd"><span class="ic">🗄️</span>Index / vector store</button>
+        <button class="nd"><span class="ic">🔐</span>App, API &amp; AuthZ</button>
+        <button class="nd"><span class="ic">🔎</span>Retrieve &amp; rerank</button>
+        <button class="nd"><span class="ic">🧠</span>LLM + guardrails</button>
+        <button class="nd"><span class="ic">📊</span>Observe &amp; eval</button>
+      </div>
+      <div class="dtl card" id="flD"></div>
+    </div>
+
+    <!-- TAB 4: SALES CALL -->
+    <div class="tabpanel">
+      <div class="say"><b>Six questions to ask before you quote anything.</b> Tap to see what each answer changes in the design.</div>
+      <div class="grid g3" id="qcs">
+        <button class="qc"><span class="n">1</span><span class="q">What data, where, and how often does it change?</span><span class="tap">tap to reveal</span><span class="a">Decides <b>connectors, ingestion schedule, incremental vs full re-index</b>.<div class="chips"><span class="pill">Ingestion</span><span class="pill">Freshness</span></div></span></button>
+        <button class="qc"><span class="n">2</span><span class="q">Who is allowed to see what?</span><span class="tap">tap to reveal</span><span class="a">Decides <b>document-level ACLs, metadata filters, per-tenant indexes</b>. Filter at retrieval, not after the answer.<div class="chips"><span class="pill">Security</span></div></span></button>
+        <button class="qc"><span class="n">3</span><span class="q">How many documents, and how many questions a day?</span><span class="tap">tap to reveal</span><span class="a">Decides <b>vector store tier, cost model, caching</b>. Use the estimator in tab 1.<div class="chips"><span class="pill">Scale</span><span class="pill">Cost</span></div></span></button>
+        <button class="qc"><span class="n">4</span><span class="q">What does a good answer look like?</span><span class="tap">tap to reveal</span><span class="a">Decides <b>golden set, citations, abstain rules, reranker</b>. No definition of "good" = no sign-off.<div class="chips"><span class="pill">Quality</span><span class="pill">Eval</span></div></span></button>
+        <button class="qc"><span class="n">5</span><span class="q">What latency and availability do you need?</span><span class="tap">tap to reveal</span><span class="a">Decides <b>streaming, skipping the loop for simple questions, multi-AZ, fallback model</b>.<div class="chips"><span class="pill">SLA</span><span class="pill">Latency</span></div></span></button>
+        <button class="qc"><span class="n">6</span><span class="q">Any compliance rules: PII, residency, audit?</span><span class="tap">tap to reveal</span><span class="a">Decides <b>region pinning, guardrails, logging, retention</b>, and sometimes the whole option in tab 2.<div class="chips"><span class="pill">Governance</span></div></span></button>
+      </div>
+      <div class="say" style="margin-top:14px"><b>Close the call with:</b> "I'll quote after I know answers 1 to 3. Today I can give you an option and a range."</div>
+    </div>
+  </div>
 </section>
 
 <!-- ============ ARB ============ -->
@@ -753,5 +985,64 @@ const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
  $("lcR").oninput=f;$("lcP").oninput=f;f();}
 
 </script>
+<script>
+/* ===== Day 4 · Architecture & solutioning ===== */
+(function(){
+const xp=(k,n)=>{try{if(typeof addXP==="function")addXP(k,n)}catch(e){}};
+const g=id=>document.getElementById(id);
+/* tab 1: tap cards */
+document.querySelectorAll(".act").forEach((c,i)=>c.addEventListener("click",()=>{c.classList.toggle("open");xp("act"+i,1)}));
+/* tab 1: estimator */
+const $$=n=>g(n);
+const money=v=>"$"+(v<1?v.toFixed(2):Math.round(v).toLocaleString("en-US"));
+function calc(){
+  const C=+$$("ccC").value,Q=+$$("ccQ").value,K=+$$("ccK").value,S=+$$("ccS").value;
+  $$("occC").textContent=C+" M";$$("occQ").textContent=Q.toLocaleString("en-US");$$("occK").textContent=K;$$("occS").textContent="$"+S;
+  const qm=Q*30,emb=0.02,
+    em=qm*30/1e6*emb,
+    llm=qm*(K*500+400)/1e6*3+qm*300/1e6*15,
+    one=C*emb,
+    tot=em+S+llm;
+  $$("vLlm").textContent=money(llm);$$("vSt").textContent=money(S);$$("vEm").textContent=money(em);$$("vOne").textContent=money(one);
+  const pc=x=>tot>0?(100*x/tot):0;
+  $$("bLlm").style.width=pc(llm)+"%";$$("bSt").style.width=pc(S)+"%";$$("bEm").style.width=pc(em)+"%";
+  $$("vTake").textContent="LLM answers = "+Math.round(pc(llm))+"% of the monthly bill. Embeddings = "+(pc(em)<1?"<1":Math.round(pc(em)))+"%.";
+}
+["ccC","ccQ","ccK","ccS"].forEach(id=>{const e=g(id);if(e)e.addEventListener("input",()=>{calc();xp("calc",2)})});
+if(g("ccC"))calc();
+/* tab 2: chooser */
+const sel=new Set();
+function choose(){
+  const opts=[...document.querySelectorAll(".opt[data-s]")];
+  const sc=opts.map(o=>{const s=o.dataset.s.split(",").map(Number);let t=0;sel.forEach(k=>t+=s[k]);return t});
+  const max=Math.max(...sc);
+  opts.forEach((o,i)=>{const mx=2*sel.size;o.querySelector(".sc i").style.width=sel.size?(100*sc[i]/mx)+"%":"0";
+    o.classList.toggle("best",sel.size>0&&sc[i]===max&&max>0)});
+  const h=g("chHint");if(h)h.textContent=sel.size?"Bars show how well each option covers your selected concerns. Rule of thumb only: validate with a PoC.":"Pick one or more concerns above. Scores are a rule of thumb, not a verdict: validate with a PoC.";
+}
+document.querySelectorAll("#chQ .cq").forEach(b=>b.addEventListener("click",()=>{const k=+b.dataset.k;b.classList.toggle("on");if(sel.has(k))sel.delete(k);else sel.add(k);choose();xp("choose",2)}));
+/* tab 3: reference architecture */
+const N=[
+ {t:"Sources",ask:"Where do the documents live, and who owns them?",w:"Connector limits and permission sync are where schedules slip.",aws:"S3 · SharePoint, Confluence, web connectors in Bedrock Knowledge Bases",az:"Blob · SharePoint · SQL via AI Search indexers",gc:"Cloud Storage · Drive · connectors in Vertex AI Search",os:"Airbyte · LlamaIndex / LangChain loaders"},
+ {t:"Parse & chunk",ask:"Scanned PDFs, tables, images in the content?",w:"Bad parsing means bad answers, whatever the model.",aws:"Textract · KB chunking (fixed, hierarchical, semantic)",az:"Document Intelligence · integrated chunking",gc:"Document AI layout parser",os:"Unstructured · Docling"},
+ {t:"Embed",ask:"Which languages? Domain jargon? May data go to a hosted model?",w:"Change the embedding model and you must re-embed everything.",aws:"Titan Text Embeddings V2 · Cohere Embed",az:"Azure OpenAI text-embedding-3",gc:"Vertex AI text embeddings",os:"BGE · E5 · sentence-transformers"},
+ {t:"Index / vector store",ask:"How many chunks, how often updated, is hybrid search needed?",w:"Some managed stores bill a monthly floor even when idle.",aws:"OpenSearch Serverless · Aurora pgvector · S3 Vectors",az:"Azure AI Search · Cosmos DB · Postgres pgvector",gc:"Vertex AI Vector Search · AlloyDB pgvector",os:"pgvector · Qdrant · Milvus · Weaviate"},
+ {t:"App, API & AuthZ",ask:"Who may see which document?",w:"Filter by the user's groups at retrieval time, not after the LLM has answered.",aws:"API Gateway + Lambda · Cognito / IAM",az:"API Management + Functions · Entra ID",gc:"Cloud Run · IAM / Identity Platform",os:"FastAPI · Keycloak"},
+ {t:"Retrieve & rerank",ask:"Exact codes and IDs, or natural language? What latency budget?",w:"This is Lab 3: hybrid search, metadata filter, reranker.",aws:"KB Retrieve API · rerank models on Bedrock",az:"Hybrid search · semantic ranker",gc:"Vertex AI Search · Ranking API",os:"BM25 + vectors · bge-reranker"},
+ {t:"LLM + guardrails",ask:"Which models are approved? Any PII or policy rules?",w:"Treat retrieved text as data, never as instructions.",aws:"Bedrock models · Guardrails",az:"Azure OpenAI · Content Safety",gc:"Gemini on Vertex AI · safety filters",os:"vLLM / Ollama · Llama Guard · NeMo Guardrails"},
+ {t:"Observe & eval",ask:"What does \"good\" mean, and who signs it off?",w:"Golden set plus a regression gate before every change.",aws:"CloudWatch · Bedrock invocation logs · KB evaluation",az:"Azure Monitor · Foundry evaluations",gc:"Cloud Logging · Gen AI evaluation service",os:"Langfuse · Ragas · Phoenix"}
+];
+function showNode(i){
+  const n=N[i];
+  document.querySelectorAll("#fl .nd").forEach((b,j)=>b.classList.toggle("on",j===i));
+  g("flD").innerHTML='<div class="muted">Ask the client</div><div class="ask">'+n.ask+'</div><div class="maps"><div class="aws"><b>AWS</b>'+n.aws+'</div><div class="az"><b>Azure</b>'+n.az+'</div><div class="gc"><b>Google Cloud</b>'+n.gc+'</div><div class="os"><b>Open source</b>'+n.os+'</div></div><div class="warnrow">⚠️ <b>Watch out:</b> '+n.w+'</div>';
+}
+document.querySelectorAll("#fl .nd").forEach((b,i)=>b.addEventListener("click",()=>{showNode(i);xp("node"+i,1)}));
+if(g("fl"))showNode(0);
+/* tab 4: sales-call cards */
+document.querySelectorAll("#qcs .qc").forEach((c,i)=>c.addEventListener("click",()=>{c.classList.toggle("open");xp("qc"+i,1)}));
+})();
+</script>
+
 </body>
 </html>

@@ -1,0 +1,9 @@
+streamlit
+numpy
+boto3
+python-dotenv
+openai>=1.60
+python-docx
+pypdf
+fastembed
+requests
