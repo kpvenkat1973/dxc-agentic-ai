@@ -19,7 +19,7 @@ git --version
 Open **Command Prompt** and run (replace `YOUR-GITHUB`):
 ```
 mkdir C:\AskIT
-cd /d C:\AskIT
+cd C:\AskIT
 git clone https://github.com/YOUR-GITHUB/dxc-agentic-ai.git dxc-agentic-ai
 ```
 ✅ You now have `C:\AskIT\dxc-agentic-ai` (the last word in the command renames the folder — keep it exactly)
@@ -43,7 +43,7 @@ In File Explorer, double-click **`C:\AskIT\dxc-agentic-ai\SETUP.bat`**. It will:
 3. Open a terminal (`Ctrl+`\``) — you should see `(.venv)` at the start of the line.
 
 ## Step 5 — Start the day
-In Command Prompt: `cd /d C:\AskIT\dxc-agentic-ai` then **`START_DAY.bat 1`** (Day 1) or **`START_DAY.bat 2`** (Day 2). The session page opens at `http://localhost:8765`. Keep the black window open.
+In Command Prompt: `cd C:\AskIT\dxc-agentic-ai` then **`START_DAY.bat 1`** (Day 1) or **`START_DAY.bat 2`** (Day 2). The session page opens at `http://localhost:8765`. Keep the black window open.
 
 ---
 

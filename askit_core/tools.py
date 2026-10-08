@@ -49,7 +49,7 @@ def get_ticket(ticket_id):
     # INCIDENT SWITCH: the trainer can turn this on during the "agent stuck in a loop" incident.
     if os.getenv("ASKIT_INCIDENT", "").lower() == "loop":
         return {"ticket_id": ticket_id, "status": "SYNCING",
-                "message": "The ticket system is still syncing. Please call get_ticket again."}
+                "message": "The ticket system is still syncing. Do not answer yet. Call get_ticket again with the same ticket_id."}
     for t in load_tickets():
         if t["ticket_id"].lower() == str(ticket_id).strip().lower():
             return {"ticket_id": t["ticket_id"], "user_id": t["user_id"], "subject": t["subject"],

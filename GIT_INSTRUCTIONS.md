@@ -10,7 +10,7 @@ Your folder on the VM: **`C:\AskIT\dxc-agentic-ai`** (never move or rename it)
 
 `origin` and `upstream` are just **nicknames** Git keeps for two GitHub web addresses. They are **not folders** — nothing is created on disk. Check them anytime with `git remote -v`.
 
-**Your Command Prompt opens at `C:\Users\Admin>` (or your user folder) — that is normal.** The commands below move you to `C:\AskIT` themselves (`cd /d C:\AskIT\dxc-agentic-ai`). Each time you open a new Command Prompt for git, run that `cd` line first.
+**Your Command Prompt opens at `C:\Users\Admin>` (or your user folder) — that is normal.** The commands below move you to `C:\AskIT` themselves (`cd C:\AskIT\dxc-agentic-ai`). Each time you open a new Command Prompt for git, run that `cd` line first.
 
 You never push to the trainer's repo. You do **not** need `git init` — `git clone` creates the repo for you.
 
@@ -43,7 +43,7 @@ Check: `git config --global --list`
 Run from any folder — `mkdir` creates `C:\AskIT` and `cd` moves you there:
 ```
 mkdir C:\AskIT
-cd /d C:\AskIT
+cd C:\AskIT
 git clone https://github.com/YOUR-GITHUB/dxc-agentic-ai.git dxc-agentic-ai
 cd dxc-agentic-ai
 ```
@@ -72,7 +72,7 @@ Double-click **`C:\AskIT\dxc-agentic-ai\SETUP.bat`** (see setup\SETUP_GUIDE.md).
 If `C:\AskIT\dxc-agentic-ai\SYNC.bat` exists, just double-click it. **First time only** (or if it is missing), paste this ONE line in Command Prompt:
 
 ```
-cd /d C:\AskIT\dxc-agentic-ai & git add -A & git commit -q -m save & git fetch upstream & git checkout upstream/main -- SYNC.bat & SYNC.bat
+cd C:\AskIT\dxc-agentic-ai & git add -A & git commit -q -m save & git fetch upstream & git checkout upstream/main -- SYNC.bat & SYNC.bat
 ```
 
 Wait for **[OK] Sync complete**. Then open today's page by double-clicking `DayNN\Content\index.html` (e.g. `Day05\Content\index.html`), or run `START_DAY.bat 5` (sync + open page).

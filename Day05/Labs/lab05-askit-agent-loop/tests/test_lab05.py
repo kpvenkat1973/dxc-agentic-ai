@@ -71,12 +71,12 @@ def test_challenge_3_make_tool_result():
 
 def test_challenge_3_notes():
     sec = notes_section("Lab 5A")
-    assert "<fill" not in sec, "Fill in the Lab 5A lines in submission\\lab05_notes.md"
+    assert "<fill" not in sec, "NOTES ONLY, your code is fine: replace each <fill> in the Lab 5A lines of submission\\lab05_notes.md with your answer, save, and run the check again"
 
 
 def test_stretch_a_get_user():
     out = agent.run_tool("get_user", {"user_id": "EMP-1002"})
-    assert out.get("name") == "Priya Iyer", "write get_user and remove the two # in front of the registration lines"
+    assert out.get("name") == "Priya Iyer", "write the body of get_user and remove the two # in front of the registration lines"
     assert "error" in agent.run_tool("get_user", {"user_id": "EMP-9999"})
 
 
@@ -106,12 +106,12 @@ def test_challenge_6_step_limit():
     model = ScriptedModel(*[tool_use("get_ticket", {"ticket_id": f"TKT-000{i}"}, f"t{i}") for i in range(1, 9)])
     res = agent.run_agent("keep going", call_model=model, max_steps=3)
     assert model.calls == 3, "the agent must stop after max_steps model calls"
-    assert res["handoff"] is True, "out of steps: hand over to a human with give_up(...)"
+    assert res["handoff"] is True, "out of steps: PART C of TODO-1 must hand over to a human with give_up(...)"
     assert "human" in res["answer"].lower()
 
 
 def test_challenge_6_notes():
-    assert "<fill" not in notes_section("Lab 5B"), "Fill in the Lab 5B lines in submission\\lab05_notes.md"
+    assert "<fill" not in notes_section("Lab 5B"), "NOTES ONLY, your code is fine: replace each <fill> in the Lab 5B lines of submission\\lab05_notes.md with your answer, save, and run the check again"
 
 
 # ================= LAB 5C =================
@@ -134,7 +134,7 @@ def test_challenge_8_run_tool_safely():
 
 
 def test_challenge_8_notes():
-    assert "<fill" not in notes_section("Lab 5C"), "Fill in the Lab 5C lines in submission\\lab05_notes.md"
+    assert "<fill" not in notes_section("Lab 5C"), "NOTES ONLY, your code is fine: replace each <fill> in the Lab 5C lines of submission\\lab05_notes.md with your answer, save, and run the check again"
 
 
 def test_stretch_b_vip_block():
@@ -159,8 +159,8 @@ def test_challenge_9_loop_stops_early():
     model = ScriptedModel(tool_use("get_ticket", {"ticket_id": "TKT-0004"}))   # asks for the SAME call forever
     res = agent.run_agent("status of TKT-0004?", call_model=model, max_steps=6)
     assert res["handoff"] is True
-    assert model.calls <= 2, "after the 2nd identical request the agent must stop (add the is_repeat check inside run_agent)"
+    assert model.calls <= 2, "the agent should stop after the 2nd identical request. Open agent.py, search STOP_ON_REPEAT and change False to True"
 
 
 def test_challenge_9_notes():
-    assert "<fill" not in notes_section("Incident"), "Fill in the Incident lines in submission\\lab05_notes.md"
+    assert "<fill" not in notes_section("Incident"), "NOTES ONLY, your code is fine: replace each <fill> in the Incident lines of submission\\lab05_notes.md with your answer, save, and run the check again"

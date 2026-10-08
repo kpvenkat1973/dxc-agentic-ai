@@ -53,7 +53,7 @@ Open **Command Prompt**. `team-x` below means **your** team folder: `team-a`, `t
 ### Part 1 — ADR v1 (now)
 
 ```
-cd /d C:\AskIT\dxc-agentic-ai
+cd C:\AskIT\dxc-agentic-ai
 copy Day01\Labs\adr1-model-selection\ADR_TEMPLATE.md teams\team-x\ADR-001_v1.md
 notepad teams\team-x\ADR-001_v1.md
 ```
@@ -73,7 +73,7 @@ You should see a line ending in `main -> main`. **Do not edit the v1 file again*
 Make a copy of v1 and change **the copy**:
 
 ```
-cd /d C:\AskIT\dxc-agentic-ai
+cd C:\AskIT\dxc-agentic-ai
 copy teams\team-x\ADR-001_v1.md teams\team-x\ADR-001_v2.md
 notepad teams\team-x\ADR-001_v2.md
 ```

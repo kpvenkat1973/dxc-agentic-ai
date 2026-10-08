@@ -11,7 +11,7 @@ You built embeddings and an index in Parts A and B. This app wires them to an LL
 
 ## Set up (once, 3 minutes)
 ```
-cd /d C:\AskIT\dxc-agentic-ai
+cd C:\AskIT\dxc-agentic-ai
 python -m pip install -r Day03\Labs\lab02-askit-rag-app\requirements.txt
 cd Day03\Labs\lab02-askit-rag-app
 python -m streamlit run app.py

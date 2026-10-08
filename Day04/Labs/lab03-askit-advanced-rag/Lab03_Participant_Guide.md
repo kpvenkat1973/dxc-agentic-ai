@@ -68,7 +68,7 @@ By the end of this lab you will be able to:
 Open a Command Prompt and run these lines one by one:
 
 ```
-cd /d C:\AskIT\dxc-agentic-ai
+cd C:\AskIT\dxc-agentic-ai
 python -m pip install -r Day04\Labs\lab03-askit-advanced-rag\requirements.txt
 cd Day04\Labs\lab03-askit-advanced-rag
 python check_setup.py
@@ -376,7 +376,7 @@ Rule 6 is one sentence. If removing it changes the answer, you have seen how muc
 In the first Command Prompt location run:
 
 ```
-cd /d C:\AskIT\dxc-agentic-ai
+cd C:\AskIT\dxc-agentic-ai
 pytest Day04\Labs\lab03-askit-advanced-rag
 ```
 

@@ -10,7 +10,7 @@
 
 ## Set up (once, ~5 min)
 ```
-cd /d C:\AskIT\dxc-agentic-ai
+cd C:\AskIT\dxc-agentic-ai
 python -m pip install -r Day04\Labs\lab03-askit-advanced-rag\requirements.txt
 cd Day04\Labs\lab03-askit-advanced-rag
 python check_setup.py

@@ -101,7 +101,7 @@ def test_challenge_3_ask():
 
 
 def test_challenge_3_notes():
-    assert "<fill" not in notes_section("Lab 6A"), "Fill in the Lab 6A lines in submission\\lab06_notes.md"
+    assert "<fill" not in notes_section("Lab 6A"), "NOTES ONLY, your code is fine: open submission\\lab06_notes.md, replace every <fill> in the Lab 6A lines, save (Ctrl+S), run the check again."
 
 
 # ================= LAB 6B =================
@@ -160,7 +160,7 @@ def test_challenge_6_agent_survives_crash(monkeypatch=None):
 
 
 def test_challenge_6_notes():
-    assert "<fill" not in notes_section("Lab 6B"), "Fill in the Lab 6B lines in submission\\lab06_notes.md"
+    assert "<fill" not in notes_section("Lab 6B"), "NOTES ONLY, your code is fine: open submission\\lab06_notes.md, replace every <fill> in the Lab 6B lines, save (Ctrl+S), run the check again."
 
 
 # ================= LAB 6C =================
@@ -184,7 +184,7 @@ def test_challenge_8_stream_answer(capsys=None):
 
 
 def test_challenge_8_notes():
-    assert "<fill" not in notes_section("Lab 6C"), "Fill in the Lab 6C lines in submission\\lab06_notes.md"
+    assert "<fill" not in notes_section("Lab 6C"), "NOTES ONLY, your code is fine: open submission\\lab06_notes.md, replace every <fill> in the Lab 6C lines, save (Ctrl+S), run the check again."
 
 
 def test_stretch_c_stream_tokens():

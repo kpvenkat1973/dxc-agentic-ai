@@ -1,0 +1,222 @@
+RAG PARAMETER DEMO — SINGLE FILE TEST
+=====================================
+
+FILE TO USE:
+rag_all_concepts_single_file.txt
+
+IMPORTANT:
+- Clear the existing KB first.
+- Upload ONLY rag_all_concepts_single_file.txt.
+- Whenever Chunk Size or Overlap changes, RE-INDEX the file.
+- When only Top-K changes, you do NOT need to re-index.
+- Keep "Show retrieved chunks" enabled.
+- Similarity numbers may vary slightly. Focus on which chunk is retrieved and whether the answer is present.
+
+--------------------------------------------------
+TEST 1 — TOP-K
+Purpose: Show that Top-K controls how many candidate chunks reach the LLM.
+--------------------------------------------------
+
+Question:
+	
+
+STEP 1A
+Chunk Size = 300
+Overlap = 0
+Top-K = 1
+Re-index.
+
+Observe:
+- Which chunk is retrieved?
+- Does it contain "Switch to BLR-2"?
+- What answer does the LLM give?
+
+Expected teaching point:
+Top-K = 1 gives only the highest-ranked chunk.
+The highest-ranked chunk may be relevant to the question but may not contain the complete answer.
+
+STEP 1B
+Keep:
+Chunk Size = 300
+Overlap = 0
+
+Change ONLY:
+Top-K = 2
+
+Do NOT re-index.
+
+Ask the SAME question again.
+
+Observe:
+- Two chunks should now be retrieved.
+- One should contain the VPN context.
+- Another should contain "Switch to BLR-2".
+- The LLM can read both chunks and give the complete answer.
+
+TEACH:
+"Retriever decides what evidence the LLM gets to read.
+LLM interprets that evidence and decides what to say."
+
+Also:
+"Highest cosine similarity means most semantically similar chunk.
+It does NOT guarantee that the chunk contains the complete answer."
+
+
+--------------------------------------------------
+TEST 2 — OVERLAP
+Purpose: Show that overlap protects information near chunk boundaries.
+--------------------------------------------------
+
+Use the SAME VPN question:
+My VPN still shows error 809 after the basic checks. What should I do next?
+
+STEP 2A — Baseline
+Chunk Size = 300
+Overlap = 0
+Top-K = 1
+Re-index.
+
+Observe:
+The VPN context and BLR-2 instruction may be split across two chunks.
+
+STEP 2B
+Change ONLY:
+Overlap = 100
+
+Keep:
+Chunk Size = 300
+Top-K = 1
+
+RE-INDEX.
+
+Ask the SAME question.
+
+Observe the retrieved chunk.
+
+Expected:
+The retrieved chunk should now contain BOTH:
+- VPN error 809 / basic-check context
+- "Switch to BLR-2"
+
+TEACH:
+"Overlap repeats some text between neighbouring chunks.
+This helps preserve meaning when important information falls near a chunk boundary."
+
+Key point:
+Without overlap:
+[problem/context] | [answer]
+
+With overlap:
+[problem/context]
+        [context + answer]
+
+
+--------------------------------------------------
+TEST 3 — CHUNK SIZE: SMALL / SUFFICIENT / TOO LARGE
+Purpose: Show that chunk size controls how much information stays together,
+and that very large chunks can become semantically noisy.
+--------------------------------------------------
+
+Use this question:
+My salary is wrong and I need an urgent payroll correction today.
+What correction code should I use?
+
+STEP 3A — Focused chunk
+Chunk Size = 300
+Overlap = 0
+Top-K = 1
+RE-INDEX.
+
+Ask the payroll question.
+
+Observe:
+- Which chunk is retrieved?
+- Does it contain "PAY-FIX-7"?
+- What is the similarity score?
+- What answer does the LLM give?
+
+Expected:
+A relatively focused payroll chunk should contain the specific answer:
+PAY-FIX-7
+
+STEP 3B — Oversized chunk
+Change ONLY:
+Chunk Size = 2000
+
+Keep:
+Overlap = 0
+Top-K = 1
+
+RE-INDEX.
+
+Ask the SAME payroll question again.
+
+Observe:
+- Which chunk now ranks first?
+- Does the retrieved chunk still contain PAY-FIX-7?
+- Did the answer become more generic or less precise?
+- Compare the retrieved chunk and similarity against the 300-character run.
+
+Expected teaching point:
+A very large chunk may contain the correct answer PLUS lots of unrelated content.
+Its embedding becomes less focused.
+A cleaner but incomplete chunk may rank higher.
+
+TEACH:
+"Too small -> related information may get split.
+Good size -> useful context stays together.
+Too large -> unrelated content can dilute semantic meaning."
+
+
+--------------------------------------------------
+FINAL SUMMARY TO TEACH
+--------------------------------------------------
+
+CHUNK SIZE
+= How much information stays together in each chunk.
+
+OVERLAP
+= How much information is repeated between neighbouring chunks.
+
+TOP-K
+= How many of the highest-ranked chunks are passed to the LLM.
+
+COSINE SIMILARITY / SEMANTIC SEARCH
+= Finds and ranks the chunks that are semantically closest to the question.
+
+LLM
+= Reads the retrieved chunks, connects their meaning, and generates the final answer.
+
+Best one-line explanation:
+
+"Semantic search selects the evidence.
+The LLM interprets the evidence."
+
+And:
+
+"Retriever decides WHAT the LLM gets to read.
+LLM decides WHAT TO SAY after reading it."
+
+
+--------------------------------------------------
+RE-INDEX RULE
+--------------------------------------------------
+
+Changing Chunk Size?  YES -> Re-index
+Changing Overlap?     YES -> Re-index
+Changing Top-K?       NO  -> No re-index required
+
+
+--------------------------------------------------
+WHAT NOT TO CONCLUDE
+--------------------------------------------------
+
+Do NOT say:
+- Top-K = 2 is always better.
+- Larger chunks are always better.
+- More overlap is always better.
+- The highest similarity chunk always contains the answer.
+
+Instead say:
+"We tune these parameters to balance retrieval coverage, precision, noise,
+token usage and answer quality."

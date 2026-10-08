@@ -95,6 +95,7 @@ h3{font-size:22px;margin:1.4em 0 .5em}
 .lab li{margin:4px 0}
 .path{font-family:Consolas,"Cascadia Mono",monospace;font-size:15px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
 .openpath{margin-top:14px;font-weight:700}
+.where{background:var(--warn-soft);border:2px solid var(--warn);border-radius:12px;padding:12px 16px;margin:10px 0 14px;font-size:18px}
 .steplist{list-style:none;padding:0;margin:12px 0 0}
 .steplist li{padding:6px 10px;border-radius:8px;margin:4px 0;background:var(--surface2)}
 .steplist li.ok{background:var(--ok-soft)} .steplist li.bad{background:var(--bad-soft)}
@@ -235,9 +236,9 @@ header .bar{max-width:1700px}
   <div class="agenda">
     <div class="ag"><b>9:00</b><span>Recap quiz (AhaSlides) (15 min)</span></div>
     <div class="ag"><b>9:15</b><span>① Agents, ReAct and tool calling (20 min)</span></div>
-    <div class="ag lab"><b>9:35</b><span>🧪 Lab 5A: one tool call, by hand (40 min)</span></div>
+    <div class="ag lab"><b>9:35</b><span>🧪 Lab 5A: basic agent, one tool call by hand (40 min)</span></div>
     <div class="ag"><b>10:15</b><span>② The agent loop and its stop rules (20 min)</span></div>
-    <div class="ag lab"><b>10:35</b><span>🧪 Lab 5B: write the agent loop (40 min)</span></div>
+    <div class="ag lab"><b>10:35</b><span>🧪 Lab 5B: build the agent loop (40 min)</span></div>
     <div class="ag"><b>11:15</b><span>Break</span></div>
     <div class="ag"><b>11:25</b><span>③ Safe tools and Bedrock Converse (20 min)</span></div>
     <div class="ag lab"><b>11:45</b><span>🧪 Lab 5C: ask a human before the agent changes anything (40 min)</span></div>
@@ -253,10 +254,10 @@ header .bar{max-width:1700px}
   <p class="lead">An agent is a model that can <b>ask for tools</b> and keep going until the job is done. The model never runs anything itself: it only asks. <b>Your code</b> runs the tool.</p>
 
   <div data-tabs="c1">
-    <div class="tabs"><button>① Agent = model + tools + loop</button><button>② ReAct: think, act, observe</button><button>③ Tool calling: who does what</button><button>④ The 4 AskIT tools</button></div>
+    <div class="tabs"><button>① Agent = model + tools + loop</button><button>② ReAct: think, act, observe</button><button>③ Tool calling: who does what</button><button>④ The 4 AskIT tools</button><button>⑤ Paths an agent can take</button></div>
 
     <div class="tabpanel">
-      <div class="say"><b>RAG vs agent:</b> RAG always follows the same fixed path (search, then answer). An agent <b>chooses</b> its next step each time, so the path changes with the question.</div>
+      <div class="say"><b>RAG vs agent:</b> RAG alone always follows one fixed path (search, then answer). An agent <b>chooses</b> its next step each time. And RAG does not disappear: inside an agent, <b>RAG is just one of the tools</b> (our <b>search_kb</b>). The agent decides <i>when</i> to use it.</div>
       <div class="compare">
         <div class="card"><b>📚 RAG pipeline</b><br>question → search → answer<br><span class="muted">Same path every time. Predictable. Cannot change anything.</span></div>
         <div class="card"><b>🤖 Agent</b><br>question → <i>decide</i> → tool → <i>decide</i> → tool → answer<br><span class="muted">Path depends on the question. Can act. Needs limits.</span></div>
@@ -321,6 +322,27 @@ header .bar{max-width:1700px}
           <div class="face back"><div>Resets an employee's password. Input: <b>user_id</b>, like EMP-1021. It changes data (mock today).</div></div></div></button>
       </div>
     </div>
+
+    <div class="tabpanel">
+      <div class="say">For every question the agent picks <b>one path</b>. It reads your question and the tool descriptions, then decides. These are the paths. AskIT has 5 of them today.</div>
+      <div class="grid g3">
+        <div class="card"><b>1. Answer from its own knowledge</b> <span class="tag">AskIT: yes</span><br><span class="muted">No tool. General or chat questions, like "Hi" or "What is a VPN?"</span></div>
+        <div class="card"><b>2. Look it up in documents (RAG)</b> <span class="tag">AskIT: search_kb</span><br><span class="muted">"How do I fix VPN error 809?" The answer is written in an article.</span></div>
+        <div class="card"><b>3. Read exact data (database / API)</b> <span class="tag">AskIT: get_ticket</span><br><span class="muted">"What is the status of TKT-0004?" One exact record, no guessing.</span></div>
+        <div class="card"><b>4. Take an action</b> <span class="tag">AskIT: update_ticket, reset_password</span><br><span class="muted">Changes something. Needs a human to approve first (Lab 5C).</span></div>
+        <div class="card"><b>5. Hand over to a human</b> <span class="tag">AskIT: step limit, VIP rule</span><br><span class="muted">Stuck, risky or a VIP. The agent stops and a person takes over.</span></div>
+        <div class="card"><b>6. Search the internet</b> <span class="tag">not in AskIT</span><br><span class="muted">For fresh facts the company documents do not have.</span></div>
+        <div class="card"><b>7. Calculate</b> <span class="tag">not in AskIT</span><br><span class="muted">A calculator or code tool. Models are weak at exact maths.</span></div>
+        <div class="card"><b>8. Ask another agent</b> <span class="tag">not in AskIT</span><br><span class="muted">A specialist agent does part of the job.</span></div>
+        <div class="card"><b>9. Ask the user a question</b> <span class="tag">not in AskIT</span><br><span class="muted">"Which ticket do you mean?" when information is missing.</span></div>
+      </div>
+      <h3>RAG or a database tool? A simple rule</h3>
+      <div class="compare">
+        <div class="card"><b>Need a list, a number or one exact record?</b><br>Use a <b>database tool</b> (a SQL query or an API).<br><span class="muted">"How many Critical tickets are open?" RAG could miss or invent rows.</span></div>
+        <div class="card"><b>Need an explanation or a similar past case?</b><br>Use <b>RAG</b> over text.<br><span class="muted">"How was a similar VPN problem solved?" Put the text of the notes in RAG.</span></div>
+      </div>
+      <p class="muted" style="font-size:15px;margin-bottom:0">A real agent often has <b>both</b> and picks per question. You only attach a database to RAG when the useful content in it is long text (ticket notes, resolutions) that people search by meaning.</p>
+    </div>
   </div>
 
   <h3>Exercise · which tool would the agent pick? <span class="chip b">BASIC</span></h3>
@@ -333,19 +355,22 @@ header .bar{max-width:1700px}
 <!-- ============ LAB 5A ============ -->
 <section data-title="Lab 5A" data-lab="1">
   <div class="lab">
-    <div class="kicker">🧪 Lab 5A · 40 min</div>
-    <h2>One tool call, by hand</h2>
-    <div class="wwho"><div><b>What we do</b>Send one question to the model with the four tools. The model asks for a tool. You write 3 small functions that run it and send the result back.</div><div><b>Why</b>You must see the raw conversation once, with no framework hiding it. This is the Bedrock Converse API.</div><div><b>Outcome / learning</b>You can read a tool request, run the tool safely, and wrap the result so the model understands it.</div><div><b>How</b>Read the tools (5 min) &rarr; TODO-1, 2, 3 in <span class="path">agent.py</span> (20 min) &rarr; run it and read the 4 printed steps (10 min) &rarr; notes (5 min).</div></div>
+    <div class="kicker">🧪 Lab 5A · 40 min · basic agent</div>
+    <div class="where">📂 We are doing <b>Lab 5A</b> now (folder: <span class="path">lab05-askit-agent-loop</span>).<br>In VS Code click <b>File</b> &rarr; <b>Open Folder</b> &rarr; paste <span class="path">C:\AskIT\dxc-agentic-ai\Day05\Labs\lab05-askit-agent-loop</span> &rarr; <b>Select Folder</b>. Then <b>Terminal</b> &rarr; <b>New Terminal</b>: the prompt must end with <b>lab05-askit-agent-loop</b>.</div>
+    <h2>Basic agent: one tool call, by hand (no loop yet)</h2>
+    <div class="wwho"><div><b>What we do</b>Ask the AI one question. The AI replies "please run this tool". Our code runs the tool and sends the answer back. You only run it and watch. There is nothing to write in this lab.</div><div><b>Why</b>The AI cannot run anything by itself. You see this once with your own eyes, so no framework feels like magic later.</div><div><b>Outcome / learning</b>You can say who asks for a tool (the AI), who runs it (our code), and why the ids must match.</div><div><b>How</b>Install and run (10 min) &rarr; guess, then run 3 questions (15 min) &rarr; notes and check (15 min).</div></div>
     <ol>
-      <li><b>Start:</b> <span class="path">cd /d C:\AskIT\dxc-agentic-ai</span> &rarr; <span class="path">.venv\Scripts\activate</span> &rarr; <span class="path">pip install -r Day05\Labs\lab05-askit-agent-loop\requirements.txt</span> &rarr; <span class="path">cd Day05\Labs\lab05-askit-agent-loop</span> <span class="tag">AWS Bedrock (Nova small model) is the default</span></li>
-      <li><b>Read the tools (5 min):</b> open <span class="path">askit_core\tools.py</span> and read <b>TOOL_SPECS</b> at the bottom. This text is all the model knows about each tool.</li>
-      <li><b>Open</b> <span class="path">agent.py</span> and fill <b>TODO-1</b> <span class="path">run_tool</span> (run the tool, never crash) &middot; <b>TODO-2</b> <span class="path">get_tool_requests</span> (find the tool requests in the model's reply) &middot; <b>TODO-3</b> <span class="path">make_tool_result</span> (wrap the result).</li>
-      <li><b>Run it:</b> <span class="path">python run_5a.py</span>. Read the 4 steps it prints. Then ask your own: <span class="path">python run_5a.py "How do I fix VPN error 809?"</span></li>
-      <li><b>Check:</b> <span class="path">python check.py 5a</span> &rarr; aim for 4 passed (the 4th checks your notes). Fill the <b>Lab 5A</b> lines in <span class="path">submission\lab05_notes.md</span>.</li>
-      <li><span class="tag">stretch</span> <b>STRETCH-A:</b> add a 5th tool, <span class="path">get_user</span>. Write its body in <span class="path">agent.py</span>, remove the two <b>#</b> in front of the registration lines, then run <span class="path">python run_5a.py "Who is EMP-1002?"</span></li>
+      <li><b>Install once.</b> In the terminal type <span class="path">python -m pip install -r requirements.txt</span> and press Enter. (It adds the Python packages the lab needs.)</li>
+      <li><b>Run the first question:</b> <span class="path">python run_5a.py</span> The first line must say <b>Model: bedrock</b> (good). <b>Model: offline</b> means no keys: ask the trainer. Then read the 4 printed steps: the question, the tool the AI asked for, what the tool returned, the final answer.</li>
+      <li><b>Guess first, then run.</b> For each question, write your guess in <span class="path">submission\lab05_notes.md</span> (which tool will the AI ask for?). Then run it and compare. (Guessing first is how you learn.)
+        <br><span class="path">python run_5a.py "How do I fix VPN error 809?"</span> &rarr; expect <b>search_kb</b>
+        <br><span class="path">python run_5a.py "Hi"</span> &rarr; expect <b>no tool</b>
+        <br><span class="path">python run_5a.py "Reset the password for EMP-1021"</span> &rarr; look at step 3: <b>the code reset the password and nobody was asked.</b> We fix this in Lab 5C.</li>
+      <li><b>Fill the notes:</b> replace every &lt;fill&gt; in the <b>Lab 5A</b> lines of <span class="path">submission\lab05_notes.md</span> and press Ctrl+S.</li>
+      <li><b>Check:</b> <span class="path">python check.py 5a</span> &rarr; you should see <b>4 passed</b>. If it says "your code is fine, only your notes are missing", finish step 4.</li>
+      <li><span class="tag">stretch</span> <b>STRETCH-A:</b> add a 5th tool, <span class="path">get_user</span>. Steps are in the README and the Hints file.</li>
     </ol>
-    <div class="card"><b>Stuck?</b> Hints and full answers: <span class="path">Day05\Hints\lab05_hints.md</span> &middot; "Model: offline" printed &rarr; your <span class="path">.env</span> has no AWS keys or <b>BEDROCK_SMALL_MODEL_ID</b>: ask the trainer, or add <b>OPENAI_API_KEY=...</b> and <b>ASKIT_MODEL=openai</b> to <span class="path">.env</span> (backup) &middot; Throttling error &rarr; wait 30 s and run again &middot; <b>offline</b> is fine for the TODOs; only the answers are simpler.</div>
-    <div class="openpath">📂 Open in VS Code: <span class="path">C:\AskIT\dxc-agentic-ai\Day05\Labs\lab05-askit-agent-loop\agent.py</span></div>
+    <div class="card"><b>Stuck?</b> The <b>README.md</b> in this folder has every step again, with fixes &middot; Full answers: <span class="path">Day05\Hints\lab05_hints.md</span> &middot; <b>Throttling error</b> &rarr; wait 30 seconds and run again &middot; <b>No module named ...</b> &rarr; do step 1 again &middot; <b>Model: offline</b> is fine for this lab, the answers are just simpler.</div>
     <div class="row"><button class="btn" data-done="lab5a">🏁 I completed Lab 5A: run my checks and push</button></div>
   </div>
 </section>
@@ -405,18 +430,18 @@ header .bar{max-width:1700px}
 <section data-title="Lab 5B" data-lab="1">
   <div class="lab">
     <div class="kicker">🧪 Lab 5B · 40 min</div>
-    <h2>Write the agent loop</h2>
-    <div class="wwho"><div><b>What we do</b>Finish <span class="path">run_agent</span>: ask the model, run its tool, give the result back, repeat. Add the two exits: the model answers, or the step limit hands over to a human.</div><div><b>Why</b>This loop is what every agent framework does inside. Tomorrow LangChain does it for you. Today you own it.</div><div><b>Outcome / learning</b>A working agent that answers two-part questions with several tools, and stops safely when it cannot.</div><div><b>How</b>TODO-4, 5, 6 in <span class="path">run_agent</span> (20 min) &rarr; run three questions (10 min) &rarr; check and notes (10 min).</div></div>
+    <div class="where">📂 We are doing <b>Lab 5B</b> now (folder: <span class="path">lab05-askit-agent-loop</span>).<br>In VS Code click <b>File</b> &rarr; <b>Open Folder</b> &rarr; paste <span class="path">C:\AskIT\dxc-agentic-ai\Day05\Labs\lab05-askit-agent-loop</span> &rarr; <b>Select Folder</b>. Then <b>Terminal</b> &rarr; <b>New Terminal</b>: the prompt must end with <b>lab05-askit-agent-loop</b>.</div>
+    <h2>Build the agent loop</h2>
+    <div class="wwho"><div><b>What we do</b>Write the function <span class="path">run_agent</span>. It asks the AI, runs the tool the AI asked for, gives the answer back, and repeats. It stops when the AI has the answer, or after 6 steps.</div><div><b>Why</b>In 5A you did one round trip. Real questions need several (find the ticket, then search the articles, then answer). Tomorrow LangChain builds this loop for you. Today you build it, so you know what is inside.</div><div><b>Outcome / learning</b>An agent that uses several tools, answers directly when no tool is needed, and stops safely when it cannot finish.</div><div><b>How</b>Write TODO-1 (20 min) &rarr; run 3 questions (10 min) &rarr; notes and check (10 min).</div></div>
     <ol>
-      <li><b>Start:</b> same folder as Lab 5A (venv active): <span class="path">cd /d C:\AskIT\dxc-agentic-ai\Day05\Labs\lab05-askit-agent-loop</span></li>
-      <li><b>In</b> <span class="path">agent.py</span> <b>fill 3 TODOs inside</b> <span class="path">run_agent</span>: <b>TODO-4</b> no tool request means done: save the answer and return &middot; <b>TODO-5</b> run each tool, add the results, go round again (the comments list 4 steps) &middot; <b>TODO-6</b> out of steps: <span class="path">give_up(...)</span>.</li>
-      <li><b>Run the agent:</b> <span class="path">python run_agent.py "Priya left her laptop at the airport (ticket TKT-0046). What should she do and how fast will we respond?"</span> Watch each step print.</li>
-      <li><b>Try two more:</b> <span class="path">python run_agent.py "Hi"</span> (no tool) and <span class="path">python run_agent.py "What is the status of TKT-9999?"</span> (a tool error).</li>
-      <li><b>Check:</b> <span class="path">python check.py 5b</span> &rarr; aim for 4 passed. Fill the <b>Lab 5B</b> lines in <span class="path">submission\lab05_notes.md</span>.</li>
-      <li><span class="tag">stretch</span> Set <span class="path">MAX_STEPS = 2</span> at the top of <span class="path">agent.py</span> and ask the airport question again. What happens? Then set it back to 6.</li>
+      <li><b>Find TODO-1.</b> Open <span class="path">agent.py</span>, press <b>Ctrl+F</b>, type <b>TODO-1</b>, press Enter. You are inside <span class="path">run_agent</span>. The comment lists PART A, B and C.</li>
+      <li><b>Write TODO-1</b> (the only code today in this lab). Two ways: type it by following the comment, or <b>copy the full function</b> from <span class="path">Day05\Hints\lab05_hints.md</span> (section TODO-1), select the old <span class="path">run_agent</span> function in <span class="path">agent.py</span>, delete it and paste. Press Ctrl+S. (Pasting is fine: the point is to read it and see how the loop works.)</li>
+      <li><b>Run the airport question</b> and watch each step print:<br><span class="path">python run_agent.py "Priya left her laptop at the airport (ticket TKT-0046). What should she do and how fast will we respond?"</span></li>
+      <li><b>Run two more:</b><br><span class="path">python run_agent.py "Hi"</span> &rarr; no tool, 1 step<br><span class="path">python run_agent.py "What is the status of TKT-9999?"</span> &rarr; the ticket does not exist, the agent tells you</li>
+      <li><b>Experiment.</b> At the top of <span class="path">agent.py</span> change <span class="path">MAX_STEPS = 6</span> to <span class="path">MAX_STEPS = 2</span>, save, run the airport question again. The agent runs out of steps and hands over to a human (the safety stop). Then change it back to 6.</li>
+      <li><b>Notes and check:</b> fill the <b>Lab 5B</b> lines in <span class="path">submission\lab05_notes.md</span>, save, then <span class="path">python check.py 5b</span> &rarr; <b>4 passed</b>.</li>
     </ol>
-    <div class="card"><b>Stuck?</b> <span class="path">Day05\Hints\lab05_hints.md</span> has hints and full answers &middot; Nothing happens after the first step &rarr; the <span class="path">break</span> line from TODO-5 is still there &middot; Lab 5A TODOs must be done first &middot; Bedrock keys, throttling and offline: same as Lab 5A.</div>
-    <div class="openpath">📂 Open in VS Code: <span class="path">C:\AskIT\dxc-agentic-ai\Day05\Labs\lab05-askit-agent-loop\agent.py</span></div>
+    <div class="card"><b>Stuck?</b> The <b>README.md</b> in this folder has every step &middot; Agent stops after the first step &rarr; the line <span class="path">break</span> is still in your code, delete it &middot; <b>IndentationError</b> &rarr; paste the whole function again, do not change the spaces on the left &middot; Bedrock keys, throttling: same as Lab 5A.</div>
     <div class="row"><button class="btn" data-done="lab5b">🏁 I completed Lab 5B: run my checks and push</button></div>
   </div>
 </section>
@@ -491,19 +516,19 @@ header .bar{max-width:1700px}
 <section data-title="Lab 5C" data-lab="1">
   <div class="lab">
     <div class="kicker">🧪 Lab 5C · 40 min</div>
+    <div class="where">📂 We are doing <b>Lab 5C</b> now (folder: <span class="path">lab05-askit-agent-loop</span>).<br>In VS Code click <b>File</b> &rarr; <b>Open Folder</b> &rarr; paste <span class="path">C:\AskIT\dxc-agentic-ai\Day05\Labs\lab05-askit-agent-loop</span> &rarr; <b>Select Folder</b>. Then <b>Terminal</b> &rarr; <b>New Terminal</b>: the prompt must end with <b>lab05-askit-agent-loop</b>.</div>
     <h2>Ask a human before the agent changes anything</h2>
-    <div class="wwho"><div><b>What we do</b>Add an approval step around the two tools that change data. Then read the raw Converse conversation and note what one question costs.</div><div><b>Why</b>A helpful agent that can reset passwords is also a risk. The check must live in code, where the model cannot skip it.</div><div><b>Outcome / learning</b>An agent that pauses for a human on write tools, runs read tools freely, and a first feel for tokens and cost per question.</div><div><b>How</b>TODO-7 and 8 (15 min) &rarr; run read and write questions (10 min) &rarr; read the raw conversation (10 min) &rarr; notes (5 min).</div></div>
+    <div class="wwho"><div><b>What we do</b>Tell the code which tools change data. For those, the agent must ask a human "Approve?" before running. Then read the raw conversation with the AI and see what one question costs.</div><div><b>Why</b>An agent that can reset passwords is also a risk. In 5A you saw it reset one with nobody asking. The check must be in your code, where the AI cannot skip it. A sentence in the prompt is not enough.</div><div><b>Outcome / learning</b>An agent that pauses for a human on tools that change data, runs read-only tools freely, and you can say what one question costs.</div><div><b>How</b>Write TODO-2 (5 min) &rarr; try write and read questions (15 min) &rarr; read the raw conversation (10 min) &rarr; notes and check (10 min).</div></div>
     <ol>
-      <li><b>Start:</b> same folder, venv active.</li>
-      <li><b>In</b> <span class="path">agent.py</span> <b>fill:</b> <b>TODO-7</b> <span class="path">needs_approval</span> (which tools change data?) &middot; <b>TODO-8</b> <span class="path">run_tool_safely</span> (ask a human first, refuse if the answer is no).</li>
-      <li><b>Try a write tool:</b> <span class="path">python run_agent.py "Reset the password for EMP-1021"</span> and answer <b>y</b>. Run it again and answer <b>n</b>. What did the agent say the second time?</li>
-      <li><b>Try a read tool:</b> <span class="path">python run_agent.py "What is the status of ticket TKT-0004?"</span> It must NOT ask you anything.</li>
-      <li><b>Read the raw conversation:</b> <span class="path">python run_agent.py --raw "What is the status of ticket TKT-0004?"</span> Find the <b>toolUse</b> and the <b>toolResult</b> blocks and check that their ids match.</li>
-      <li><b>Check:</b> <span class="path">python check.py 5c</span> &rarr; aim for 3 passed. Fill the <b>Lab 5C</b> lines in <span class="path">submission\lab05_notes.md</span> (the run prints the tokens and the cost).</li>
-      <li><span class="tag">stretch</span> <b>STRETCH-B:</b> write <span class="path">vip_block</span> (KB-018), then try <span class="path">python run_agent.py "Reset the password for EMP-1001"</span> &middot; or add <b>OPENAI_API_KEY</b> and <b>ASKIT_MODEL=openai</b> to <span class="path">.env</span> and run the same question again: same code, different model.</li>
+      <li><b>Find TODO-2.</b> In <span class="path">agent.py</span> press <b>Ctrl+F</b>, type <b>TODO-2</b>, press Enter. You land on <span class="path">needs_approval</span>.</li>
+      <li><b>Write TODO-2</b> (one line). Replace <span class="path">return False</span> with this line, then Ctrl+S: <span class="path">return name in ("update_ticket", "reset_password")</span> (It says: these two tools change data, so ask a human first.) The function <span class="path">run_tool_safely</span> below it is already built and uses your answer.</li>
+      <li><b>Try a tool that changes data:</b> <span class="path">python run_agent.py "Reset the password for EMP-1021"</span> It asks <b>Approve? [y/N]</b>. Type <b>y</b> and press Enter. Run it again and type <b>n</b>. What did the agent say the second time?</li>
+      <li><b>Try a read-only tool:</b> <span class="path">python run_agent.py "What is the status of ticket TKT-0004?"</span> It must <b>not</b> ask you anything.</li>
+      <li><b>Read the raw conversation:</b> <span class="path">python run_agent.py --raw "What is the status of ticket TKT-0004?"</span> Scroll to <b>RAW CONVERSATION</b>. Find the <b>toolUse</b> and the <b>toolResult</b>. Their ids must be the same.</li>
+      <li><b>Notes and check:</b> fill the <b>Lab 5C</b> lines in <span class="path">submission\lab05_notes.md</span> (the run printed the tokens and the cost), save, then <span class="path">python check.py 5c</span> &rarr; <b>3 passed</b>.</li>
+      <li><span class="tag">stretch</span> <b>STRETCH-B:</b> rule KB-018 says for a VIP the agent may gather information but must hand over before any action. Write <span class="path">vip_block</span> (Hints file, Stretch B), then run <span class="path">python run_agent.py "Reset the password for EMP-1001"</span></li>
     </ol>
-    <div class="card"><b>Stuck?</b> <span class="path">Day05\Hints\lab05_hints.md</span> &middot; It never asks for approval &rarr; <span class="path">run_agent</span> must call <span class="path">run_tool_safely</span> (it does, if TODO-5 was copied exactly) and TODO-7 must return True for the write tools &middot; Typing y does nothing &rarr; press Enter after y.</div>
-    <div class="openpath">📂 Open in VS Code: <span class="path">C:\AskIT\dxc-agentic-ai\Day05\Labs\lab05-askit-agent-loop\agent.py</span></div>
+    <div class="card"><b>Stuck?</b> The <b>README.md</b> in this folder has every step &middot; It never asks for approval &rarr; TODO-2 still says <span class="path">return False</span> or TODO-1 from Lab 5B is not complete &middot; Typing y does nothing &rarr; press Enter after y &middot; Full answer: <span class="path">Day05\Hints\lab05_hints.md</span>.</div>
     <div class="row"><button class="btn" data-done="lab5c">🏁 I completed Lab 5C: run my checks and push</button></div>
   </div>
 </section>
@@ -512,18 +537,20 @@ header .bar{max-width:1700px}
 <section data-title="🚨 Incident" data-lab="1">
   <div class="lab" style="border-color:var(--bad);background:var(--bad-soft)">
     <div class="kicker" style="color:var(--bad)">🚨 Incident of the Day · 12:25 · 10 min</div>
+    <div class="where">📂 We are doing <b>Lab the Incident</b> now (folder: <span class="path">lab05-askit-agent-loop</span>).<br>In VS Code click <b>File</b> &rarr; <b>Open Folder</b> &rarr; paste <span class="path">C:\AskIT\dxc-agentic-ai\Day05\Labs\lab05-askit-agent-loop</span> &rarr; <b>Select Folder</b>. Then <b>Terminal</b> &rarr; <b>New Terminal</b>: the prompt must end with <b>lab05-askit-agent-loop</b>.</div>
     <h2>"AskIT has been working on one ticket for five minutes"</h2>
-    <p class="lead">The Orbit Corp CIO just messaged: <i>"The bill is climbing and the user still has no answer. Find out why. Fix it."</i> First team with the right root cause scores points.</p>
-    <div class="wwho"><div><b>What we do</b>Turn on the incident, reproduce the problem, read the trace, find the root cause, and write a small fix.</div><div><b>Why</b>Agents fail in loops, quietly and expensively. Reading a trace is the skill.</div><div><b>Outcome / learning</b>You name the root cause in one sentence and the agent stops itself early.</div><div><b>How</b>Reproduce (2 min) &rarr; diagnose (3 min) &rarr; fix TODO-9 (5 min) &rarr; confirm.</div></div>
+    <p class="lead">The Orbit Corp CIO just messaged: <i>"The bill is climbing and the user still has no answer. Find out why. Fix it."</i></p>
+    <div class="wwho"><div><b>What we do</b>Switch a bug on. Run the agent and watch it ask the same thing again and again. Find out why. Then switch the fix on (change one word).</div><div><b>Why</b>Agents can get stuck in a loop and quietly burn money. The step limit stops the loop, but only after every step has been paid for.</div><div><b>Outcome / learning</b>You can say in one sentence why the agent kept repeating, and the agent now stops itself after 2 steps.</div><div><b>How</b>Switch bug on and run (5 min) &rarr; write what you saw (2 min) &rarr; switch fix on and run (3 min).</div></div>
     <ol>
-      <li><b>When the trainer says GO:</b> open <span class="path">C:\AskIT\dxc-agentic-ai\.env</span> and add a new line: <span class="path">ASKIT_INCIDENT=loop</span> (save the file).</li>
-      <li><b>Reproduce:</b> in the lab folder run <span class="path">python run_agent.py "What is the status of ticket TKT-0004?"</span> Watch the steps. Count them.</li>
-      <li><b>Diagnose:</b> what does every step have in common? What does the tool keep answering? Write what you saw and the root cause in the <b>Incident</b> lines of <span class="path">submission\lab05_notes.md</span>.</li>
-      <li><b>Fix (TODO-9):</b> write <span class="path">is_repeat</span> in <span class="path">agent.py</span>, then add the 2-line check inside <span class="path">run_agent</span> before the tool runs (the docstring shows the lines). Run the question again: the agent must stop after two steps.</li>
-      <li><b>Clean up:</b> delete the <span class="path">ASKIT_INCIDENT=loop</span> line from <span class="path">.env</span> (or put a # in front).</li>
-      <li><b>Check:</b> <span class="path">python check.py incident</span> &rarr; aim for 3 passed.</li>
+      <li><b>Wait for the trainer to say GO.</b> Then in VS Code click <b>File</b> &rarr; <b>Open File</b>, paste <span class="path">C:\AskIT\dxc-agentic-ai\.env</span> and press Enter. Add a new line at the bottom: <span class="path">ASKIT_INCIDENT=loop</span> and press Ctrl+S. Go back to <span class="path">agent.py</span>.</li>
+      <li><b>Run this and count the steps:</b> <span class="path">python run_agent.py "What is the status of ticket TKT-0004?"</span> You should see the same <span class="path">get_ticket</span> line again and again, then a hand over after 6 steps.<br><b>Answered in 1 or 2 steps with no repeat?</b> Your model was too clever. Add one more line in the same <span class="path">.env</span> file: <span class="path">ASKIT_MODEL=offline</span>, save, and run again.</li>
+      <li><b>Write what you saw</b> in the <b>Incident</b> lines of <span class="path">submission\lab05_notes.md</span>: how many steps? What does the tool keep answering? Why does the agent keep asking again?</li>
+      <li><b>Switch the fix on.</b> In <span class="path">agent.py</span> press Ctrl+F, type <b>STOP_ON_REPEAT</b>, press Enter. Change <b>False</b> to <b>True</b> so the line reads <span class="path">STOP_ON_REPEAT = True</span> and press Ctrl+S. (The agent now remembers each call it made. If it is about to make the exact same call again, it stops and a human takes over.)</li>
+      <li><b>Run the same question again.</b> It must stop after <b>2 steps</b>.</li>
+      <li><b>Clean up.</b> Open <span class="path">.env</span> again and delete the line <span class="path">ASKIT_INCIDENT=loop</span> (and <span class="path">ASKIT_MODEL=offline</span> if you added it). Save.</li>
+      <li><b>Check:</b> <span class="path">python check.py incident</span> &rarr; <b>3 passed</b>.</li>
     </ol>
-    <div class="card"><b>Stuck?</b> <span class="path">Day05\Hints\lab05_hints.md</span> (Incident section) &middot; Think: is a step limit enough? It stopped the loop, but only after 6 expensive steps.</div>
+    <div class="card"><b>Stuck?</b> The <b>README.md</b> in this folder has every step &middot; Think: the step limit also stops the loop. Why is the repeat check better? (It stops after 2 steps, not 6.) &middot; Full answer: <span class="path">Day05\Hints\lab05_hints.md</span> (Incident).</div>
     <div class="row"><button class="btn" data-done="lab5i">🏁 I fixed the incident: run my checks and push</button></div>
   </div>
 </section>

@@ -1,21 +1,24 @@
-"""agent.py  --  the AskIT agent, built step by step today.
+r"""agent.py  --  the AskIT agent. This is the ONLY file you edit in Lab 5.
 
-Open this file in VS Code. It has 4 parts, one per lab slot. Work from top to bottom:
+FIRST: in VS Code click  File > Open Folder  and open this folder:
+    C:\AskIT\dxc-agentic-ai\Day05\Labs\lab05-askit-agent-loop
 
-    Lab 5A  TODO-1, 2, 3   run ONE tool call by hand
-    Lab 5B  TODO-4, 5, 6   the agent LOOP (think -> act -> observe -> repeat)
-    Lab 5C  TODO-7, 8      ask a human before the agent changes anything
-    Incident TODO-9        stop the agent when it repeats itself
+WHERE YOU EDIT  (press Ctrl+F and search for the word shown):
+    Lab 5A    nothing to write. Read 3 small functions, then run run_5a.py
+    Lab 5B    TODO-1   write the agent loop                      (search:  TODO-1)
+    Lab 5C    TODO-2   say which tools need a human's approval   (search:  TODO-2)
+    Incident  change one word, False to True                     (search:  STOP_ON_REPEAT)
 
-Everything NOT marked TODO is already built. Read the comments: they explain each line.
-Each TODO has a short description, a starter, and a hint file:  Day05\\Hints\\lab05_hints.md  (answers are there too).
+Everything else is already built. Parts marked  READ ONLY  are for you to read, not to change.
+Stuck? Open  Day05\Hints\lab05_hints.md . Every TODO there has a full answer you can copy.
 
-The messages use the AWS Bedrock "Converse" format. You will see these three shapes:
+The messages to the AI model use the AWS Bedrock "Converse" format. You will see these three shapes:
     the user says something :  {"role": "user",      "content": [ {"text": "What is ticket TKT-0004?"} ]}
     the model wants a tool  :  {"role": "assistant", "content": [ {"toolUse": {"toolUseId": "a1", "name": "get_ticket", "input": {"ticket_id": "TKT-0004"}}} ]}
     we give the tool result :  {"role": "user",      "content": [ {"toolResult": {"toolUseId": "a1", "content": [ {"json": {...}} ]}} ]}
 """
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -37,15 +40,18 @@ Rules:
 4. If a tool returns an error, tell the user in one sentence.
 5. When you have the answer, reply in 2-3 short sentences."""
 
-MAX_STEPS = 6          # the agent may take at most this many turns. Agents ALWAYS need a stop.
+MAX_STEPS = 6            # the agent may take at most this many turns. Agents ALWAYS need a stop.
+STOP_ON_REPEAT = False      # Incident lab: change False to True. The agent then stops when it repeats the same call.
 
 
 # =============================================================================================
-# SMALL HELPERS (already built)
+# SMALL HELPERS  (READ ONLY)
 # =============================================================================================
 def final_text(response):
     """Join all the text blocks of a model reply into one string."""
-    return "".join(b.get("text", "") for b in response["output"]["message"]["content"]).strip()
+    text = "".join(b.get("text", "") for b in response["output"]["message"]["content"])
+    text = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.S)     # some models print private notes: hide them
+    return text.strip()
 
 
 def short(value, limit=110):
@@ -76,43 +82,52 @@ def give_up(result, reason):
 
 
 # =============================================================================================
-# LAB 5A  -  ONE TOOL CALL, BY HAND
+# LAB 5A  -  ONE TOOL CALL, BY HAND                                  (READ ONLY: nothing to write)
 # =============================================================================================
-def run_tool(name, args):
-    """TODO-1: run the tool the model asked for.
+# The AI model cannot run anything. It can only ASK for a tool. Your code does 3 jobs:
+#   job 1  get_tool_requests : read the model's reply and find which tool it asked for
+#   job 2  run_tool          : run that tool
+#   job 3  make_tool_result  : wrap the tool's answer and send it back to the model
+# Read the 3 functions below (about 5 minutes), then run  python run_5a.py  to watch them work.
 
-    name = the tool's name, e.g. "get_ticket"
-    args = a dict of inputs the model chose, e.g. {"ticket_id": "TKT-0004"}
-    Return the tool's result (a dict). The agent must NEVER crash because the model chose a bad tool or bad inputs:
-      - unknown tool name  -> return {"error": "Unknown tool: <name>"}
-      - the tool raises    -> return {"error": "<what went wrong>"}
+def run_tool(name, args):
+    """JOB 2: run the tool the model asked for and return its result (a dict).
+
+    name = the tool's name, e.g. "get_ticket"        args = the inputs the model chose, e.g. {"ticket_id": "TKT-0004"}
+    The agent must NEVER crash because the model picked a wrong tool or wrong inputs. So we return an error instead.
     """
-    return {"error": "TODO-1 not done yet"}
+    func = TOOLS.get(name)                      # TOOLS is a list of our tools: tool name -> Python function
+    if func is None:                            # the model asked for a tool we do not have
+        return {"error": f"Unknown tool: {name}"}
+    try:
+        return func(**args)                     # run it. **args turns {"ticket_id": "X"} into ticket_id="X"
+    except Exception as e:                      # e.g. the model forgot an input: tell it, do not crash
+        return {"error": f"{type(e).__name__}: {e}"}
 
 
 def get_tool_requests(response):
-    """TODO-2: find the tool requests inside the model's reply. Return a LIST (an empty list when there are none).
+    """JOB 1: find the tool requests inside the model's reply. Returns a LIST (an empty list when there are none).
 
-    The reply looks like:
-      response["output"]["message"]["content"] = [ {"text": "Let me check."},
-                                                   {"toolUse": {"toolUseId": "a1", "name": "get_ticket", "input": {...}}} ]
-    For every block that has a "toolUse" key, add  {"id": <toolUseId>, "name": <name>, "input": <input>}  to the list.
+    The reply is a list of blocks: some are plain text, some are tool requests (they have the key "toolUse").
     """
     blocks = response["output"]["message"]["content"]       # the model's reply is a list of blocks
-    return []
+    requests = []
+    for block in blocks:
+        if "toolUse" in block:                               # this block is a tool request
+            use = block["toolUse"]
+            requests.append({"id": use["toolUseId"], "name": use["name"], "input": use["input"]})
+    return requests
 
 
 def make_tool_result(tool_use_id, result):
-    """TODO-3: wrap a tool's result so the model can read it.
+    """JOB 3: wrap a tool's result so the model can read it.
 
-    Return ONE block shaped like:
-      {"toolResult": {"toolUseId": <tool_use_id>, "content": [ {"json": <result>} ]}}
     The toolUseId must be the SAME id the model sent in its request. That is how the model matches answer to question.
     """
-    return {}
+    return {"toolResult": {"toolUseId": tool_use_id, "content": [{"json": result}]}}
 
 
-# --- STRETCH for Lab 5A: add a 5th tool, get_user ---------------------------------------------
+# --- OPTIONAL STRETCH for Lab 5A: add a 5th tool, get_user -------------------------------------
 def get_user(user_id):
     """STRETCH-A: return {"user_id", "name", "department", "vip"} for an employee (data: load_users()).
     If the user does not exist, return {"error": "User <id> not found."}.
@@ -128,63 +143,7 @@ GET_USER_SPEC = {"toolSpec": {"name": "get_user", "description": "Look up an emp
 
 
 # =============================================================================================
-# LAB 5C  -  ASK A HUMAN BEFORE THE AGENT CHANGES ANYTHING  (defined here because the loop below uses it)
-# =============================================================================================
-def needs_approval(name, args):
-    """TODO-7: should a human approve this tool call first?
-
-    Two tools only READ data: search_kb, get_ticket        -> no approval needed (return False)
-    Two tools CHANGE data:    update_ticket, reset_password -> a human must approve (return True)
-    """
-    return False
-
-
-def ask_human(name, args):
-    """Ask the person at the keyboard to approve an action. Returns True for 'y'."""
-    answer = input(f"   ⚠️  AskIT wants to run {name}({short(args)}). Approve? [y/N] ")
-    return answer.strip().lower() == "y"
-
-
-def vip_block(name, args):
-    """STRETCH-B: KB-018 says: for a VIP user, AskIT may gather information but must hand over to a human
-    before taking any ACTION. Return True when this call must be blocked completely:
-      - the tool changes data (needs_approval says so) AND
-      - the person it is about is a VIP (users.csv column 'vip' == 'yes').
-    For reset_password the person is args["user_id"]. For update_ticket find the ticket's user_id first
-    (data: load_tickets()). Everything else: return False."""
-    return False
-
-
-def run_tool_safely(name, args, approve=None):
-    """TODO-8: run a tool, but ask for approval first when needs_approval() says so.
-
-    1. If needs_approval(name, args): ask   approve(name, args)   (use ask_human when approve is None).
-       If the answer is False, DO NOT run the tool. Return
-       {"error": "A human did not approve this action. Do not retry. Tell the user a human will follow up."}
-    2. Otherwise return run_tool(name, args).
-    STRETCH-B: before step 1, if vip_block(name, args) return an error that says a human must handle VIP users.
-    """
-    return run_tool(name, args)                              # starter: runs everything, no questions asked
-
-
-# =============================================================================================
-# INCIDENT  -  "THE AGENT IS STUCK IN A LOOP"
-# =============================================================================================
-def is_repeat(history, name, args):
-    """TODO-9: has the agent already made EXACTLY this call?
-
-    history = a list of (tool_name, inputs) pairs the agent has already run, e.g. [("get_ticket", {"ticket_id": "TKT-0004"})]
-    Return True if (name, args) is already in the list. Return False for the first time.
-
-    THEN use it: in run_agent, inside `for req in requests:` and BEFORE the line that runs the tool, add
-        if is_repeat(history, req["name"], req["input"]):
-            return give_up(result, "I kept repeating the same action, so a human will take over.")
-    """
-    return False
-
-
-# =============================================================================================
-# LAB 5B  -  THE AGENT LOOP
+# LAB 5B  -  THE AGENT LOOP                                          (you write TODO-1 here)
 # =============================================================================================
 def run_agent(question, call_model=None, max_steps=MAX_STEPS, approve=None):
     """Answer a question by looping:  THINK (ask the model) -> ACT (run its tool) -> OBSERVE (give it the result) -> repeat.
@@ -205,17 +164,80 @@ def run_agent(question, call_model=None, max_steps=MAX_STEPS, approve=None):
         add_usage(result, response)
         requests = get_tool_requests(response)                            # did the model ask for a tool?
 
-        pass   # TODO-4: if `requests` is empty, save final_text(response) in result["answer"], say(...) a line, and return result
-
-        # TODO-5: write these 4 steps, then delete the `break` line below:
-        #   1. messages.append(response["output"]["message"])       remember the model's tool request
-        #   2. blocks = []                                          all tool results go back in ONE user message
-        #   3. for req in requests:                                 (the model may ask for several tools at once)
-        #          history.append((req["name"], req["input"]))      remember the call
+        # ============ TODO-1: write the rest of the loop (3 parts). Full answer: Hints file, TODO-1 ============
+        # PART A. The model asked for NO tool = it already has the answer. Write these 3 lines inside  if not requests:
+        #       result["answer"] = final_text(response)          save the model's text as the answer
+        #       say(result, f"Step {step}: ✅ final answer")      print a line
+        #       return result                                    stop here
+        #
+        # PART B. The model asked for tool(s). Write these steps (after the if), then delete the  break  line below:
+        #   1. messages.append(response["output"]["message"])         remember the model's tool request
+        #   2. blocks = []                                            a list to collect the tool answers
+        #   3. for req in requests:                                   (the model may ask for several tools at once)
+        #          if STOP_ON_REPEAT and is_repeat(history, req["name"], req["input"]):          (used in the Incident)
+        #              return give_up(result, "I kept repeating the same action, so a human will take over.")
+        #          history.append((req["name"], req["input"]))        remember this call
         #          output = run_tool_safely(req["name"], req["input"], approve)     ACT: run the tool
         #          say(result, f"Step {step}: 🔧 {req['name']}({short(req['input'])}) -> {short(output)}")
-        #          blocks.append(make_tool_result(req["id"], output))
-        #   4. messages.append({"role": "user", "content": blocks})   give the results back to the model
-        break   # <- delete this line when TODO-5 is written
+        #          blocks.append(make_tool_result(req["id"], output))   wrap the answer
+        #   4. messages.append({"role": "user", "content": blocks})   send all the answers back to the model
+        break   # <- delete this line when PART A and PART B are written
 
-    return result   # TODO-6: the loop ended without an answer: use give_up(result, "...") instead
+    # PART C. If we get here the loop ran out of steps without an answer. Replace the next line with:
+    #       return give_up(result, f"I could not finish within {max_steps} steps, so a human will take over.")
+    return result
+
+
+# =============================================================================================
+# LAB 5C  -  ASK A HUMAN BEFORE THE AGENT CHANGES ANYTHING          (you write TODO-2 here)
+# =============================================================================================
+def needs_approval(name, args):
+    """TODO-2: should a human approve this tool call first? Return True (yes, ask) or False (no, just run it).
+
+    Two tools only READ data:   search_kb, get_ticket          -> return False
+    Two tools CHANGE data:      update_ticket, reset_password  -> return True
+    Replace the line  return False  with ONE line. Full answer: Hints file, TODO-2.
+    """
+    return False
+
+
+def ask_human(name, args):
+    """READ ONLY. Ask the person at the keyboard to approve an action. Returns True for 'y'."""
+    answer = input(f"   ⚠️  AskIT wants to run {name}({short(args)}). Approve? [y/N] ")
+    return answer.strip().lower() == "y"
+
+
+def vip_block(name, args):
+    """OPTIONAL STRETCH-B: KB-018 says: for a VIP user, AskIT may gather information but must hand over to a human
+    before taking any ACTION. Return True when this call must be blocked completely:
+      - the tool changes data (needs_approval says so) AND
+      - the person it is about is a VIP (users.csv column 'vip' == 'yes').
+    For reset_password the person is args["user_id"]. For update_ticket find the ticket's user_id first
+    (data: load_tickets()). Everything else: return False."""
+    return False
+
+
+def run_tool_safely(name, args, approve=None):
+    """READ ONLY. Run a tool, but ask a human first when needs_approval() says the tool changes data.
+
+    The check lives HERE, in code, between the model's request and the tool. The model cannot skip it.
+    """
+    if vip_block(name, args):                                # STRETCH-B (does nothing until vip_block is written)
+        return {"error": "This user is a VIP. A human must handle this action. Do not retry."}
+    if needs_approval(name, args):                           # a tool that changes data: stop and ask a human
+        approve = approve or ask_human
+        if not approve(name, args):
+            return {"error": "A human did not approve this action. Do not retry. Tell the user a human will follow up."}
+    return run_tool(name, args)                              # approved (or a harmless read tool): run it
+
+
+# =============================================================================================
+# INCIDENT  -  "THE AGENT IS STUCK IN A LOOP"                       (READ ONLY)
+# =============================================================================================
+def is_repeat(history, name, args):
+    """Has the agent already made EXACTLY this call (same tool, same inputs)?
+
+    history = a list of (tool_name, inputs) pairs the agent has already run, e.g. [("get_ticket", {"ticket_id": "TKT-0004"})]
+    The loop in run_agent uses this when  STOP_ON_REPEAT = True  (see the top of this file).
+    """
+    return (name, args) in history                           # same tool AND same inputs = a repeat

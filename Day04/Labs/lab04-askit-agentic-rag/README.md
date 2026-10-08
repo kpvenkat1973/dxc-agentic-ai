@@ -12,7 +12,7 @@ question → ROUTER → retrieve → rerank → CRITIC → not enough? → rewri
 
 ## Setup (2 minutes)
 ```
-cd /d C:\AskIT\dxc-agentic-ai
+cd C:\AskIT\dxc-agentic-ai
 python -m pip install -r Day04\Labs\lab03-askit-advanced-rag\requirements.txt
 cd Day04\Labs\lab04-askit-agentic-rag
 python -m streamlit run app.py

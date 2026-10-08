@@ -95,6 +95,7 @@ h3{font-size:22px;margin:1.4em 0 .5em}
 .lab li{margin:4px 0}
 .path{font-family:Consolas,"Cascadia Mono",monospace;font-size:15px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
 .openpath{margin-top:14px;font-weight:700}
+.where{background:var(--warn-soft);border:2px solid var(--warn);border-radius:12px;padding:12px 16px;margin:10px 0 14px;font-size:18px}
 .steplist{list-style:none;padding:0;margin:12px 0 0}
 .steplist li{padding:6px 10px;border-radius:8px;margin:4px 0;background:var(--surface2)}
 .steplist li.ok{background:var(--ok-soft)} .steplist li.bad{background:var(--bad-soft)}
@@ -303,19 +304,19 @@ header .bar{max-width:1700px}
 <section data-title="Lab 6A" data-lab="1">
   <div class="lab">
     <div class="kicker">🧪 Lab 6A · 40 min</div>
+    <div class="where">📂 We are doing <b>Lab 6A</b> now (folder: <span class="path">lab06-askit-langchain-agent</span>).<br>In VS Code click <b>File</b> &rarr; <b>Open Folder</b> &rarr; paste <span class="path">C:\AskIT\dxc-agentic-ai\Day06\Labs\lab06-askit-langchain-agent</span> &rarr; <b>Select Folder</b>. Then <b>Terminal</b> &rarr; <b>New Terminal</b>: the prompt must end with <b>lab06-askit-langchain-agent</b>.</div>
     <h2>Build the agent with LangChain</h2>
     <div class="wwho"><div><b>What we do</b>Rebuild AskIT with LangChain in three small functions: wrap the tools, build the agent, ask a question.</div><div><b>Why</b>See how much of yesterday's loop disappears, and prove it is the same agent by comparing the tools it uses.</div><div><b>Outcome / learning</b>A working LangChain agent on the small Bedrock Nova model, and a feel for which code you still own.</div><div><b>How</b>Install (5 min) &rarr; TODO-1, 2, 3 in <span class="path">agent6.py</span> (20 min) &rarr; run and compare with Day 5 (10 min) &rarr; notes (5 min).</div></div>
     <ol>
-      <li><b>Start:</b> <span class="path">cd /d C:\AskIT\dxc-agentic-ai</span> &rarr; <span class="path">.venv\Scripts\activate</span> &rarr; <span class="path">pip install -r Day06\Labs\lab06-askit-langchain-agent\requirements.txt</span> (takes a few minutes: do it first) &rarr; <span class="path">cd Day06\Labs\lab06-askit-langchain-agent</span> <span class="tag">AWS Bedrock (Nova small model) is the default</span></li>
+      <li><b>Install once (takes a few minutes, do it first).</b> In the terminal type <span class="path">python -m pip install -r requirements.txt</span> and press Enter. <span class="tag">AWS Bedrock (Nova small model) is the default</span></li>
       <li><b>Open</b> <span class="path">agent6.py</span> and read the top comment. Fill <b>TODO-1</b> <span class="path">make_tools</span> (wrap the four functions) &middot; <b>TODO-2</b> <span class="path">build_agent</span> (one call to create_agent) &middot; <b>TODO-3</b> <span class="path">ask</span> (run the agent, collect the answer and the tools used).</li>
       <li><b>Run it:</b> <span class="path">python run_6a.py</span> (the airport laptop question). Then ask your own: <span class="path">python run_6a.py "How do I fix VPN error 809?"</span></li>
       <li><b>Compare with Day 5:</b> same question, same tools? Open yesterday's <span class="path">Day05\Labs\lab05-askit-agent-loop\agent.py</span> and count the lines of <span class="path">run_agent</span> against your <span class="path">build_agent</span>.</li>
       <li><b>Check:</b> <span class="path">python check.py 6a</span> &rarr; aim for 4 passed. Fill the <b>Lab 6A</b> lines in <span class="path">submission\lab06_notes.md</span>.</li>
       <li><span class="tag">stretch</span> Switch the model without touching <span class="path">agent6.py</span>: add <b>OPENAI_API_KEY=...</b> and <b>ASKIT_MODEL=openai</b> to the course <span class="path">.env</span>, run the same question, and compare the tools used. Remove the line afterwards.</li>
     </ol>
-    <div class="card"><b>Stuck?</b> Hints and full answers: <span class="path">Day06\Hints\lab06_hints.md</span> &middot; "Model: offline" printed &rarr; your <span class="path">.env</span> has no AWS keys or <b>BEDROCK_SMALL_MODEL_ID</b>: ask the trainer, or use the OpenAI backup above (offline is fine for the TODOs) &middot; Throttling error &rarr; wait 30 s and run again &middot; ImportError for langchain &rarr; the <span class="path">pip install</span> line did not finish: run it again.</div>
-    <div class="openpath">📂 Open in VS Code: <span class="path">C:\AskIT\dxc-agentic-ai\Day06\Labs\lab06-askit-langchain-agent\agent6.py</span></div>
-    <div class="row"><button class="btn" data-done="lab6a">🏁 I completed Lab 6A: run my checks and push</button></div>
+    <div class="card"><b>Stuck?</b> The <b>README.md</b> in this folder has every step again &middot; Hints and full answers: <span class="path">Day06\Hints\lab06_hints.md</span> &middot; "Model: offline" printed &rarr; your <span class="path">.env</span> has no AWS keys or <b>BEDROCK_SMALL_MODEL_ID</b>: ask the trainer, or use the OpenAI backup above (offline is fine for the TODOs) &middot; Throttling error &rarr; wait 30 s and run again &middot; ImportError for langchain &rarr; the install line did not finish: run <span class="path">python -m pip install -r requirements.txt</span> again.</div>
+        <div class="row"><button class="btn" data-done="lab6a">🏁 I completed Lab 6A: run my checks and push</button></div>
   </div>
 </section>
 
@@ -380,19 +381,18 @@ header .bar{max-width:1700px}
 <section data-title="Lab 6B" data-lab="1">
   <div class="lab">
     <div class="kicker">🧪 Lab 6B · 40 min</div>
+    <div class="where">📂 We are doing <b>Lab 6B</b> now (folder: <span class="path">lab06-askit-langchain-agent</span>).<br>In VS Code click <b>File</b> &rarr; <b>Open Folder</b> &rarr; paste <span class="path">C:\AskIT\dxc-agentic-ai\Day06\Labs\lab06-askit-langchain-agent</span> &rarr; <b>Select Folder</b>. Then <b>Terminal</b> &rarr; <b>New Terminal</b>: the prompt must end with <b>lab06-askit-langchain-agent</b>.</div>
     <h2>Three guards</h2>
     <div class="wwho"><div><b>What we do</b>Write the logic of three guards: hide emails and phone numbers, stop the agent at its call limit, and survive a crashing tool.</div><div><b>Why</b>Production agents fail in boring ways: leaked personal data, runaway cost, a database that is down. Guards turn those into controlled outcomes.</div><div><b>Outcome / learning</b>An agent that never shows personal data to the model, always stops, and answers politely when a tool is down.</div><div><b>How</b>TODO-4, 5, 6 in <span class="path">agent6.py</span> (20 min) &rarr; see the crash and fix it (10 min) &rarr; check and notes (10 min).</div></div>
     <ol>
-      <li><b>Start:</b> same folder as Lab 6A (venv active): <span class="path">cd /d C:\AskIT\dxc-agentic-ai\Day06\Labs\lab06-askit-langchain-agent</span></li>
-      <li><b>See the crash first:</b> <span class="path">python run_6b.py --down "What is the status of ticket TKT-0004?"</span> The ticket database is "down" and your agent crashes. That is what we fix.</li>
+            <li><b>See the crash first:</b> <span class="path">python run_6b.py --down "What is the status of ticket TKT-0004?"</span> The ticket database is "down" and your agent crashes. That is what we fix.</li>
       <li><b>In</b> <span class="path">agent6.py</span> <b>fill:</b> <b>TODO-4</b> <span class="path">redact_pii</span> (two <span class="path">re.sub</span> calls) &middot; <b>TODO-5</b> <span class="path">over_budget</span> (one comparison) &middot; <b>TODO-6</b> <span class="path">tool_guard</span> (try the tool, catch the error). The three guards are already wired into <span class="path">GUARDS</span>.</li>
       <li><b>Run again:</b> <span class="path">python run_6b.py</span> (the question has an email and a phone number: read the stored question) and <span class="path">python run_6b.py --down "What is the status of ticket TKT-0004?"</span> (a polite answer now).</li>
       <li><b>Check:</b> <span class="path">python check.py 6b</span> &rarr; aim for 7 passed. Fill the <b>Lab 6B</b> lines in <span class="path">submission\lab06_notes.md</span>.</li>
       <li><span class="tag">stretch</span> Set <span class="path">MAX_MODEL_CALLS = 3</span> and run the airport question from Lab 6A: does the agent still finish? What does that tell you about choosing the limit? Then set it back to 6.</li>
     </ol>
     <div class="card"><b>Stuck?</b> <span class="path">Day06\Hints\lab06_hints.md</span> has hints and full answers &middot; Lab 6A TODOs must be done first &middot; <span class="path">--down</span> still crashes &rarr; TODO-6 must wrap <b>handler(request)</b> in try / except &middot; Bedrock keys, throttling and offline: same as Lab 6A.</div>
-    <div class="openpath">📂 Open in VS Code: <span class="path">C:\AskIT\dxc-agentic-ai\Day06\Labs\lab06-askit-langchain-agent\agent6.py</span></div>
-    <div class="row"><button class="btn" data-done="lab6b">🏁 I completed Lab 6B: run my checks and push</button></div>
+        <div class="row"><button class="btn" data-done="lab6b">🏁 I completed Lab 6B: run my checks and push</button></div>
   </div>
 </section>
 
@@ -448,18 +448,17 @@ header .bar{max-width:1700px}
 <section data-title="Lab 6C" data-lab="1">
   <div class="lab">
     <div class="kicker">🧪 Lab 6C · 30 min</div>
+    <div class="where">📂 We are doing <b>Lab 6C</b> now (folder: <span class="path">lab06-askit-langchain-agent</span>).<br>In VS Code click <b>File</b> &rarr; <b>Open Folder</b> &rarr; paste <span class="path">C:\AskIT\dxc-agentic-ai\Day06\Labs\lab06-askit-langchain-agent</span> &rarr; <b>Select Folder</b>. Then <b>Terminal</b> &rarr; <b>New Terminal</b>: the prompt must end with <b>lab06-askit-langchain-agent</b>.</div>
     <h2>Stream the agent's steps</h2>
     <div class="wwho"><div><b>What we do</b>Turn each streamed update into a readable line (TODO-7), then print the lines as they arrive (TODO-8).</div><div><b>Why</b>People tolerate a 10 second wait when they can see progress. Streamed steps also help you debug.</div><div><b>Outcome / learning</b>A live view of the agent: tool requested, tool result, answer. You measure how soon the first line appears.</div><div><b>How</b>TODO-7 and 8 (15 min) &rarr; run it and time it (5 min) &rarr; notes (5 min) &rarr; stretch.</div></div>
     <ol>
-      <li><b>Start:</b> same folder, venv active.</li>
       <li><b>In</b> <span class="path">agent6.py</span> <b>fill:</b> <b>TODO-7</b> <span class="path">describe_step</span> (one update in, a list of lines out) &middot; <b>TODO-8</b> <span class="path">stream_answer</span> (loop over <span class="path">agent.stream</span> and print each line at once).</li>
       <li><b>Run it:</b> <span class="path">python run_6c.py</span> and watch the lines appear. Try <span class="path">python run_6c.py "How do I fix VPN error 809?"</span></li>
       <li><b>Check:</b> <span class="path">python check.py 6c</span> &rarr; aim for 3 passed. Fill the <b>Lab 6C</b> lines in <span class="path">submission\lab06_notes.md</span> (the run prints the total time).</li>
       <li><span class="tag">stretch</span> <b>STRETCH-C:</b> write <span class="path">stream_tokens</span> and run <span class="path">python run_6c.py --tokens</span> to see the answer typed word by word. Check with <span class="path">python check.py stretch</span>.</li>
     </ol>
     <div class="card"><b>Stuck?</b> <span class="path">Day06\Hints\lab06_hints.md</span> &middot; Nothing prints &rarr; <span class="path">describe_step</span> still returns an empty list &middot; Lines appear all at once at the end &rarr; use <span class="path">stream_mode="updates"</span> and <span class="path">flush=True</span> when printing.</div>
-    <div class="openpath">📂 Open in VS Code: <span class="path">C:\AskIT\dxc-agentic-ai\Day06\Labs\lab06-askit-langchain-agent\agent6.py</span></div>
-    <div class="row"><button class="btn" data-done="lab6c">🏁 I completed Lab 6C: run my checks and push</button></div>
+        <div class="row"><button class="btn" data-done="lab6c">🏁 I completed Lab 6C: run my checks and push</button></div>
   </div>
 </section>
 

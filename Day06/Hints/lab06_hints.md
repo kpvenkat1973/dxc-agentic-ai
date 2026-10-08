@@ -1,6 +1,8 @@
 # Lab 6 hints and answers
 
-Try first. Look at the **Hint**. Only then open the **Answer**. All code goes in `agent6.py`. Check yourself with `python check.py 6a` (or 6b, 6c).
+Try first. Look at the **Hint**. Only then use the **Answer**.
+
+**How to paste an answer:** in `agent6.py` press **Ctrl+F**, type the TODO name (for example `TODO-1`) and press Enter. Select the whole old function (from its `def` line to its last `return` line), delete it, paste the answer block from here, and press **Ctrl+S**. Then run `python check.py 6a` (or 6b, 6c).
 
 ---
 ## Lab 6A: build the agent

@@ -29,7 +29,7 @@
 1. Open **Command Prompt** and go to your project folder:
 
    ```
-   cd /d C:\AskIT\dxc-agentic-ai
+   cd C:\AskIT\dxc-agentic-ai
    ```
 
 2. Install the packages (copy and paste, press Enter, wait till it finishes):
