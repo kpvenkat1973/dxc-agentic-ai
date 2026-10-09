@@ -1,11 +1,10 @@
 """check.py  --  run the automatic checks for one part of the lab.
 
 Type ONE of these lines in the VS Code terminal (Terminal > New Terminal), then press Enter:
-    python check.py 6a          Lab 6A   (TODO-1)
-    python check.py 6b          Lab 6B   (TODO-2)
-    python check.py 6c          Lab 6C   (TODO-3)
-    python check.py stretch     the optional stretch challenge
-    python check.py all         everything
+    python check.py 7a          Lab 7A   (TODO-1)
+    python check.py 7b          Lab 7B   (TODO-2)
+    python check.py 7c          Lab 7C   (TODO-3)
+    python check.py all         everything (7a, 7b and 7c)
 
 A check that fails tells you what is wrong. Fix it, run the same line again.
 The "I completed" buttons on the session page run these same checks.
@@ -16,14 +15,13 @@ from pathlib import Path
 import pytest
 
 PARTS = {
-    "6a": "test_6a_",
-    "6b": "test_6b_",
-    "6c": "test_6c_",
-    "stretch": "stretch",
-}
+    "7a": "test_7a_",
+    "7b": "test_7b_",
+    "7c": "test_7c_",
+    }
 part = sys.argv[1].lower() if len(sys.argv) > 1 else "all"
 if part != "all" and part not in PARTS:
-    sys.exit("Use: python check.py 6a | 6b | 6c | stretch | all")
+    sys.exit("Use: python check.py 7a | 7b | 7c | all")
 
 
 class Summary:
@@ -50,9 +48,9 @@ if not summary.failed:
     print(f"RESULT: all {summary.passed} checks passed. Well done!")
 elif all("_notes" in f for f in summary.failed):
     print("RESULT: your code is fine. Only your notes are missing.")
-    print("  Open submission\\lab06_notes.md, replace every <fill> with your answer, save the file (Ctrl+S),")
+    print("  Open submission\\lab07_notes.md, replace every <fill> with your answer, save the file (Ctrl+S),")
     print("  then run the same check line again.")
 else:
     print(f"RESULT: {len(summary.failed)} check(s) failed. Read the message under FAILURES above.")
-    print("  Stuck? Open Day06\\Hints\\lab06_hints.md and find your TODO.")
+    print("  Stuck? Open Day07\\Hints\\lab07_hints.md and find your TODO.")
 sys.exit(code)

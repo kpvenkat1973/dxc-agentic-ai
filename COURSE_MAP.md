@@ -12,7 +12,7 @@ New content appears the morning of each session — run `START_DAY.bat` to get i
 | 4 | Tue 6 Oct | Advanced RAG (filter, hybrid, rerank, guard), agentic RAG with critic, evaluation and security | `Day04\Content` | `Day04\Labs\lab03-askit-advanced-rag`, `lab04-askit-agentic-rag` | Ready |
 | 5 | Wed 7 Oct | Agents, ReAct, tools and function calling | `Day05\Content` | `Day05\Labs\lab05-askit-agent-loop` | Ready |
 | 6 | Thu 8 Oct | LangChain agents, middleware, streaming | `Day06\Content` | `Day06\Labs\lab06-askit-langchain-agent` | Ready |
-| 7 | Fri 9 Oct | Memory, context engineering, LangGraph | `Day07\Content` | `Day07\Labs\lab07-...`, `lab08-...` | Coming |
+| 7 | Fri 9 Oct | Context, compaction and memory | `Day07\Content` | `Day07\Labs\lab07-askit-memory-context` | Ready |
 | 8 | Mon 12 Oct | Multi-agent and human-in-the-loop | `Day08\Content` | `Day08\Labs\lab09-...` | Coming |
 | 9 | Tue 13 Oct | MCP | `Day09\Content` | `Day09\Labs\lab10-...` | Coming |
 | 10 | Wed 14 Oct | Observability, cost, evaluation | `Day10\Content` | `Day10\Labs\lab11-...`, `lab13-...` | Coming |

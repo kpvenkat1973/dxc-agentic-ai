@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6 · LangChain Agents, Middleware & Streaming</title>
+<style>
+
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --surface2:#eef1f7; --ink:#141a2a; --muted:#5a6478; --line:#dde2ec;
+  --accent:#0f7c8c; --accent-soft:#d8f0f3; --warn:#b45309; --warn-soft:#fdecd3;
+  --ok:#157f3b; --ok-soft:#dcf3e4; --bad:#b42318; --bad-soft:#fbe0dd;
+  --basic:#157f3b; --inter:#b45309; --adv:#6d3fc0;
+  --shadow:0 2px 10px rgba(20,26,42,.07);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17;
+  --basic:#4ccf7c; --inter:#f0a44b; --adv:#b494ff; --shadow:none;}}
+:root[data-theme="dark"]{
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17;
+  --basic:#4ccf7c; --inter:#f0a44b; --adv:#b494ff; --shadow:none;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Aptos Narrow","Aptos","Segoe UI",system-ui,-apple-system,sans-serif;font-size:18px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer}
+header{position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar{max-width:1200px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:.2px}
+.brand small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.steps{display:flex;gap:6px;flex-wrap:wrap;flex:1;justify-content:center;align-items:center}
+.step{border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:4px 12px;font-size:14px}
+.step.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.step.lab{border-style:dashed}
+.xp{font-weight:700;background:var(--warn-soft);color:var(--warn);border-radius:999px;padding:4px 12px;font-size:15px;white-space:nowrap}
+.theme{border:1px solid var(--line);background:var(--surface2);border-radius:8px;padding:4px 10px;font-size:14px}
+main{max-width:1200px;margin:0 auto;padding:24px 16px 90px}
+section{display:none;animation:fade .25s ease}
+section.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+h1{font-size:40px;line-height:1.15;margin:.2em 0 .3em}
+h2{font-size:30px;margin:.2em 0 .4em}
+h3{font-size:22px;margin:1.4em 0 .5em}
+.kicker{color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:14px}
+.lead{font-size:21px;color:var(--muted);max-width:820px}
+.chip{display:inline-block;font-size:13px;font-weight:700;border-radius:6px;padding:2px 8px;margin-right:6px;vertical-align:middle;border:1px solid currentColor}
+.chip.b{color:var(--basic)} .chip.i{color:var(--inter)} .chip.a{color:var(--adv)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+/* flip cards */
+.flip{perspective:1000px;min-height:170px;border:0;background:none;padding:0;text-align:left;width:100%}
+.flip .in{position:relative;width:100%;height:100%;min-height:170px;transition:transform .5s;transform-style:preserve-3d}
+.flip.flipped .in{transform:rotateY(180deg)}
+.flip .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;padding:16px;border:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}
+.flip .front{background:var(--surface);box-shadow:var(--shadow)}
+.flip .front b{font-size:21px}
+.flip .front .hint{font-size:13px;color:var(--muted);margin-top:8px}
+.flip .back{background:var(--accent-soft);transform:rotateY(180deg);font-size:16px}
+.big-emoji{font-size:30px;line-height:1}
+/* stepper */
+.timeline{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.tl-item{display:none;gap:14px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:10px;padding:12px 16px}
+.tl-item.show{display:flex;animation:fade .3s}
+.tl-item .yr{font-weight:700;color:var(--accent);min-width:110px}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:9px 18px;font-weight:700}
+.btn.ghost{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+/* quiz */
+.q{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:12px 0}
+.q .qt{font-weight:700;margin-bottom:10px}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--surface2);border-radius:10px;padding:9px 14px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:var(--ok-soft);border-color:var(--ok)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.why{display:none;margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--surface2);font-size:16px}
+.why.show{display:block}
+/* classify */
+.cls{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line)}
+.cls select{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--ink)}
+.cls .res{grid-column:1/-1;font-size:15px;display:none}
+.cls .res.show{display:block}
+/* lab card */
+.lab{border:2px dashed var(--accent);background:var(--accent-soft);border-radius:16px;padding:22px}
+.lab h2{margin-top:0}
+.lab ol{margin:.4em 0 0;padding-left:1.3em}
+.lab li{margin:4px 0}
+.path{font-family:Consolas,"Cascadia Mono",monospace;font-size:15px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+.openpath{margin-top:14px;font-weight:700}
+.where{background:var(--warn-soft);border:2px solid var(--warn);border-radius:12px;padding:12px 16px;margin:10px 0 14px;font-size:18px}
+.steplist{list-style:none;padding:0;margin:12px 0 0}
+.steplist li{padding:6px 10px;border-radius:8px;margin:4px 0;background:var(--surface2)}
+.steplist li.ok{background:var(--ok-soft)} .steplist li.bad{background:var(--bad-soft)}
+.who{font-size:14px;color:var(--muted);white-space:nowrap}
+.tag{font-size:13px;font-weight:700;border-radius:6px;padding:1px 8px;background:var(--surface);border:1px solid var(--line);margin-left:6px}
+/* widgets */
+textarea{width:100%;min-height:110px;font:inherit;font-size:16px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--ink)}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+.stat{background:var(--surface2);border-radius:10px;padding:8px 14px;min-width:130px}
+.stat b{display:block;font-size:26px}
+.slider{display:grid;grid-template-columns:200px 1fr 70px;gap:10px;align-items:center;margin:8px 0}
+.slider input{width:100%}
+.slider output{font-weight:700;text-align:right}
+.ctxbar{display:flex;height:40px;border-radius:10px;overflow:hidden;border:2px solid var(--line);margin-top:12px;background:var(--surface2)}
+.ctxbar div{height:100%;transition:width .25s}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;margin-top:8px}
+.legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;background:var(--c);vertical-align:-1px}
+.alert{margin-top:10px;padding:10px 14px;border-radius:10px;font-weight:700}
+.alert.ok{background:var(--ok-soft);color:var(--ok)} .alert.bad{background:var(--bad-soft);color:var(--bad)}
+.bars{margin-top:12px}
+.pb{display:grid;grid-template-columns:120px 1fr 64px;gap:10px;align-items:center;margin:5px 0;font-size:16px}
+.pb .track{background:var(--surface2);border-radius:6px;height:22px;overflow:hidden}
+.pb .fill{height:100%;background:var(--accent);transition:width .25s}
+.pb.cut{opacity:.35}
+.pb.cut .fill{background:var(--muted)}
+.samples{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+.samples span{background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:2px 10px;font-size:15px}
+.matrix{display:grid;grid-template-columns:120px 1fr 1fr;gap:8px}
+.matrix .hd{font-weight:700;color:var(--muted);display:flex;align-items:center;justify-content:center;text-align:center;font-size:15px}
+.cell{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px;min-height:110px;text-align:left}
+.cell .rv{display:none;font-size:15px;margin-top:6px}
+.cell.open .rv{display:block}
+.cell .t{font-weight:700}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ticket{font-style:italic;background:var(--surface2);border-left:4px solid var(--warn);padding:12px 16px;border-radius:8px}
+table.kv{border-collapse:collapse;width:100%;font-size:16px}
+table.kv td{border-bottom:1px solid var(--line);padding:6px 8px}
+table.kv td:first-child{color:var(--muted);width:40%}
+.agenda{display:grid;gap:6px}
+.ag{display:grid;grid-template-columns:120px 1fr;gap:10px;padding:8px 12px;border-radius:8px;background:var(--surface)}
+.ag.lab{background:var(--accent-soft);border:1px dashed var(--accent)}
+.ag b{font-variant-numeric:tabular-nums}
+.score{font-size:48px;font-weight:800;color:var(--accent)}
+footer.nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line)}
+footer .bar{justify-content:space-between}
+.hidden{display:none!important}
+@media (max-width:700px){
+  body{font-size:16px} h1{font-size:30px} h2{font-size:24px}
+  .brand small{display:none} .steps{order:3;flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding-bottom:4px}
+  .step{white-space:nowrap;flex:none}
+  .compare{grid-template-columns:1fr} .slider{grid-template-columns:1fr 60px} .slider label{grid-column:1/-1}
+  .matrix{grid-template-columns:80px 1fr 1fr} .ag{grid-template-columns:90px 1fr} .pb{grid-template-columns:90px 1fr 54px}
+}
+
+.wwho{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 16px}
+.wwho div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:17px;line-height:1.4}
+.wwho b{display:block;color:var(--accent);font-size:14px;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+@media(max-width:800px){.wwho{grid-template-columns:1fr}}
+/* ---- added for Day 3/4 ---- */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
+.tabs button{border:1px solid var(--line);background:var(--surface2);border-radius:10px 10px 0 0;padding:8px 14px;font-weight:700;font-size:16px}
+.tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tabpanel{display:none;background:var(--surface);border:1px solid var(--line);border-radius:0 12px 12px 12px;padding:16px;box-shadow:var(--shadow)}
+.tabpanel.on{display:block;animation:fade .25s}
+.say{background:var(--accent-soft);border-left:5px solid var(--accent);border-radius:8px;padding:10px 14px;margin:10px 0;font-size:17px}
+.vrow{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;margin:4px 0;font-size:15px}
+.vbars{display:flex;gap:3px;align-items:center;height:64px}
+.vb{flex:1;position:relative;height:100%;background:var(--surface2);border-radius:4px}
+.vb i{position:absolute;left:0;right:0;border-radius:3px}
+.vb span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:11px;color:var(--muted)}
+.simtable{width:100%;border-collapse:collapse;font-size:16px;margin-top:8px}
+.simtable th,.simtable td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+.simtable th{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.5px}
+.simtable tr.top td{background:var(--ok-soft)}
+.num{font-variant-numeric:tabular-nums;font-weight:700}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--surface2);padding:6px 14px;font-weight:700}
+.seg button.on{background:var(--accent);color:#fff}
+select.pick{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);max-width:100%}
+.kw{display:inline-block;font-size:13px;border-radius:6px;padding:1px 7px;background:var(--warn-soft);color:var(--warn);font-weight:700}
+.sm{display:inline-block;font-size:13px;border-radius:6px;padding:1px 7px;background:var(--ok-soft);color:var(--ok);font-weight:700}
+.adr label{display:block;font-weight:700;margin-top:10px}
+.adr textarea{min-height:70px}
+.adr pre{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:12px;white-space:pre-wrap;font-size:14px;max-height:340px;overflow:auto}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.pill{border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:3px 12px;font-size:15px}
+.doc{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;margin:6px 0;display:grid;grid-template-columns:90px 1fr auto;gap:10px;align-items:center;transition:all .3s}
+.doc.rel{border-color:var(--ok);background:var(--ok-soft)}
+.doc.out{opacity:.35}
+.doc b{font-variant-numeric:tabular-nums}
+.node{cursor:pointer}
+@media(max-width:700px){.vrow{grid-template-columns:1fr}.doc{grid-template-columns:70px 1fr}}
+
+/* ===== top navigation (cleaner): brand + XP on row 1, one scrollable step row below ===== */
+header .bar{flex-wrap:wrap;row-gap:8px}
+.brand{margin-right:auto}
+.steps{order:3;flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;gap:8px;padding:2px 0 6px;scrollbar-width:thin}
+.step{flex:none;white-space:nowrap;font-size:16px;padding:6px 14px;border-radius:999px;line-height:1.2}
+.step.lab{padding:6px 14px;border-radius:999px;background:var(--accent-soft);border:1.5px dashed var(--accent);color:var(--ink)}
+.step.lab::before{content:"🧪 "}
+.step.on,.step.lab.on{background:var(--accent);border:1.5px solid var(--accent);color:#fff;font-weight:700}
+.step.seen:not(.on){border-color:var(--accent)}
+.step.seen:not(.on)::after{content:" ✓";color:var(--accent);font-weight:700}
+@media(max-width:700px){.step{font-size:14px;padding:5px 11px}}
+header .bar{max-width:1700px}
+.step{font-size:15px;padding:5px 11px}.step.lab{padding:5px 11px}
+.steps{gap:6px}
+
+
+</style>
+<style>[data-done],#dayEnd{display:none!important}</style></head>
+<body>
+<header><div class="bar">
+  <div class="brand">AskIT Program · Session 6<small>Agentic AI · DevPro Academy</small></div>
+  <nav class="steps" id="steps"></nav>
+  <span class="who" id="who"></span><span class="xp" id="xp">⭐ 0 XP</span>
+  <button class="theme" id="theme" aria-label="Toggle theme">◐</button>
+</div></header>
+
+<main>
+<!-- ============ 0. WELCOME ============ -->
+<section data-title="Welcome">
+  <div class="kicker">Session 6 · LangChain agents, middleware &amp; streaming</div>
+  <h1>Same agent, a fraction of the code, plus guards you can see</h1>
+  <p class="lead">Yesterday you wrote the agent loop yourself, so you know exactly what is inside. Today a framework builds that loop for you. You spend the time on what matters in production: <b>guards</b> (middleware) and <b>visibility</b> (streaming). Then your team defends its design at the <b>Design Review</b>.</p>
+
+  <h3>Where we are, in 3 cards</h3>
+  <div class="grid g3">
+    <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🔁</span><b>Yesterday</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>Four tools, a manual loop, a step limit, approval for write tools and a repeat guard. Bedrock Converse by hand.</div></div></div></button>
+    <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🧰</span><b>Today</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>The <b>same</b> AskIT built with LangChain: <b>create_agent</b>, three middleware guards (hide personal data, cap calls, survive tool crashes) and streaming.</div></div></div></button>
+    <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🏛️</span><b>Review Board 3</b><span class="hint">Click to flip</span></div>
+      <div class="face back"><div>Each team presents its agent design: tools, permissions, failure handling. One decision record (ADR-004) and one tool contract.</div></div></div></button>
+  </div>
+
+  <h3>Today's flow · concept, lab, concept, lab</h3>
+  <div class="agenda">
+    <div class="ag"><b>9:00</b><span>Recap quiz (AhaSlides) (15 min)</span></div>
+    <div class="ag"><b>9:15</b><span>① Why a framework, and what it does for you (20 min)</span></div>
+    <div class="ag lab"><b>9:35</b><span>🧪 Lab 6A: build the agent with LangChain (40 min)</span></div>
+    <div class="ag"><b>10:15</b><span>② Middleware: guards around the model and the tools (20 min)</span></div>
+    <div class="ag lab"><b>10:35</b><span>🧪 Lab 6B: three guards (40 min)</span></div>
+    <div class="ag"><b>11:15</b><span>Break</span></div>
+    <div class="ag"><b>11:25</b><span>③ Streaming, and what AWS logs for you (20 min)</span></div>
+    <div class="ag lab"><b>11:45</b><span>🧪 Lab 6C: stream the agent's steps (30 min)</span></div>
+    <div class="ag"><b>12:15</b><span>🏛️ Review Board 3, Design Review: team prep 10 min · 4 presentations × 5 min · verdicts 10 min</span></div>
+    <div class="ag"><b>12:55</b><span>🏁 Sum-up and Day End</span></div>
+  </div>
+</section>
+
+<!-- ============ 1. WHY A FRAMEWORK ============ -->
+<section data-title="① Why a framework">
+  <div class="kicker">Concept 1 · <span class="chip b">BASIC</span> → <span class="chip i">INTERMEDIATE</span></div>
+  <h2>What LangChain does for you, and what it does not</h2>
+  <p class="lead">A framework does not change how an agent works. It builds the <b>same loop you wrote yesterday</b>, so you can add features faster. You can only trust it because you have seen what is inside.</p>
+
+  <div data-tabs="d1">
+    <div class="tabs"><button>① Yesterday vs today</button><button>② Tools from functions</button><button>③ The agent in four inputs</button></div>
+
+    <div class="tabpanel">
+      <div class="say">Every piece of your Day 5 agent has a LangChain partner. Click a row to see the idea behind it.</div>
+      <table class="simtable" id="mapTbl"><tr><th>Day 5, by hand</th><th>Day 6, LangChain</th></tr>
+        <tr><td>Tool dictionary and tool specs</td><td>Tools made from your functions. Name, docstring and inputs are read for you.</td></tr>
+        <tr><td>provider.py (Bedrock, OpenAI, offline)</td><td>A chat model object. Swap the vendor by swapping that one object.</td></tr>
+        <tr><td>The run_agent loop with a step limit</td><td>create_agent builds the loop (think, act, observe, repeat).</td></tr>
+        <tr><td>run_tool_safely, give_up, is_repeat</td><td>Middleware: small functions that run at fixed moments.</td></tr>
+        <tr><td>print() of every step</td><td>Streaming: each step arrives as it happens.</td></tr>
+        <tr><td>Converse message dictionaries</td><td>Message objects: human, AI (with tool calls), tool.</td></tr></table>
+      <div class="compare" style="margin-top:12px">
+        <div class="card"><b>✅ Use a framework when</b><br>you want standard parts fast (guards, streaming, memory, tracing) and your team already knows it.</div>
+        <div class="card"><b>⚠️ Keep the manual loop in mind when</b><br>something misbehaves. You know what is underneath, so you can debug it.</div>
+      </div>
+    </div>
+
+    <div class="tabpanel">
+      <div class="say">Yesterday you wrote a tool spec for every tool. LangChain <b>reads it from the function</b>.</div>
+      <div class="grid g3">
+        <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🏷️</span><b>The name</b><span class="hint">Click to flip</span></div>
+          <div class="face back"><div>The function name becomes the tool name: <b>get_ticket</b>. Choose clear names.</div></div></div></button>
+        <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">📝</span><b>The docstring</b><span class="hint">Click to flip</span></div>
+          <div class="face back"><div>The text under the function becomes the <b>description</b> the model reads. Same rule as yesterday: good description, right tool.</div></div></div></button>
+        <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🔌</span><b>The inputs</b><span class="hint">Click to flip</span></div>
+          <div class="face back"><div>The function's arguments become the tool's inputs, with their names (and types if given).</div></div></div></button>
+      </div>
+      <p class="muted" style="font-size:15px;margin-bottom:0">Lab 6A TODO-1 is exactly this: wrap four functions so LangChain can read them.</p>
+    </div>
+
+    <div class="tabpanel">
+      <div class="say">Building the agent is one call with four inputs. Everything else you add later plugs into the same call.</div>
+      <div class="grid g2">
+        <div class="card"><b>1. model</b><br><span class="muted">Bedrock Nova (main), OpenAI (backup) or the offline stand-in. Your choice, handed in as one object.</span></div>
+        <div class="card"><b>2. tools</b><br><span class="muted">The four AskIT tools from TODO-1.</span></div>
+        <div class="card"><b>3. system prompt</b><br><span class="muted">The same AskIT job description as yesterday.</span></div>
+        <div class="card"><b>4. middleware</b><br><span class="muted">Empty today in Lab 6A, three guards in Lab 6B.</span></div>
+      </div>
+      <p class="muted" style="font-size:15px;margin-bottom:0">You ask a question with <b>invoke</b>. You get back the whole conversation: the question, the tool requests, the tool results and the final answer.</p>
+    </div>
+  </div>
+
+  <h3>Quick check</h3>
+  <div data-quiz="m1"></div>
+</section>
+
+<!-- ============ LAB 6A ============ -->
+<section data-title="Lab 6A" data-lab="1">
+  <div class="lab">
+    <div class="kicker">🧪 Lab 6A · 40 min</div>
+    <div class="where">📂 We are doing <b>Lab 6A</b> now (folder: <span class="path">lab06-askit-langchain-agent</span>).<br>In VS Code click <b>File</b> &rarr; <b>Open Folder</b> &rarr; paste <span class="path">C:\AskIT\dxc-agentic-ai\Day06\Labs\lab06-askit-langchain-agent</span> &rarr; <b>Select Folder</b>. Then <b>Terminal</b> &rarr; <b>New Terminal</b>: the prompt must end with <b>lab06-askit-langchain-agent</b>.</div>
+    <h2>Build the agent with LangChain</h2>
+    <div class="wwho"><div><b>What we do</b>Rebuild AskIT with LangChain in three small functions: wrap the tools, build the agent, ask a question.</div><div><b>Why</b>See how much of yesterday's loop disappears, and prove it is the same agent by comparing the tools it uses.</div><div><b>Outcome / learning</b>A working LangChain agent on the small Bedrock Nova model, and a feel for which code you still own.</div><div><b>How</b>Install (5 min) &rarr; TODO-1, 2, 3 in <span class="path">agent6.py</span> (20 min) &rarr; run and compare with Day 5 (10 min) &rarr; notes (5 min).</div></div>
+    <ol>
+      <li><b>Install once (takes a few minutes, do it first).</b> In the terminal type <span class="path">python -m pip install -r requirements.txt</span> and press Enter. <span class="tag">AWS Bedrock (Nova small model) is the default</span></li>
+      <li><b>Open</b> <span class="path">agent6.py</span> and read the top comment. Fill <b>TODO-1</b> <span class="path">make_tools</span> (wrap the four functions) &middot; <b>TODO-2</b> <span class="path">build_agent</span> (one call to create_agent) &middot; <b>TODO-3</b> <span class="path">ask</span> (run the agent, collect the answer and the tools used).</li>
+      <li><b>Run it:</b> <span class="path">python run_6a.py</span> (the airport laptop question). Then ask your own: <span class="path">python run_6a.py "How do I fix VPN error 809?"</span></li>
+      <li><b>Compare with Day 5:</b> same question, same tools? Open yesterday's <span class="path">Day05\Labs\lab05-askit-agent-loop\agent.py</span> and count the lines of <span class="path">run_agent</span> against your <span class="path">build_agent</span>.</li>
+      <li><b>Check:</b> <span class="path">python check.py 6a</span> &rarr; aim for 4 passed. Fill the <b>Lab 6A</b> lines in <span class="path">submission\lab06_notes.md</span>.</li>
+      <li><span class="tag">stretch</span> Switch the model without touching <span class="path">agent6.py</span>: add <b>OPENAI_API_KEY=...</b> and <b>ASKIT_MODEL=openai</b> to the course <span class="path">.env</span>, run the same question, and compare the tools used. Remove the line afterwards.</li>
+    </ol>
+    <div class="card"><b>Stuck?</b> The <b>README.md</b> in this folder has every step again &middot; Hints and full answers: <span class="path">Day06\Hints\lab06_hints.md</span> &middot; "Model: offline" printed &rarr; your <span class="path">.env</span> has no AWS keys or <b>BEDROCK_SMALL_MODEL_ID</b>: ask the trainer, or use the OpenAI backup above (offline is fine for the TODOs) &middot; Throttling error &rarr; wait 30 s and run again &middot; ImportError for langchain &rarr; the install line did not finish: run <span class="path">python -m pip install -r requirements.txt</span> again.</div>
+        <div class="row"><button class="btn" data-done="lab6a">🏁 I completed Lab 6A: run my checks and push</button></div>
+  </div>
+</section>
+
+<!-- ============ 2. MIDDLEWARE ============ -->
+<section data-title="② Middleware">
+  <div class="kicker">Concept 2 · <span class="chip i">INTERMEDIATE</span></div>
+  <h2>Middleware: guards that run around the model and the tools</h2>
+  <p class="lead">Yesterday you pasted checks into the loop: the step limit, the repeat guard, error handling. Middleware gives those checks a proper place. You write the check; LangChain decides <b>when</b> it runs.</p>
+
+  <div data-tabs="d2">
+    <div class="tabs"><button>① Where guards run</button><button>② Hide personal data</button><button>③ Cap the calls</button><button>④ Survive a crash</button></div>
+
+    <div class="tabpanel">
+      <div class="say">Two hook points matter today. Click through one full round.</div>
+      <div data-stepper="mw">
+        <div class="timeline">
+          <div class="tl-item"><div class="yr">🛡️ before_model</div><div>Runs <b>just before each model call</b>. It can look at the conversation, change it, or stop the whole run.</div></div>
+          <div class="tl-item"><div class="yr">🧠 Model</div><div>Sees only what the guard let through. Asks for a tool, or answers.</div></div>
+          <div class="tl-item"><div class="yr">🛡️ wrap_tool_call</div><div>Runs <b>around each tool call</b>: your code can catch errors, log, or block the call.</div></div>
+          <div class="tl-item"><div class="yr">🔧 Tool</div><div>The real function runs.</div></div>
+          <div class="tl-item"><div class="yr">🔁 Repeat</div><div>Back to before_model for the next round, until the model answers or a guard stops the run.</div></div>
+        </div>
+        <div class="row"><button class="btn stNext">Next step ▶</button><button class="btn ghost stReset">Reset</button></div>
+      </div>
+      <p class="muted" style="font-size:15px;margin-bottom:0">Three guards today: <b>pii_guard</b> and <b>budget_guard</b> (both before the model) and <b>tool_guard</b> (around tools). You write the logic for each.</p>
+    </div>
+
+    <div class="tabpanel">
+      <div class="say"><b>pii_guard:</b> personal data should not travel to a model if it does not need to. Type something personal, switch the guard on and off.</div>
+      <textarea id="piiIn" style="min-height:70px">Aarav Sharma (aarav.sharma@orbitcorp.example, +91 98765 43210) says ticket TKT-0044 is still open. What is its status?</textarea>
+      <div class="row"><label><input type="checkbox" id="piiOn" checked> pii_guard ON</label></div>
+      <div class="card" style="margin-top:8px"><span class="muted">What the model receives:</span><div id="piiOut" style="font-size:18px;margin-top:4px"></div></div>
+      <p class="muted" style="font-size:15px;margin-bottom:0">Ticket and employee ids stay: the agent needs them. This is a simple pattern match: real systems add more patterns and a review.</p>
+    </div>
+
+    <div class="tabpanel">
+      <div class="say"><b>budget_guard:</b> yesterday's step limit, now as middleware. When the limit is hit it adds a handover message and ends the run.</div>
+      <div class="slider"><label>Max model calls</label><input type="range" id="bgL" min="2" max="10" value="6"><output id="oBgL"></output></div>
+      <div class="stats">
+        <div class="stat"><span class="muted">Model calls made by a stuck agent</span><b id="bgN">0</b></div>
+        <div class="stat"><span class="muted">Input tokens paid for (illustrative)</span><b id="bgT">0</b></div>
+      </div>
+      <div class="alert bad" id="bgMsg" style="margin-top:10px"></div>
+    </div>
+
+    <div class="tabpanel">
+      <div class="say"><b>tool_guard:</b> a tool crashes (the ticket database is down). Compare the two outcomes.</div>
+      <div class="row" style="margin-top:0"><label><input type="checkbox" id="tgOn" checked> tool_guard ON</label></div>
+      <div id="tgOut" style="margin-top:8px"></div>
+      <p class="muted" style="font-size:15px;margin-bottom:0">Same idea as Day 5's <span class="path">run_tool</span>: an error becomes information, not a crash.</p>
+    </div>
+  </div>
+
+  <h3>Exercise · which guard fixes which problem? <span class="chip i">INTERMEDIATE</span></h3>
+  <div class="card" data-classify="mw"></div>
+
+  <h3>Quick check</h3>
+  <div data-quiz="m2"></div>
+</section>
+
+<!-- ============ LAB 6B ============ -->
+<section data-title="Lab 6B" data-lab="1">
+  <div class="lab">
+    <div class="kicker">🧪 Lab 6B · 40 min</div>
+    <div class="where">📂 We are doing <b>Lab 6B</b> now (folder: <span class="path">lab06-askit-langchain-agent</span>).<br>In VS Code click <b>File</b> &rarr; <b>Open Folder</b> &rarr; paste <span class="path">C:\AskIT\dxc-agentic-ai\Day06\Labs\lab06-askit-langchain-agent</span> &rarr; <b>Select Folder</b>. Then <b>Terminal</b> &rarr; <b>New Terminal</b>: the prompt must end with <b>lab06-askit-langchain-agent</b>.</div>
+    <h2>Three guards</h2>
+    <div class="wwho"><div><b>What we do</b>Write the logic of three guards: hide emails and phone numbers, stop the agent at its call limit, and survive a crashing tool.</div><div><b>Why</b>Production agents fail in boring ways: leaked personal data, runaway cost, a database that is down. Guards turn those into controlled outcomes.</div><div><b>Outcome / learning</b>An agent that never shows personal data to the model, always stops, and answers politely when a tool is down.</div><div><b>How</b>TODO-4, 5, 6 in <span class="path">agent6.py</span> (20 min) &rarr; see the crash and fix it (10 min) &rarr; check and notes (10 min).</div></div>
+    <ol>
+            <li><b>See the crash first:</b> <span class="path">python run_6b.py --down "What is the status of ticket TKT-0004?"</span> The ticket database is "down" and your agent crashes. That is what we fix.</li>
+      <li><b>In</b> <span class="path">agent6.py</span> <b>fill:</b> <b>TODO-4</b> <span class="path">redact_pii</span> (two <span class="path">re.sub</span> calls) &middot; <b>TODO-5</b> <span class="path">over_budget</span> (one comparison) &middot; <b>TODO-6</b> <span class="path">tool_guard</span> (try the tool, catch the error). The three guards are already wired into <span class="path">GUARDS</span>.</li>
+      <li><b>Run again:</b> <span class="path">python run_6b.py</span> (the question has an email and a phone number: read the stored question) and <span class="path">python run_6b.py --down "What is the status of ticket TKT-0004?"</span> (a polite answer now).</li>
+      <li><b>Check:</b> <span class="path">python check.py 6b</span> &rarr; aim for 7 passed. Fill the <b>Lab 6B</b> lines in <span class="path">submission\lab06_notes.md</span>.</li>
+      <li><span class="tag">stretch</span> Set <span class="path">MAX_MODEL_CALLS = 3</span> and run the airport question from Lab 6A: does the agent still finish? What does that tell you about choosing the limit? Then set it back to 6.</li>
+    </ol>
+    <div class="card"><b>Stuck?</b> <span class="path">Day06\Hints\lab06_hints.md</span> has hints and full answers &middot; Lab 6A TODOs must be done first &middot; <span class="path">--down</span> still crashes &rarr; TODO-6 must wrap <b>handler(request)</b> in try / except &middot; Bedrock keys, throttling and offline: same as Lab 6A.</div>
+        <div class="row"><button class="btn" data-done="lab6b">🏁 I completed Lab 6B: run my checks and push</button></div>
+  </div>
+</section>
+
+<!-- ============ 3. STREAMING + LOGGING ============ -->
+<section data-title="③ Streaming &amp; logs">
+  <div class="kicker">Concept 3 · <span class="chip i">INTERMEDIATE</span></div>
+  <h2>Streaming, and what AWS logs for you</h2>
+  <p class="lead">An agent can take ten seconds and several steps. A user staring at a blank screen assumes it is broken. <b>Streaming</b> shows each step as it happens.</p>
+
+  <div data-tabs="d3">
+    <div class="tabs"><button>① Waiting vs watching</button><button>② Two stream modes</button><button>③ AWS: invocation logging (DEMO)</button></div>
+
+    <div class="tabpanel">
+      <div class="say">Same agent, same total time (6 seconds, compressed). Press <b>Run both</b>.</div>
+      <div class="row" style="margin-top:0"><button class="btn" id="stGo">Run both ▶</button><button class="btn ghost" id="stReset">Reset</button></div>
+      <div class="compare" style="margin-top:10px">
+        <div class="card"><b>⏳ invoke: wait for everything</b><div id="stL" style="min-height:130px;margin-top:6px" class="muted">Waiting...</div></div>
+        <div class="card"><b>👀 stream: watch each step</b><div id="stR" style="min-height:130px;margin-top:6px" class="muted">Waiting...</div></div>
+      </div>
+      <div class="stats"><div class="stat"><span class="muted">First sign of life, invoke</span><b id="stT1">-</b></div><div class="stat"><span class="muted">First sign of life, stream</span><b id="stT2">-</b></div></div>
+    </div>
+
+    <div class="tabpanel">
+      <div class="say">LangChain offers more than one view of the same run. You use two.</div>
+      <div class="grid g2">
+        <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">🪜</span><b>updates</b><span class="hint">Click to flip</span></div>
+          <div class="face back"><div>One piece per <b>agent step</b>: "the model asked for get_ticket", "the tool returned this", "the answer". Lab 6C TODO-7 and 8.</div></div></div></button>
+        <button class="flip"><div class="in"><div class="face front"><span class="big-emoji">💬</span><b>messages</b><span class="hint">Click to flip</span></div>
+          <div class="face back"><div>One piece per <b>word</b> of the model's text, like a chat window typing. Lab 6C stretch.</div></div></div></button>
+      </div>
+      <p class="muted" style="font-size:15px;margin-bottom:0">Steps help while tools run. Words help while the final answer is written. Real products often show both.</p>
+    </div>
+
+    <div class="tabpanel">
+      <div class="say"><b>Trainer demo.</b> Your accounts are Bedrock-only, so the trainer shows this in the AWS console. Streaming shows <i>you</i> the run; logging records it for <i>operations</i>.</div>
+      <div data-stepper="log">
+        <div class="timeline">
+          <div class="tl-item"><div class="yr">⚙️ Turn on</div><div><b>Model invocation logging</b> is a Bedrock setting. You choose where records go: <b>CloudWatch Logs</b>, an <b>S3</b> bucket, or both.</div></div>
+          <div class="tl-item"><div class="yr">🧾 What is recorded</div><div>Each model call: which model, when, how many input and output tokens, how long it took, and (if you enable it) the prompt and the response.</div></div>
+          <div class="tl-item"><div class="yr">🔎 What you do with it</div><div>Query the logs: calls per hour, tokens per team, the slowest calls. That is how you find a looping agent after the fact.</div></div>
+          <div class="tl-item"><div class="yr">🔒 Be careful</div><div>Prompts may contain personal data. Decide who can read the logs and how long they are kept. This is why the pii_guard matters.</div></div>
+        </div>
+        <div class="row"><button class="btn stNext">Next step ▶</button><button class="btn ghost stReset">Reset</button></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Quick check</h3>
+  <div data-quiz="m3"></div>
+</section>
+
+<!-- ============ LAB 6C ============ -->
+<section data-title="Lab 6C" data-lab="1">
+  <div class="lab">
+    <div class="kicker">🧪 Lab 6C · 30 min</div>
+    <div class="where">📂 We are doing <b>Lab 6C</b> now (folder: <span class="path">lab06-askit-langchain-agent</span>).<br>In VS Code click <b>File</b> &rarr; <b>Open Folder</b> &rarr; paste <span class="path">C:\AskIT\dxc-agentic-ai\Day06\Labs\lab06-askit-langchain-agent</span> &rarr; <b>Select Folder</b>. Then <b>Terminal</b> &rarr; <b>New Terminal</b>: the prompt must end with <b>lab06-askit-langchain-agent</b>.</div>
+    <h2>Stream the agent's steps</h2>
+    <div class="wwho"><div><b>What we do</b>Turn each streamed update into a readable line (TODO-7), then print the lines as they arrive (TODO-8).</div><div><b>Why</b>People tolerate a 10 second wait when they can see progress. Streamed steps also help you debug.</div><div><b>Outcome / learning</b>A live view of the agent: tool requested, tool result, answer. You measure how soon the first line appears.</div><div><b>How</b>TODO-7 and 8 (15 min) &rarr; run it and time it (5 min) &rarr; notes (5 min) &rarr; stretch.</div></div>
+    <ol>
+      <li><b>In</b> <span class="path">agent6.py</span> <b>fill:</b> <b>TODO-7</b> <span class="path">describe_step</span> (one update in, a list of lines out) &middot; <b>TODO-8</b> <span class="path">stream_answer</span> (loop over <span class="path">agent.stream</span> and print each line at once).</li>
+      <li><b>Run it:</b> <span class="path">python run_6c.py</span> and watch the lines appear. Try <span class="path">python run_6c.py "How do I fix VPN error 809?"</span></li>
+      <li><b>Check:</b> <span class="path">python check.py 6c</span> &rarr; aim for 3 passed. Fill the <b>Lab 6C</b> lines in <span class="path">submission\lab06_notes.md</span> (the run prints the total time).</li>
+      <li><span class="tag">stretch</span> <b>STRETCH-C:</b> write <span class="path">stream_tokens</span> and run <span class="path">python run_6c.py --tokens</span> to see the answer typed word by word. Check with <span class="path">python check.py stretch</span>.</li>
+    </ol>
+    <div class="card"><b>Stuck?</b> <span class="path">Day06\Hints\lab06_hints.md</span> &middot; Nothing prints &rarr; <span class="path">describe_step</span> still returns an empty list &middot; Lines appear all at once at the end &rarr; use <span class="path">stream_mode="updates"</span> and <span class="path">flush=True</span> when printing.</div>
+        <div class="row"><button class="btn" data-done="lab6c">🏁 I completed Lab 6C: run my checks and push</button></div>
+  </div>
+</section>
+
+<!-- ============ DESIGN REVIEW ============ -->
+<section data-title="🏛️ Review Board 3">
+  <div class="kicker">Review Board 3 · Design Review · 12:15</div>
+  <h2>ADR-004: is this agent safe to build on? Plus the tool contract</h2>
+  <p class="lead">Team prep <b>10 minutes</b>, then each team presents <b>4 minutes + 1 minute questions</b>. Use what you ran today and yesterday: steps, guards, failures. Then the board gives its verdict.</p>
+  <div class="grid g2">
+    <div class="card"><h3 style="margin-top:0">What the board expects</h3>
+      <b>ADR-004:</b> the agent design you choose (manual loop or framework), the guards you rely on, and what happens when things fail.<br><br>
+      <b>Tool contract:</b> one page for <b>one tool</b>: purpose, inputs, output, read or write, who approves, what it does when it fails.<br><br>
+      <b>Must include:</b> your evidence from Labs 5 and 6 · one risk and its control · one metric to watch in production (for example steps or handoffs per question).</div>
+    <div class="card"><h3 style="margin-top:0">Board verdict</h3>
+      ✅ <b>Approved</b><br>🟡 <b>Approved with conditions</b> (fix before the next board)<br>🔁 <b>Re-present</b> next board
+      <p class="muted">Reviewers: 2 people from other teams. Hard questions to ask: "What happens when get_ticket is down?" "Who approves a password reset for a VIP, and where is that enforced?" "How would you know an agent started looping in production?"</p></div>
+  </div>
+  <h3>ADR builder</h3>
+  <div class="card" data-adr="adr004"></div>
+  <h3>Tool contract builder (one tool)</h3>
+  <div class="card" data-adr="toolcontract"></div>
+  <div class="card" style="text-align:center;margin-top:14px">
+    <div class="muted">Presenter timer</div><div class="score" id="tmr">4:00</div>
+    <div class="row" style="justify-content:center"><button class="btn" id="tmrGo">▶ Start</button><button class="btn ghost" id="tmrReset">Reset</button></div>
+  </div>
+</section>
+
+<!-- ============ BOSS QUIZ ============ -->
+<section data-title="🏆 Boss Quiz">
+  <div class="kicker">Boss Quiz · Basic → Advanced</div>
+  <h2>12 questions. How far can you go?</h2>
+  <p class="lead">Basic 5 · Intermediate 10 · Advanced 15 XP.</p>
+  <div data-quiz="boss"></div>
+  <div class="card" style="text-align:center;margin-top:16px">
+    <div class="muted">Boss Quiz score</div><div class="score" id="bossScore">0 / 12</div>
+    <div id="bossBadge" class="muted">Answer all questions to earn your badge.</div>
+  </div>
+</section>
+
+<!-- ============ WRAP ============ -->
+<section data-title="Sum-up">
+  <div class="kicker">Sum-up</div>
+  <h2>What we built today</h2>
+  <div class="grid g3">
+    <div class="card"><b>The same agent, built by a framework</b><br>Tools from functions, one create_agent call, the loop is no longer yours to maintain.</div>
+    <div class="card"><b>Guards in the right place</b><br>Hide personal data, cap the calls, survive tool crashes: all as middleware.</div>
+    <div class="card"><b>Visible and reviewable</b><br>Streaming shows the steps. The Design Review (ADR-004 and a tool contract) shows your reasoning.</div>
+  </div>
+
+  <h3>Coming next · Session 7 (Friday)</h3>
+  <div class="card">AskIT forgets everything between questions. Next: <b>memory</b> and <b>context engineering</b> (what to keep, what to summarise, what to drop), then <b>LangGraph</b>, the library underneath create_agent, for agents with explicit steps. Expect a second incident and a client curveball from the Orbit Corp CIO.</div>
+
+  <h3>Exit ticket (saved with your Day End)</h3>
+  <div class="grid g3">
+    <div class="card">💡 One thing that <b>surprised</b> you today<textarea class="et" data-k="surprised" style="min-height:80px;margin-top:8px"></textarea></div>
+    <div class="card">❓ One thing still <b>unclear</b><textarea class="et" data-k="unclear" style="min-height:80px;margin-top:8px"></textarea></div>
+    <div class="card">🎯 Confidence today (1 = lost, 5 = could teach it)<div class="row" id="conf"></div></div>
+  </div>
+
+  <h3>🏁 Day End: do this before you leave</h3>
+  <div class="lab">
+    <p>One click: saves your XP, quiz answers, ADR and exit ticket, and <b>pushes everything to your GitHub fork</b>. Lab results come from the "I completed" buttons. You can click again if you finish more later.</p>
+    <button class="btn" id="dayEnd">🏁 Day End · Save &amp; Push</button>
+    <ul class="steplist" id="deOut"></ul>
+    <p class="muted" id="deHelp" style="display:none">Page not opened via <b>START_DAY.bat</b>? Your file was downloaded instead. Now double-click <span class="path">C:\AskIT\dxc-agentic-ai\DAY_END.bat</span>.</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="nav"><div class="bar">
+  <button class="btn ghost" id="prev">◀ Back</button>
+  <span class="muted" id="where"></span>
+  <button class="btn" id="next">Next ▶</button>
+</div></footer>
+
+<script>
+const SESSION="S06", PFX="s6_";
+const Q={
+ "m1": [
+  {
+   "l": "b",
+   "q": "What does tool(search_kb) do?",
+   "o": [
+    "Turns a Python function into a LangChain tool",
+    "Runs the function once in most cases for every user",
+    "Deletes the function",
+    "Sends it to AWS"
+   ],
+   "a": 0,
+   "w": "It wraps the function. The name, docstring and inputs are read for the model."
+  },
+  {
+   "l": "i",
+   "q": "Which part of a function does the model read to choose a tool?",
+   "o": [
+    "Its name and docstring",
+    "Its line count",
+    "The file name it lives in",
+    "The Python version"
+   ],
+   "a": 0,
+   "w": "The name and the docstring become the tool name and description."
+  },
+  {
+   "l": "a",
+   "q": "What does agent.invoke(...) return?",
+   "o": [
+    "The whole conversation, including tool calls and the answer",
+    "Only the final text at all times every time on its own in most cases",
+    "Only the list of tools used",
+    "Nothing, it prints"
+   ],
+   "a": 0,
+   "w": "result['messages'] holds every message. The last one is the answer."
+  }
+ ],
+ "m2": [
+  {
+   "l": "b",
+   "q": "When does a before_model guard run?",
+   "o": [
+    "Just before each model call",
+    "Only once at startup for every user",
+    "After the final answer",
+    "Only when a tool fails"
+   ],
+   "a": 0,
+   "w": "Before every model call, so it can change or stop the run."
+  },
+  {
+   "l": "i",
+   "q": "Why hide emails and phone numbers before the model call?",
+   "o": [
+    "Personal data should not travel to the model needlessly",
+    "Models cannot read digits at all times every time on its own",
+    "It makes answers longer",
+    "Bedrock refuses emails"
+   ],
+   "a": 0,
+   "w": "Send the model only what it needs. Ids stay because the agent needs them."
+  },
+  {
+   "l": "a",
+   "q": "Which hook catches a crashing tool?",
+   "o": [
+    "wrap_tool_call",
+    "before_model",
+    "A longer system prompt",
+    "A lower temperature"
+   ],
+   "a": 0,
+   "w": "wrap_tool_call surrounds each tool call, so a try/except there catches the crash."
+  }
+ ],
+ "m3": [
+  {
+   "l": "b",
+   "q": "What does streaming give the user?",
+   "o": [
+    "Each step as it happens",
+    "A cheaper model in most cases",
+    "Fewer tokens",
+    "A longer answer"
+   ],
+   "a": 0,
+   "w": "Progress is visible instead of a blank screen."
+  },
+  {
+   "l": "i",
+   "q": "Which stream mode gives one piece per agent step?",
+   "o": [
+    "updates",
+    "messages",
+    "values only",
+    "none"
+   ],
+   "a": 0,
+   "w": "updates = per step. messages = per word."
+  },
+  {
+   "l": "a",
+   "q": "What does Bedrock model invocation logging record?",
+   "o": [
+    "Model calls: tokens, timing, optionally prompts",
+    "Only the AWS bill for every user at all times every time",
+    "Only failed logins",
+    "Nothing until you code it"
+   ],
+   "a": 0,
+   "w": "It writes call records to CloudWatch Logs and/or S3. Prompts may hold personal data, so control access."
+  }
+ ],
+ "boss": [
+  {
+   "l": "b",
+   "q": "What does create_agent build for you?",
+   "o": [
+    "The think, act, observe loop",
+    "A new language model on its own",
+    "A vector database",
+    "A web page"
+   ],
+   "a": 0,
+   "w": "The loop you hand-wrote on Day 5."
+  },
+  {
+   "l": "b",
+   "q": "Which input is NOT passed to create_agent today?",
+   "o": [
+    "A vector index",
+    "The model",
+    "The tools",
+    "The system prompt"
+   ],
+   "a": 0,
+   "w": "Model, tools, system prompt and middleware are the four inputs."
+  },
+  {
+   "l": "b",
+   "q": "What is middleware?",
+   "o": [
+    "Small functions that run at fixed moments",
+    "A kind of database in most cases for every user",
+    "A cloud region",
+    "A model size"
+   ],
+   "a": 0,
+   "w": "You write the logic, LangChain decides when it runs."
+  },
+  {
+   "l": "b",
+   "q": "Why stream an agent's work?",
+   "o": [
+    "Users see progress, not a blank screen",
+    "It lowers the bill at all times every time",
+    "It removes tool calls",
+    "It hides errors"
+   ],
+   "a": 0,
+   "w": "A visible step feels alive and is easier to trust."
+  },
+  {
+   "l": "i",
+   "q": "budget_guard returns jump_to end. What happens?",
+   "o": [
+    "The run stops with the handover message",
+    "The model is called twice on its own in most cases",
+    "The tool runs again",
+    "The guard is ignored"
+   ],
+   "a": 0,
+   "w": "No more model calls: the agent ends at once."
+  },
+  {
+   "l": "i",
+   "q": "Where do you enforce 'never print raw phone numbers to the model'?",
+   "o": [
+    "In a before_model guard",
+    "In a tool docstring only",
+    "In the user's message",
+    "In the AWS bill"
+   ],
+   "a": 0,
+   "w": "Code that runs before every model call enforces it. A prompt only asks."
+  },
+  {
+   "l": "i",
+   "q": "Without tool_guard, a tool raises 'database down'. What happens?",
+   "o": [
+    "The exception stops the agent",
+    "The model fixes the database for every user",
+    "The tool retries forever",
+    "Nothing"
+   ],
+   "a": 0,
+   "w": "An unhandled exception propagates. tool_guard turns it into a message the model can explain."
+  },
+  {
+   "l": "i",
+   "q": "Which is the right order of the pieces in one agent round?",
+   "o": [
+    "before_model, model, wrap_tool_call, tool",
+    "tool, model, before_model at all times every time",
+    "model, tool, before_model",
+    "wrap_tool_call, model"
+   ],
+   "a": 0,
+   "w": "Guard, think, guarded tool call, real tool, then repeat."
+  },
+  {
+   "l": "a",
+   "q": "An agent loops. Which TWO controls stop it, one in each tool of the course?",
+   "o": [
+    "Day 5 step limit and Day 6 budget_guard",
+    "Higher temperature and more tools on its own",
+    "A bigger model and a longer prompt",
+    "Streaming and logging"
+   ],
+   "a": 0,
+   "w": "Same control, two forms: a MAX_STEPS check by hand, a before_model guard in LangChain."
+  },
+  {
+   "l": "a",
+   "q": "In the board, what must a tool contract state?",
+   "o": [
+    "Purpose, inputs, output, read or write, approver, failure behaviour",
+    "The font used in the code in most cases for every user at all times every time",
+    "Only the tool name",
+    "Who wrote the docstring"
+   ],
+   "a": 0,
+   "w": "One page per tool so reviewers can judge risk."
+  },
+  {
+   "l": "a",
+   "q": "Logs show calls per hour tripled overnight for one team. First suspicion?",
+   "o": [
+    "A looping agent",
+    "A new AWS region",
+    "Cheaper tokens",
+    "A typo in a docstring"
+   ],
+   "a": 0,
+   "w": "A sudden jump in calls with no jump in users points to a loop. Check steps per question."
+  },
+  {
+   "l": "a",
+   "q": "Why can invocation logs be a privacy risk?",
+   "o": [
+    "Prompts and responses may contain personal data",
+    "Logs delete the model on its own in most cases for every user",
+    "They disable middleware",
+    "They are always public"
+   ],
+   "a": 0,
+   "w": "Limit who reads them, set retention, and keep pii_guard in front of the model."
+  }
+ ]
+}
+;
+const CLS={
+ mw:{opts:["pii_guard (before_model)","budget_guard (before_model)","tool_guard (wrap_tool_call)","Streaming","Invocation logging"],items:[
+  ["A user pastes their phone number and email into the chat.",0,"Redact before the model sees it."],
+  ["The agent keeps calling the model and never answers.",1,"Cap the model calls and hand over."],
+  ["get_ticket raises 'database is down'.",2,"Catch it around the tool call and return a message."],
+  ["Users think the helpdesk bot froze during a long answer.",3,"Show each step as it happens."],
+  ["Operations asks: how many tokens did the support team use last week?",4,"The AWS record of every model call."]]}
+};
+const ADR={
+ adr004:{title:"ADR-004: How is the AskIT agent built?",file:"ADR-004.md",fields:[
+  ["context","Context","Who uses the agent, what can it do, what must never go wrong? (2-3 lines)"],
+  ["options","Options considered","A: manual loop (Day 5) · B: LangChain create_agent with middleware. One line each on cost and risk."],
+  ["evidence","Evidence","Your Lab 5 and Lab 6 results: steps used, tools used, guards tested, tokens and cost."],
+  ["decision","Decision","Which option ships, and which guards are mandatory?"],
+  ["consequences","Consequences and risks","One risk (e.g. a tool outage, a loop, personal data) and the control that handles it."],
+  ["monitoring","Monitoring","ONE metric to watch in production, with an alert threshold (e.g. steps or handoffs per question)."]]},
+ toolcontract:{title:"Tool contract",file:"tool_contract.md",fields:[
+  ["name","Tool name","e.g. reset_password"],
+  ["purpose","Purpose","What it does, in one line."],
+  ["inputs","Inputs","Names and types, e.g. user_id (string, EMP-xxxx)."],
+  ["output","Output","What comes back, including the error shape."],
+  ["rw","Read or write","Does it change data?"],
+  ["approver","Who approves","Human? Never for VIPs? Where is it enforced (code, not prompt)?"],
+  ["failure","When it fails","What the agent does and says."]]}
+};
+/* Deterministic shuffle of answer options (same order on every load), so the right answer is not always first. */
+(function(){let seed=11;const rnd=()=>{seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff};
+ for(const k in Q)Q[k].forEach(q=>{const right=q.o[q.a],arr=q.o.slice();
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}
+  q.o=arr;q.a=arr.indexOf(right)})})();
+
+/* ===== storage (safe) ===== */
+const store = {
+  get(k,d){try{const v=localStorage.getItem(PFX+k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(PFX+k,JSON.stringify(v))}catch(e){}}
+};
+const $=id=>document.getElementById(id);
+/* ===== theme ===== */
+$("theme").onclick=()=>{
+  const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
+  r.dataset.theme=dark?"light":"dark";store.set("theme",r.dataset.theme)};
+{const t=store.get("theme",null);if(t)document.documentElement.dataset.theme=t;}
+/* ===== XP ===== */
+let earned=store.get("xp",{});
+function renderXP(){const t=Object.values(earned).reduce((a,b)=>a+b,0);$("xp").textContent="⭐ "+t+" XP"}
+function addXP(key,n){if(earned[key]!==undefined)return;earned[key]=n;store.set("xp",earned);renderXP()}
+renderXP();
+/* ===== navigation ===== */
+const secs=[...document.querySelectorAll("main section")];
+const stepsEl=$("steps");
+secs.forEach((s,i)=>{const b=document.createElement("button");b.className="step"+(s.dataset.lab?" lab":"");b.textContent=s.dataset.title;b.onclick=()=>go(i);stepsEl.appendChild(b)});
+let cur=0;
+function go(i){cur=Math.max(0,Math.min(secs.length-1,i));secs.forEach((s,j)=>s.classList.toggle("on",j===cur));
+  [...stepsEl.children].forEach((b,j)=>{b.classList.toggle("on",j===cur);if(j<cur)b.classList.add("seen")});const on=stepsEl.children[cur];if(on&&on.scrollIntoView)on.scrollIntoView({inline:"center",block:"nearest"});
+  $("where").textContent=(cur+1)+" / "+secs.length;
+  $("prev").disabled=cur===0;$("next").disabled=cur===secs.length-1;
+  store.set("cur",cur);window.scrollTo({top:0,behavior:"smooth"})}
+$("prev").onclick=()=>go(cur-1);$("next").onclick=()=>go(cur+1);
+document.addEventListener("keydown",e=>{if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;if(e.key==="ArrowRight")go(cur+1);if(e.key==="ArrowLeft")go(cur-1)});
+go(store.get("cur",0));
+/* ===== flip cards, reveal cells ===== */
+document.querySelectorAll(".flip").forEach((f,i)=>f.addEventListener("click",()=>{f.classList.toggle("flipped");addXP("flip_"+i,1)}));
+document.querySelectorAll(".cell").forEach((c,i)=>c.onclick=()=>{c.classList.toggle("open");addXP("cell"+i,1)});
+/* ===== "I completed the lab": run tests + collect evidence + push to GitHub (via local portal) ===== */
+document.querySelectorAll("[data-done]").forEach(b=>{const k=b.dataset.done,label=b.dataset.label||b.textContent;
+  const out=document.createElement("div");out.className="labres";out.style.cssText="margin-top:8px;width:100%";b.parentNode.after(out);
+  const idle=again=>{b.disabled=false;b.textContent=again?"🔁 Re-check & push again":label};
+  const show=(html,cls)=>{out.innerHTML=`<div class="alert ${cls}">${html}</div>`};
+  if(earned["sub_"+k]!==undefined){idle(true);show("Submitted earlier. Press again after more work to re-check.","ok")}
+  b.onclick=async()=>{
+    if(!location.protocol.startsWith("http")){show("Open this page through <b>START_DAY.bat</b> (http://localhost:8765) so your lab tests can run and be pushed.","bad");return}
+    b.disabled=true;b.textContent="⏳ Running your tests and pushing… (up to a minute)";out.innerHTML="";
+    try{const r=await fetch("/api/labdone",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({session:SESSION,lab:k})});
+      const res=await r.json(),s=res.summary||{},steps=(res.steps||[]).map(x=>`<li>${x.ok?"✅":"❌"} ${x.step}${x.detail?" — "+x.detail:""}</li>`).join("");
+      if(s.total!==undefined){addXP("sub_"+k,5);const all=s.total>0&&s.passed===s.total;if(all)addXP("pass_"+k,15);
+        const fl=(s.failed||[]).map(f=>`<li><code>${f.name}</code> ${f.msg?"— "+f.msg:""}</li>`).join("");
+        show(`<b>${all?"🎉 All "+s.total+" checks pass.":"Result: "+s.passed+"/"+s.total+" checks pass."}</b>${s.stretch?" Stretch: "+s.stretch[0]+"/"+s.stretch[1]+".":""}${fl?"<ul>"+fl+"</ul>Fix these and press the button again. Your trainer can already see this result.":""}<ul>${steps}</ul>`,all&&res.ok?"ok":"bad");beat()}
+      else show(`<ul>${steps||"<li>Something went wrong. Call the trainer.</li>"}</ul>`,"bad");
+    }catch(e){show("Could not reach the portal. Is the START_DAY window still open?","bad")}
+    idle(true)}});
+function labsDone(){const o={};Object.keys(earned).forEach(k=>{if(k.startsWith("sub_"))o[k.slice(4)]=true});
+  document.querySelectorAll("[data-done]").forEach(b=>{if(!(b.dataset.done in o))o[b.dataset.done]=false});return o}
+/* ===== sub tabs ===== */
+document.querySelectorAll("[data-tabs]").forEach(host=>{const bs=[...host.querySelectorAll(":scope > .tabs > button")],ps=[...host.querySelectorAll(":scope > .tabpanel")];
+  const show=i=>{bs.forEach((b,j)=>b.classList.toggle("on",j===i));ps.forEach((p,j)=>p.classList.toggle("on",j===i));addXP("tab_"+host.dataset.tabs+i,1)};
+  bs.forEach((b,i)=>b.onclick=()=>show(i));show(0)});
+/* ===== timeline steppers (id tl*) ===== */
+document.querySelectorAll("[data-stepper]").forEach(host=>{const items=[...host.querySelectorAll(".tl-item")];let n=0;
+  const nx=host.querySelector(".stNext"),rs=host.querySelector(".stReset");
+  nx.onclick=()=>{if(n<items.length){items[n].classList.add("show");n++}if(n===items.length){nx.disabled=true;addXP("st_"+host.dataset.stepper,3)}};
+  rs.onclick=()=>{items.forEach(i=>i.classList.remove("show"));n=0;nx.disabled=false}});
+/* ===== classify exercises ===== */
+document.querySelectorAll("[data-classify]").forEach(box=>{const cfg=CLS[box.dataset.classify];
+ cfg.items.forEach(it=>{const d=document.createElement("div");d.className="cls";
+  d.innerHTML=`<div>${it[0]}</div><select><option value="">Choose…</option>${cfg.opts.map((o,j)=>`<option value="${j}">${o}</option>`).join("")}</select><div class="res"></div>`;box.appendChild(d)});
+ const btn=document.createElement("button");btn.className="btn";btn.textContent="Check answers";btn.style.marginTop="12px";box.appendChild(btn);
+ btn.onclick=()=>{let right=0;[...box.querySelectorAll(".cls")].forEach((d,i)=>{const v=d.querySelector("select").value;const r=d.querySelector(".res");
+   const ok=v!==""&&+v===cfg.items[i][1];if(ok)right++;r.className="res show";r.style.color=ok?"var(--ok)":"var(--bad)";
+   r.textContent=(ok?"✔ Correct — ":"✘ Answer: "+cfg.opts[cfg.items[i][1]]+" — ")+cfg.items[i][2]});
+   if(right===cfg.items.length)addXP("cls_"+box.dataset.classify,10)}});
+/* ===== quizzes ===== */
+const PTS={b:5,i:10,a:15};const LBL={b:"BASIC",i:"INTERMEDIATE",a:"ADVANCED"};
+let bossRight=0,bossDone=0;let answers=store.get("answers",{});
+document.querySelectorAll("[data-quiz]").forEach(host=>{const set=host.dataset.quiz;
+ Q[set].forEach((it,qi)=>{const d=document.createElement("div");d.className="q";
+  d.innerHTML=`<div class="qt"><span class="chip ${it.l}">${LBL[it.l]}</span>${qi+1}. ${it.q}</div><div class="opts">${it.o.map((o,oi)=>`<button class="opt" data-i="${oi}">${o}</button>`).join("")}</div><div class="why"></div>`;
+  host.appendChild(d);
+  d.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{const ok=+b.dataset.i===it.a;
+   d.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(+x.dataset.i===it.a)x.classList.add("right")});
+   if(!ok)b.classList.add("wrong");
+   const w=d.querySelector(".why");w.className="why show";w.innerHTML=(ok?"✔ <b>Correct.</b> ":"✘ <b>Not quite.</b> ")+it.w+(ok?` <b>+${PTS[it.l]} XP</b>`:"");
+   answers[set+"_"+qi]={correct:ok,level:it.l};store.set("answers",answers);
+   if(ok)addXP("q_"+set+"_"+qi,PTS[it.l]);
+   if(set==="boss"){bossDone++;if(ok)bossRight++;updBoss()}});
+ })});
+function updBoss(){const n=Q.boss.length;$("bossScore").textContent=bossRight+" / "+n;
+ if(bossDone===n){const b=$("bossBadge"),p=bossRight/n;
+  b.innerHTML=p>=.9?"🥇 <b>Agent Engineer</b> — outstanding!":p>=.7?"🥈 <b>Agent Builder</b> — strong grip.":p>=.45?"🥉 <b>Agent Explorer</b> — review the modules tonight.":"🔁 <b>Rookie</b> — revisit the modules and retry."}}
+/* ===== presenter timer ===== */
+if($("tmr")){let left=240,t=null;const el=$("tmr");
+ const show=()=>{el.textContent=Math.floor(left/60)+":"+String(left%60).padStart(2,"0");el.style.color=left<=30?"var(--bad)":"var(--accent)"};
+ $("tmrGo").onclick=()=>{if(t)return;t=setInterval(()=>{left=Math.max(0,left-1);show();if(!left){clearInterval(t);t=null}},1000)};
+ $("tmrReset").onclick=()=>{clearInterval(t);t=null;left=240;show()};show();}
+/* ===== ADR builder (data-adr="key"): fields -> markdown, copy / download ===== */
+document.querySelectorAll("[data-adr]").forEach(host=>{const cfg=ADR[host.dataset.adr];const saved=store.get("adr_"+host.dataset.adr,{});
+ host.classList.add("adr");
+ host.innerHTML=cfg.fields.map(f=>`<label>${f[1]}</label><div class="muted" style="font-size:14px">${f[2]}</div><textarea data-k="${f[0]}"></textarea>`).join("")+
+  `<div class="row"><button class="btn" data-a="make">Build ADR text</button><button class="btn ghost" data-a="copy">Copy</button><button class="btn ghost" data-a="dl">Download .md</button></div><pre class="hidden"></pre>`;
+ const ta=[...host.querySelectorAll("textarea")],pre=host.querySelector("pre");
+ ta.forEach(t=>{t.value=saved[t.dataset.k]||"";t.addEventListener("input",()=>{saved[t.dataset.k]=t.value;store.set("adr_"+host.dataset.adr,saved)})});
+ const md=()=>`# ${cfg.title}\n\nStatus: Proposed · Team: ${ME?ME.team:"?"} · Date: ${new Date().toISOString().slice(0,10)}\n\n`+cfg.fields.map(f=>`## ${f[1]}\n${saved[f[0]]||"(empty)"}\n`).join("\n");
+ host.querySelector('[data-a="make"]').onclick=()=>{pre.textContent=md();pre.classList.remove("hidden");addXP("adr_"+host.dataset.adr,15)};
+ host.querySelector('[data-a="copy"]').onclick=async e=>{try{await navigator.clipboard.writeText(md());e.target.textContent="Copied ✔"}catch(x){pre.textContent=md();pre.classList.remove("hidden")}};
+ host.querySelector('[data-a="dl"]').onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([md()],{type:"text/markdown"}));a.download=cfg.file;document.body.appendChild(a);a.click();a.remove()}});
+/* ===== participant identity (served by local portal) ===== */
+let ME=null;
+if(location.protocol.startsWith("http")){fetch("/api/me").then(r=>r.ok?r.json():null).then(m=>{if(m){ME=m;$("who").textContent="👤 "+m.name+" · Team "+m.team}}).catch(()=>{})}
+/* ===== exit ticket ===== */
+let exitT=store.get("exit",{});
+document.querySelectorAll(".et").forEach(t=>{t.value=exitT[t.dataset.k]||"";t.addEventListener("input",()=>{exitT[t.dataset.k]=t.value;store.set("exit",exitT)})});
+{const c=$("conf");for(let i=1;i<=5;i++){const b=document.createElement("button");b.className="btn ghost";b.textContent=i;
+ if(exitT.confidence===i)b.className="btn";
+ b.onclick=()=>{exitT.confidence=i;store.set("exit",exitT);[...c.children].forEach((x,j)=>x.className=j===i-1?"btn":"btn ghost")};c.appendChild(b)}}
+/* ===== heartbeat: live progress ===== */
+let lastAct=Date.now();["click","keydown","scroll","input","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{lastAct=Date.now()},{passive:true}));
+let activeMin=store.get("activeMin",0);
+function beat(){if(!location.protocol.startsWith("http"))return;
+ fetch("/api/heartbeat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({session:SESSION,section:secs[cur].dataset.title,section_idx:cur,sections_total:secs.length,
+  xp_total:Object.values(earned).reduce((a,b)=>a+b,0),active_minutes:activeMin,quiz_answered:Object.keys(answers).length,quiz_correct:Object.values(answers).filter(v=>v.correct).length,
+  labs_self_reported:labsDone()})}).catch(()=>{})}
+setInterval(()=>{if(document.visibilityState==="visible"&&Date.now()-lastAct<120000){activeMin++;store.set("activeMin",activeMin)}beat()},60000);
+$("prev").addEventListener("click",()=>setTimeout(beat,300));$("next").addEventListener("click",()=>setTimeout(beat,300));
+stepsEl.addEventListener("click",()=>setTimeout(beat,300));setTimeout(beat,2000);
+/* ===== Day End ===== */
+function payload(){const xpTotal=Object.values(earned).reduce((a,b)=>a+b,0);
+ const bossAns=Object.entries(answers).filter(([k])=>k.startsWith("boss_"));
+ return {session:SESSION,timestamp:new Date().toISOString(),participant:ME,xp_total:xpTotal,xp:earned,
+  active_minutes:activeMin,quiz:answers,boss:{answered:bossAns.length,correct:bossAns.filter(([k,v])=>v.correct).length,of:Q.boss.length},
+  labs_self_reported:labsDone(),exit_ticket:exitT,adr:{...Object.fromEntries(Object.keys(ADR).map(k=>[k,store.get("adr_"+k,{})]))}}}
+function showSteps(steps){$("deOut").innerHTML=steps.map(s=>`<li class="${s.ok?"ok":"bad"}">${s.ok?"✅":"❌"} ${s.step}${s.detail?" — "+s.detail:""}</li>`).join("")}
+function download(p){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(p,null,2)],{type:"application/json"}));
+ a.download="askit_"+SESSION+"_xp.json";document.body.appendChild(a);a.click();a.remove()}
+$("dayEnd").onclick=async e=>{const b=e.target;b.disabled=true;b.textContent="⏳ Saving & pushing…";const p=payload();
+ try{
+  if(!location.protocol.startsWith("http"))throw new Error("offline");
+  const r=await fetch("/api/dayend",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});
+  const res=await r.json();showSteps(res.steps||[]);
+  b.textContent=res.ok?"✅ Done — see you next session!":"⚠️ Try again or call the trainer";
+ }catch(err){download(p);$("deHelp").style.display="block";
+  showSteps([{ok:true,step:"XP file downloaded",detail:"askit_"+SESSION+"_xp.json"},{ok:false,step:"Not pushed yet",detail:"run DAY_END.bat"}]);
+  b.textContent="🏁 Day End · Save & Push"}
+ b.disabled=false};
+
+/* ---- mapping table: click a row to highlight it ---- */
+$("mapTbl").querySelectorAll("tr").forEach((tr,i)=>{if(!i)return;tr.style.cursor="pointer";
+ tr.onclick=()=>{$("mapTbl").querySelectorAll("tr").forEach(r=>r.style.background="");tr.style.background="rgba(80,140,255,.18)";addXP("map",2)}});
+/* ---- PII demo ---- */
+{const f=()=>{let t=$("piiIn").value;if($("piiOn").checked){t=t.replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g,"[EMAIL]").replace(/(?<!\d)(\+?\d{2}[\s-]?)?\d{5}[\s-]?\d{5}(?!\d)/g,"[PHONE]")}
+  $("piiOut").textContent=t;addXP("pii",2)};
+ $("piiIn").oninput=f;$("piiOn").onchange=f;f();}
+/* ---- budget demo ---- */
+{const f=()=>{const L=+$("bgL").value;$("oBgL").textContent=L;let t=0;for(let i=0;i<L;i++)t+=500+300*i;
+  $("bgN").textContent=L;$("bgT").textContent=t.toLocaleString();
+  $("bgMsg").textContent=`A stuck agent is cut off after ${L} model calls: "I used up my step budget, so a human will take over." Lower limit = smaller bill, but less room for hard questions.`;addXP("bg",2)};
+ $("bgL").oninput=f;f();}
+/* ---- tool crash demo ---- */
+{const f=()=>{$("tgOut").innerHTML=$("tgOn").checked
+  ?`<div class="alert ok">tool_guard ON: get_ticket raised "Ticket database is down". The guard returned a message. AskIT answers: "I cannot reach the ticket system right now; a human will follow up."</div>`
+  :`<div class="alert bad">tool_guard OFF: the exception travels up and the whole agent stops with a stack trace. The user sees nothing useful.</div>`;addXP("tg",2)};
+ $("tgOn").onchange=f;f();}
+/* ---- wait vs watch ---- */
+{let timers=[];const L=$("stL"),R=$("stR");
+ const steps=["🔧 asks for get_ticket(TKT-0046)","👁️ result: Critical, lost laptop","🔧 asks for search_kb(lost laptop)","👁️ result: KB-014","✅ answer: Call the helpdesk now [KB-014]."];
+ const reset=()=>{timers.forEach(clearTimeout);timers=[];L.textContent="Waiting...";R.textContent="Waiting...";$("stT1").textContent="-";$("stT2").textContent="-";$("stGo").disabled=false};
+ $("stReset").onclick=reset;
+ $("stGo").onclick=()=>{reset();$("stGo").disabled=true;L.textContent="";R.textContent="";const t0=Date.now();
+  L.innerHTML="<span class='muted'>(nothing yet)</span>";
+  steps.forEach((s,i)=>{timers.push(setTimeout(()=>{if(!i){R.textContent="";$("stT2").textContent=((Date.now()-t0)/1000).toFixed(1)+" s"}
+    R.innerHTML+=`<div>${s}</div>`},400+i*400))});
+  timers.push(setTimeout(()=>{L.innerHTML=steps.map(s=>`<div>${s}</div>`).join("");$("stT1").textContent=((Date.now()-t0)/1000).toFixed(1)+" s";$("stGo").disabled=false;addXP("st",3)},400+steps.length*400))}}
+
+</script>
+</body>
+</html>

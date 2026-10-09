@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7 · Context, Compaction and Memory</title>
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --surface2:#eef1f7; --ink:#141a2a; --muted:#5a6478; --line:#dde2ec;
+  --accent:#0f7c8c; --accent-soft:#d8f0f3; --warn:#b45309; --warn-soft:#fdecd3;
+  --ok:#157f3b; --ok-soft:#dcf3e4; --bad:#b42318; --bad-soft:#fbe0dd;
+  --shadow:0 2px 10px rgba(20,26,42,.07);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17; --shadow:none;}}
+:root[data-theme="dark"]{
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17; --shadow:none;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Aptos Narrow","Aptos","Segoe UI",system-ui,-apple-system,sans-serif;font-size:19px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer}
+header{position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+.bar{max-width:1100px;margin:0 auto;padding:12px 16px 8px;display:flex;align-items:center;gap:12px}
+.brand{font-weight:700;font-size:20px;flex:1;min-width:0}
+.brand small{display:block;font-weight:400;color:var(--muted);font-size:14px}
+.tbtn{border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:7px 14px;font-size:15px;font-weight:600;white-space:nowrap}
+.tbtn:hover{border-color:var(--accent)}
+.navwrap{max-width:1100px;margin:0 auto;padding:0 16px 12px}
+.steps{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding:2px 0 6px}
+.stp{flex:0 0 auto;border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:999px;padding:6px 14px;font-size:15px;font-weight:600;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s}
+.stp:hover{border-color:var(--accent);transform:translateY(-1px)}
+.stp.done{color:var(--muted)}
+.stp.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.stp.islab{border-style:dashed;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.stp.islab.on{background:var(--accent);color:#fff;border-style:solid}
+.stp:focus-visible,.tbtn:focus-visible,.btn:focus-visible,.flip:focus-visible,.opt:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.prog{height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 90px}
+section{display:none}
+section.on{display:block}
+h1{font-size:40px;line-height:1.15;margin:.2em 0 .3em}
+h2{font-size:30px;margin:.2em 0 .4em}
+h3{font-size:22px;margin:1.2em 0 .4em}
+.kicker{color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:14px}
+.lead{font-size:21px;color:var(--muted);max-width:820px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+.big{font-size:44px;line-height:1}
+/* flip cards */
+.flip{perspective:1000px;min-height:150px;border:0;background:none;padding:0;text-align:left;width:100%}
+.flip .in{position:relative;width:100%;height:100%;min-height:150px;transition:transform .5s;transform-style:preserve-3d}
+.flip.flipped .in{transform:rotateY(180deg)}
+.flip .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;padding:16px;border:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}
+.flip .front{background:var(--surface);box-shadow:var(--shadow)}
+.flip .front b{font-size:21px}
+.flip .front .hint{font-size:13px;color:var(--muted);margin-top:8px}
+.flip .back{background:var(--accent-soft);transform:rotateY(180deg);font-size:17px}
+/* quiz */
+.q{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:12px 0}
+.q .qt{font-weight:700;margin-bottom:10px}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--surface2);border-radius:10px;padding:9px 14px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:var(--ok-soft);border-color:var(--ok)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.why{display:none;margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--surface2);font-size:16px}
+.why.show{display:block}
+/* concept box */
+.say{border-left:5px solid var(--accent);background:var(--surface);border-radius:10px;padding:12px 16px;margin:12px 0;box-shadow:var(--shadow)}
+.say b{color:var(--accent)}
+/* table */
+table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:16px}
+th{background:var(--surface2)}
+/* lab pointer */
+.lab{border:2px dashed var(--accent);background:var(--accent-soft);border-radius:16px;padding:22px}
+.lab h2{margin-top:0}
+.lab .now{font-weight:700;font-size:19px}
+.lab ol{margin:.5em 0 0;padding-left:1.3em}
+.lab li{margin:6px 0}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:9px 18px;font-weight:700}
+.btn.ghost{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.score{font-size:24px;font-weight:700;color:var(--warn)}
+footer{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px}
+footer .inner{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;gap:10px}
+@media (max-width:600px){h1{font-size:30px} h2{font-size:24px} body{font-size:17px}}
+:root[data-theme="dark"] .btn:not(.ghost),:root[data-theme="dark"] .stp.on{color:#06222a}
+footer .inner{padding:0 16px}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">S7 · Context, Compaction and Memory<small>Friday 9 Oct · Day 7 of 12</small></div>
+    <button class="tbtn" id="theme" type="button" aria-label="Toggle dark mode">🌙 Dark</button>
+  </div>
+  <div class="navwrap">
+    <nav class="steps" id="steps" aria-label="Sections"></nav>
+    <div class="prog"><i id="progbar"></i></div>
+  </div>
+</header>
+
+<main>
+
+<!-- 0 · START -->
+<section data-id="start" class="on">
+  <div class="kicker">Today's flow</div>
+  <h1>The agent remembers. And every memory costs something.</h1>
+  <p class="lead">Concept, then a small lab, then concept, then lab, then concept, then lab. Three small labs, one per idea.</p>
+  <div class="grid g2" style="margin-top:18px">
+    <div class="card"><div class="big">1</div><h3>What the model sees</h3><p class="muted">The whole chat, sent again at every step.</p></div>
+    <div class="card"><div class="big">2</div><h3>Compaction</h3><p class="muted">Summarise the old part of the chat so it costs less.</p></div>
+    <div class="card"><div class="big">3</div><h3>Memory across chats</h3><p class="muted">A note saved in one chat, recalled in a new one.</p></div>
+  </div>
+  <div class="row"><button class="btn" onclick="go('c1')">Start the first idea</button></div>
+</section>
+
+<!-- 1 · CONCEPT: CONTEXT -->
+<section data-id="c1">
+  <div class="kicker">Idea 1 · Context</div>
+  <h2>Every step sends the whole chat again</h2>
+  <p class="lead">A chat agent has no memory of its own between model calls. Each time it answers, the model is sent everything it needs: the rules, the chat so far and the tool results.</p>
+
+  <h3>Tap each card</h3>
+  <div class="grid g2">
+    <button class="flip" onclick="this.classList.toggle('flipped')"><div class="in">
+      <div class="face front"><b>What is context?</b><span class="hint">tap to flip</span></div>
+      <div class="face back">Everything the model reads in one call: system rules, all earlier messages, tool results.</div>
+    </div></button>
+    <button class="flip" onclick="this.classList.toggle('flipped')"><div class="in">
+      <div class="face front"><b>Why does it cost money?</b><span class="hint">tap to flip</span></div>
+      <div class="face back">You pay for the words sent in each call. A 10-message chat sent 10 times costs far more than 10 messages sent once.</div>
+    </div></button>
+    <button class="flip" onclick="this.classList.toggle('flipped')"><div class="in">
+      <div class="face front"><b>Why does it slow down?</b><span class="hint">tap to flip</span></div>
+      <div class="face back">Longer input takes longer to read, so the first word of the answer arrives later.</div>
+    </div></button>
+    <button class="flip" onclick="this.classList.toggle('flipped')"><div class="in">
+      <div class="face front"><b>Why can quality drop?</b><span class="hint">tap to flip</span></div>
+      <div class="face back">Old, irrelevant text can distract the model. More context is not always better context.</div>
+    </div></button>
+  </div>
+
+  <div class="say"><b>Say this:</b> "Context is not free. Every word in the chat is paid for again at every step."</div>
+  <div class="row"><button class="btn ghost" onclick="go('start')">Back</button><button class="btn" onclick="go('q1')">Quick check</button></div>
+</section>
+
+<section data-id="q1">
+  <div class="kicker">Quick check · Idea 1</div>
+  <h2>Three questions</h2>
+  <div class="q" data-right="b"><div class="qt">1. What does the model receive at step 5 of a chat?</div>
+    <div class="opts">
+      <button class="opt" data-v="a">Only the newest message</button>
+      <button class="opt" data-v="b">The whole chat so far, plus the rules and tool results</button>
+      <button class="opt" data-v="c">Nothing, because it remembers by itself</button>
+    </div><div class="why">Each call is a fresh request. The chat is sent again every time.</div></div>
+  <div class="q" data-right="c"><div class="qt">2. A chat is 40 messages long. Which costs the least per answer?</div>
+    <div class="opts">
+      <button class="opt" data-v="a">Send all 40 messages every time</button>
+      <button class="opt" data-v="b">Send the 40 messages with the tool results repeated</button>
+      <button class="opt" data-v="c">Summarise the old messages and keep the last few word for word</button>
+    </div><div class="why">Summarising shrinks what is sent. Keeping everything is the most expensive.</div></div>
+  <div class="q" data-right="a"><div class="qt">3. Why can a long chat give worse answers?</div>
+    <div class="opts">
+      <button class="opt" data-v="a">Old, irrelevant text can distract the model</button>
+      <button class="opt" data-v="b">The model gets bored after 10 messages</button>
+      <button class="opt" data-v="c">The database is slower</button>
+    </div><div class="why">More text is not always better. Old details can pull the answer off course.</div></div>
+  <div class="row"><span class="score" id="score1"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c1')">Back</button><button class="btn" onclick="go('lab7a')">Lab 7A now</button></div>
+</section>
+
+<!-- LAB 7A POINTER -->
+<section data-id="lab7a">
+  <div class="lab">
+    <h2>Lab 7A · watch the context grow</h2>
+    <p class="now">We are doing Lab 7A now (<code>lab07-askit-memory-context</code>).</p>
+    <p class="now">In VS Code: File &gt; Open Folder &gt; C:\AskIT\dxc-agentic-ai\Day07\Labs\lab07-askit-memory-context</p>
+    <ol>
+      <li>Open <b>README.md</b> in that folder and follow the section <b>Lab 7A</b>.</li>
+      <li>Everything you need to do is in the README. Nothing else.</li>
+    </ol>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('q1')">Back</button><button class="btn" onclick="go('c2')">Next idea (after the lab)</button></div>
+</section>
+
+<!-- 2 · CONCEPT: COMPACTION -->
+<section data-id="c2">
+  <div class="kicker">Idea 2 · Compaction</div>
+  <h2>Summarise the old part, keep the new part</h2>
+  <p class="lead">Compaction means: when the chat gets big, the agent writes a short summary of the old messages and keeps only the newest ones word for word.</p>
+
+  <div class="say"><b>Three knobs decide everything:</b> <br>1. <b>When</b> to compact (the size that triggers it). <br>2. <b>How much</b> to keep word for word. <br>3. <b>What</b> the summary must keep: decisions, ticket ids, open questions.</div>
+
+  <h3>Choose the trade-off</h3>
+  <table>
+    <tr><th>Strategy</th><th>Cost</th><th>Risk</th><th>Use when</th></tr>
+    <tr><td>Keep everything</td><td>High</td><td>Distraction from old text</td><td>Short chats</td></tr>
+    <tr><td>Keep the last few messages only</td><td>Low</td><td>Forgets early facts</td><td>Simple, one-question chats</td></tr>
+    <tr><td>Summarise the old part, keep the last few</td><td>Medium</td><td>Summary may miss a detail</td><td>Long support chats</td></tr>
+    <tr><td>Save facts in a store</td><td>Low per chat</td><td>More engineering</td><td>Facts that must survive a new chat</td></tr>
+  </table>
+
+  <div class="say" style="margin-top:14px"><b>Say this:</b> "Compaction is a product choice. You trade a little detail for a lot less cost. Test the answers before you trust it."</div>
+  <div class="row"><button class="btn ghost" onclick="go('lab7a')">Back</button><button class="btn" onclick="go('q2')">Quick check</button></div>
+</section>
+
+<section data-id="q2">
+  <div class="kicker">Quick check · Idea 2</div>
+  <h2>Three questions</h2>
+  <div class="q" data-right="b"><div class="qt">1. What does compaction do?</div>
+    <div class="opts">
+      <button class="opt" data-v="a">Deletes the whole chat</button>
+      <button class="opt" data-v="b">Replaces the old messages with a short summary</button>
+      <button class="opt" data-v="c">Sends the chat to a second model for checking</button>
+    </div><div class="why">The old part becomes a summary. The newest messages stay word for word.</div></div>
+  <div class="q" data-right="a"><div class="qt">2. If you set the trigger very low (for example 800 tokens), what happens?</div>
+    <div class="opts">
+      <button class="opt" data-v="a">Summaries happen more often, and each call is cheaper</button>
+      <button class="opt" data-v="b">The agent stops answering</button>
+      <button class="opt" data-v="c">Nothing changes</button>
+    </div><div class="why">Compacting early keeps the chat small, but each summary can lose a detail.</div></div>
+  <div class="q" data-right="c"><div class="qt">3. Which detail must the summary keep?</div>
+    <div class="opts">
+      <button class="opt" data-v="a">The weather in the office</button>
+      <button class="opt" data-v="b">Greetings and thanks</button>
+      <button class="opt" data-v="c">The ticket id and what the user decided</button>
+    </div><div class="why">Ticket ids and decisions are the facts the next answer depends on.</div></div>
+  <div class="row"><span class="score" id="score2"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c2')">Back</button><button class="btn" onclick="go('lab7b')">Lab 7B now</button></div>
+</section>
+
+<!-- LAB 7B POINTER -->
+<section data-id="lab7b">
+  <div class="lab">
+    <h2>Lab 7B · summarise the old messages</h2>
+    <p class="now">We are doing Lab 7B now (<code>lab07-askit-memory-context</code>).</p>
+    <p class="now">In VS Code: File &gt; Open Folder &gt; C:\AskIT\dxc-agentic-ai\Day07\Labs\lab07-askit-memory-context</p>
+    <ol>
+      <li>Open <b>README.md</b> in that folder and follow the section <b>Lab 7B</b>.</li>
+      <li>Everything you need to do is in the README. Nothing else.</li>
+    </ol>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('q2')">Back</button><button class="btn" onclick="go('c3')">Next idea (after the lab)</button></div>
+</section>
+
+<!-- 3 · CONCEPT: MEMORY -->
+<section data-id="c3">
+  <div class="kicker">Idea 3 · Memory</div>
+  <h2>Two kinds of memory</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Short-term: one chat</h3><p>Everything said in this chat thread. It disappears for a new chat unless it is saved elsewhere.</p><p class="muted">Like the notes on the table during one meeting.</p></div>
+    <div class="card"><h3>Long-term: a store</h3><p>Facts saved on purpose, kept across chats. The agent looks them up when it needs them.</p><p class="muted">Like a notebook in the drawer you open next week.</p></div>
+  </div>
+
+  <h3>What is worth saving?</h3>
+  <div class="grid g2">
+    <div class="card"><b>Save</b><p class="muted">Stable facts the user asked you to remember, for example their laptop model or their preferred contact time.</p></div>
+    <div class="card"><b>Do not save</b><p class="muted">Passwords, card numbers, health details, anything the user did not ask you to keep. Store facts, not whole transcripts.</p></div>
+  </div>
+
+  <div class="say"><b>Product choice:</b> a notebook is fine for a few facts per user. Tickets, orders and records belong in the systems that already own them.</div>
+  <div class="row"><button class="btn ghost" onclick="go('lab7b')">Back</button><button class="btn" onclick="go('q3')">Quick check</button></div>
+</section>
+
+<section data-id="q3">
+  <div class="kicker">Quick check · Idea 3</div>
+  <h2>Three questions</h2>
+  <div class="q" data-right="b"><div class="qt">1. A note is saved in chat 1. Where is it found in chat 2?</div>
+    <div class="opts">
+      <button class="opt" data-v="a">Nowhere, every chat starts empty</button>
+      <button class="opt" data-v="b">In the long-term store, which the agent can search</button>
+      <button class="opt" data-v="c">In the model's own memory</button>
+    </div><div class="why">Only the store keeps facts across chats. The model itself keeps nothing.</div></div>
+  <div class="q" data-right="a"><div class="qt">2. Which fact should NOT be saved as a note?</div>
+    <div class="opts">
+      <button class="opt" data-v="a">A card number the user typed in the chat</button>
+      <button class="opt" data-v="b">The user's laptop model, if they asked you to remember it</button>
+      <button class="opt" data-v="c">The user's preferred contact time</button>
+    </div><div class="why">Payment and identity details should never go into notes. Ask the user to use the secure form instead.</div></div>
+  <div class="q" data-right="c"><div class="qt">3. What is the best place for a ticket's full status?</div>
+    <div class="opts">
+      <button class="opt" data-v="a">A note in the store</button>
+      <button class="opt" data-v="b">The chat summary</button>
+      <button class="opt" data-v="c">The ticket system, read by a tool</button>
+    </div><div class="why">The ticket system owns the ticket. The agent reads it with a tool, rather than keeping a copy.</div></div>
+  <div class="row"><span class="score" id="score3"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c3')">Back</button><button class="btn" onclick="go('lab7c')">Lab 7C now</button></div>
+</section>
+
+<!-- LAB 7C POINTER -->
+<section data-id="lab7c">
+  <div class="lab">
+    <h2>Lab 7C · a note that survives a new chat</h2>
+    <p class="now">We are doing Lab 7C now (<code>lab07-askit-memory-context</code>).</p>
+    <p class="now">In VS Code: File &gt; Open Folder &gt; C:\AskIT\dxc-agentic-ai\Day07\Labs\lab07-askit-memory-context</p>
+    <ol>
+      <li>Open <b>README.md</b> in that folder and follow the section <b>Lab 7C</b>.</li>
+      <li>Everything you need to do is in the README. Nothing else.</li>
+    </ol>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('q3')">Back</button><button class="btn" onclick="go('sum')">Sum-up</button></div>
+</section>
+
+<!-- 4 · SUM-UP -->
+<section data-id="sum">
+  <div class="kicker">Sum-up</div>
+  <h2>What we learned today</h2>
+  <div class="grid g2">
+    <div class="card"><div class="big">1</div><h3>Context is paid for at every step</h3><p class="muted">Keep it small, and keep it relevant.</p></div>
+    <div class="card"><div class="big">2</div><h3>Compaction trades detail for cost</h3><p class="muted">Choose the trigger and what to keep. Test the answers.</p></div>
+    <div class="card"><div class="big">3</div><h3>Save facts, not transcripts</h3><p class="muted">Notes for stable facts. Records stay in their own systems.</p></div>
+  </div>
+  <div class="say" style="margin-top:18px"><b>Coming next · Day 8 (Mon 12 Oct):</b> several agents working together, and a human who approves the risky steps.</div>
+  <div class="row"><button class="btn ghost" onclick="go('lab7c')">Back</button><button class="btn" onclick="go('start')">Back to the start</button></div>
+</section>
+
+</main>
+
+<footer><div class="inner"><span class="muted" id="pos"></span><span><button class="btn ghost" id="prev">Previous</button> <button class="btn" id="next">Next</button></span></div></footer>
+
+<script>
+const order = ['start','c1','q1','lab7a','c2','q2','lab7b','c3','q3','lab7c','sum'];
+const names = {start:'Start',c1:'1 Context',q1:'Check 1',lab7a:'Lab 7A',c2:'2 Compaction',q2:'Check 2',lab7b:'Lab 7B',c3:'3 Memory',q3:'Check 3',lab7c:'Lab 7C',sum:'Sum-up'};
+
+function go(id){
+  document.querySelectorAll('main > section').forEach(s => s.classList.toggle('on', s.dataset.id === id));
+  render(id);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function render(id){
+  const i = order.indexOf(id);
+  document.getElementById('steps').innerHTML = order.map((k,n) =>
+    `<button type="button" class="stp ${k===id?'on':''} ${n<i?'done':''} ${k.startsWith('lab')?'islab':''}" data-go="${k}" ${k===id?'aria-current="step"':''}>${names[k]}</button>`).join('');
+  document.querySelectorAll('.stp').forEach(b => b.onclick = () => go(b.dataset.go));
+  const on = document.querySelector('.stp.on'); if (on) on.scrollIntoView({block:'nearest',inline:'center'});
+  document.getElementById('pos').textContent = `${i+1} of ${order.length}`;
+  document.getElementById('progbar').style.width = ((i+1)/order.length*100)+'%';
+  document.getElementById('prev').disabled = i === 0;
+  document.getElementById('next').disabled = i === order.length - 1;
+  try{ history.replaceState(null,'','#'+id); }catch(e){}
+}
+document.getElementById('prev').onclick = () => go(order[order.indexOf(current())-1]);
+document.getElementById('next').onclick = () => go(order[order.indexOf(current())+1]);
+function current(){ return document.querySelector('main > section.on').dataset.id; }
+
+// quick checks: pick an answer, see if it is right, see the reason
+document.querySelectorAll('.q').forEach(q => {
+  q.querySelectorAll('.opt').forEach(btn => btn.onclick = () => {
+    if (q.dataset.answered) return;
+    q.dataset.answered = '1';
+    const right = q.dataset.right;
+    q.querySelectorAll('.opt').forEach(o => {
+      o.disabled = true;
+      if (o.dataset.v === right) o.classList.add('right');
+      else if (o === btn) o.classList.add('wrong');
+    });
+    q.querySelector('.why').classList.add('show');
+    const section = q.closest('section');
+    const total = section.querySelectorAll('.q').length;
+    const got = section.querySelectorAll('.q .opt.right').length;
+    const answered = [...section.querySelectorAll('.q')].filter(x => x.dataset.answered).length;
+    if (answered === total) {
+      const score = section.querySelector('.score');
+      score.textContent = `${got} of ${total} right`;
+    }
+  });
+});
+
+// dark / light toggle (remembers choice)
+const root=document.documentElement, tb=document.getElementById('theme');
+function applyTheme(t){ root.setAttribute('data-theme',t); tb.textContent = t==='dark' ? '☀️ Light' : '🌙 Dark'; }
+let saved=null; try{ saved=localStorage.getItem('s7theme'); }catch(e){}
+applyTheme(saved || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark':'light'));
+tb.onclick=()=>{ const t=root.getAttribute('data-theme')==='dark'?'light':'dark'; applyTheme(t); try{localStorage.setItem('s7theme',t);}catch(e){} };
+
+// keyboard: left/right arrows
+document.addEventListener('keydown',e=>{
+  if(e.target.closest('input,textarea')) return;
+  const i=order.indexOf(current());
+  if(e.key==='ArrowRight' && i<order.length-1) go(order[i+1]);
+  if(e.key==='ArrowLeft' && i>0) go(order[i-1]);
+});
+
+const h=location.hash.slice(1);
+if(order.includes(h)) go(h); else render('start');
+</script>
+</body>
+</html>
