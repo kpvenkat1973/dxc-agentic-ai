@@ -164,28 +164,25 @@ def run_agent(question, call_model=None, max_steps=MAX_STEPS, approve=None):
         add_usage(result, response)
         requests = get_tool_requests(response)                            # did the model ask for a tool?
 
-        # ============ TODO-1: write the rest of the loop (3 parts). Full answer: Hints file, TODO-1 ============
-        # PART A. The model asked for NO tool = it already has the answer. Write these 3 lines inside  if not requests:
-        #       result["answer"] = final_text(response)          save the model's text as the answer
-        #       say(result, f"Step {step}: ✅ final answer")      print a line
-        #       return result                                    stop here
-        #
-        # PART B. The model asked for tool(s). Write these steps (after the if), then delete the  break  line below:
-        #   1. messages.append(response["output"]["message"])         remember the model's tool request
-        #   2. blocks = []                                            a list to collect the tool answers
-        #   3. for req in requests:                                   (the model may ask for several tools at once)
-        #          if STOP_ON_REPEAT and is_repeat(history, req["name"], req["input"]):          (used in the Incident)
-        #              return give_up(result, "I kept repeating the same action, so a human will take over.")
-        #          history.append((req["name"], req["input"]))        remember this call
-        #          output = run_tool_safely(req["name"], req["input"], approve)     ACT: run the tool
-        #          say(result, f"Step {step}: 🔧 {req['name']}({short(req['input'])}) -> {short(output)}")
-        #          blocks.append(make_tool_result(req["id"], output))   wrap the answer
-        #   4. messages.append({"role": "user", "content": blocks})   send all the answers back to the model
-        break   # <- delete this line when PART A and PART B are written
+        if not requests:                                                  # PART A: no tool request = the model is finished
+            result["answer"] = final_text(response)                       # its text IS the answer
+            say(result, f"Step {step}: ✅ final answer")
+            return result
 
-    # PART C. If we get here the loop ran out of steps without an answer. Replace the next line with:
-    #       return give_up(result, f"I could not finish within {max_steps} steps, so a human will take over.")
-    return result
+        messages.append(response["output"]["message"])                    # PART B-1: remember the model's tool request
+        blocks = []                                                       # PART B-2: all tool answers go back in ONE message
+        for req in requests:
+            if STOP_ON_REPEAT and is_repeat(history, req["name"], req["input"]):    # Incident: the exact same call again?
+                return give_up(result, "I kept repeating the same action, so a human will take over.")
+            history.append((req["name"], req["input"]))                   # remember this call
+            output = run_tool_safely(req["name"], req["input"], approve)  # ACT: run the tool
+            say(result, f"Step {step}: 🔧 {req['name']}({short(req['input'])}) -> {short(output)}")   # OBSERVE: print what came back
+            blocks.append(make_tool_result(req["id"], output))            # wrap the answer for the model
+        messages.append({"role": "user", "content": blocks})              # PART B-4: give the answers back to the model
+
+    # PART C: the loop ended without an answer = out of steps. Hand over to a human.
+    return give_up(result, f"I could not finish within {max_steps} steps, so a human will take over.")
+
 
 
 # =============================================================================================
@@ -198,7 +195,7 @@ def needs_approval(name, args):
     Two tools CHANGE data:      update_ticket, reset_password  -> return True
     Replace the line  return False  with ONE line. Full answer: Hints file, TODO-2.
     """
-    return False
+    return name in ["update_ticket", "reset_password"]
 
 
 def ask_human(name, args):
