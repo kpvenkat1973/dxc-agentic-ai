@@ -62,6 +62,7 @@ def make_tools():
 
 def build_agent(model, tools, middleware=None):
     """TODO-1 (Lab 6A): create the agent. ONE line to write.
+    
 
     create_agent(...) builds the whole loop for you: think, act, observe, repeat.
     Replace the line  'return None'  with ONE line that calls create_agent with:
@@ -71,7 +72,7 @@ def build_agent(model, tools, middleware=None):
         middleware=middleware or []
     Use exactly these names. Then run:  python check.py 6a
     """
-    return None  # TODO-1: replace this line with: return create_agent(...)
+    return create_agent(model=model, tools=tools, system_prompt=SYSTEM_PROMPT, middleware=middleware or [])
 
 
 def ask(agent, question):
