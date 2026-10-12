@@ -1,3 +1,5 @@
+> **Note:** this lab is replaced by **`lab07-askit-memory-playground`** (same ideas, no code to write). This folder is OPTIONAL: only for people who want to write the code themselves.
+
 # Lab 7: The agent remembers (and what it costs)
 
 **Session 7 · Context, Compaction and Memory**

@@ -96,12 +96,45 @@ footer .inner{max-width:1100px;margin:0 auto;display:flex;justify-content:space-
 @media (max-width:600px){h1{font-size:30px} h2{font-size:24px} body{font-size:17px}}
 :root[data-theme="dark"] .btn:not(.ghost),:root[data-theme="dark"] .stp.on{color:#06222a}
 footer .inner{padding:0 16px}
+
+:root{--blue:#1F5AA6;--blue-soft:#E2EBF7;--plum:#6A3FA0;--plum-soft:#EEE6F7;--teal:#0E7068;--teal-soft:#E3F1EE;
+--amber:#A8570A;--amber-soft:#FBEEDB;--red:#B42318;--red-soft:#FDE7E7;--grey:#8A93A3;--grey-soft:#F1F2F4;--lane:#FAFAF7}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--blue:#86B4F0;--blue-soft:#17253d;--plum:#C4A6EE;--plum-soft:#2a2040;
+--teal:#5FD0C4;--teal-soft:#123532;--amber:#F2B266;--amber-soft:#3a2a14;--red:#FF8A7E;--red-soft:#3d1a17;--grey:#7d8698;--grey-soft:#20263a;--lane:#141a29}}
+:root[data-theme="dark"]{--blue:#86B4F0;--blue-soft:#17253d;--plum:#C4A6EE;--plum-soft:#2a2040;--teal:#5FD0C4;--teal-soft:#123532;
+--amber:#F2B266;--amber-soft:#3a2a14;--red:#FF8A7E;--red-soft:#3d1a17;--grey:#7d8698;--grey-soft:#20263a;--lane:#141a29}
+.dg{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px;margin:14px 0;box-shadow:var(--shadow);overflow-x:auto}
+.dg svg{width:100%;min-width:760px;height:auto;display:block}
+.g2 .dg svg{min-width:0}
+.dg .cap{font-size:15px;color:var(--muted);padding:4px 8px 2px}
+.nd rect{fill:var(--ks);stroke:var(--k);stroke-width:2.2}
+.nd .tt{fill:var(--k);font-weight:700;font-size:19px;text-anchor:middle}
+.nd .ic{font-size:26px;text-anchor:middle}
+.nd .sb{fill:var(--ink);font-size:15px;text-anchor:middle}
+.nd .fl{fill:var(--muted);font-size:13px;text-anchor:middle;font-family:Consolas,monospace}
+.k-ui{--k:var(--blue);--ks:var(--blue-soft)} .k-ag{--k:var(--plum);--ks:var(--plum-soft)} .k-mem{--k:var(--teal);--ks:var(--teal-soft)}
+.k-tool{--k:var(--amber);--ks:var(--amber-soft)} .k-hu{--k:var(--red);--ks:var(--red-soft)} .k-off{--k:var(--grey);--ks:var(--grey-soft)}
+.ln rect{fill:var(--lane);stroke:var(--line);stroke-width:1.4} .ln .lt{fill:var(--ink);font-weight:700;font-size:18px} .ln .lh{fill:var(--muted);font-size:13px}
+.ar{stroke:var(--muted);stroke-width:2;fill:none} .ar.d{stroke-dasharray:6 5} .ahd{fill:var(--muted)}
+.al{fill:var(--muted);font-size:14px;text-anchor:middle;paint-order:stroke;stroke:var(--surface);stroke-width:5px}
+.num{fill:var(--accent);font-weight:700;font-size:14px;text-anchor:middle} .numc{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.flow{counter-reset:f;list-style:none;padding:0;margin:10px 0}
+.flow li{counter-increment:f;position:relative;padding:8px 12px 8px 50px;margin:6px 0;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.flow li::before{content:counter(f);position:absolute;left:12px;top:8px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;text-align:center;line-height:26px;font-size:15px}
+.four{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0}
+.four div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.four b{display:block;color:var(--accent);margin-bottom:4px}
+.cmd{display:flex;gap:8px;align-items:center;margin:6px 0}
+.cmd code{flex:1;background:#0f1320;color:#e8ecf5;padding:10px 14px;border-radius:8px;font-size:17px}
+.tag{display:inline-block;font-size:13px;font-weight:700;padding:2px 10px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);margin-right:6px}
+.client{border-left:5px solid var(--teal);background:var(--surface);border-radius:10px;padding:12px 16px;margin:12px 0;box-shadow:var(--shadow)}
+.client b{color:var(--teal)}
 </style>
 </head>
 <body>
 <header>
   <div class="bar">
-    <div class="brand">S7 · Context, Compaction and Memory<small>Friday 9 Oct · Day 7 of 12</small></div>
+    <div class="brand">S7 · Context, Compaction and Memory<small>Day 7 of 12 · AskIT Memory Playground</small></div>
     <button class="tbtn" id="theme" type="button" aria-label="Toggle dark mode">🌙 Dark</button>
   </div>
   <div class="navwrap">
@@ -109,229 +142,184 @@ footer .inner{padding:0 16px}
     <div class="prog"><i id="progbar"></i></div>
   </div>
 </header>
-
 <main>
-
-<!-- 0 · START -->
 <section data-id="start" class="on">
-  <div class="kicker">Today's flow</div>
+  <div class="kicker">Today's flow · Session 7</div>
   <h1>The agent remembers. And every memory costs something.</h1>
-  <p class="lead">Concept, then a small lab, then concept, then lab, then concept, then lab. Three small labs, one per idea.</p>
+  <p class="lead">Three ideas, ONE lab app. You learn by playing with switches and watching charts. No code to write today.</p>
   <div class="grid g2" style="margin-top:18px">
-    <div class="card"><div class="big">1</div><h3>What the model sees</h3><p class="muted">The whole chat, sent again at every step.</p></div>
-    <div class="card"><div class="big">2</div><h3>Compaction</h3><p class="muted">Summarise the old part of the chat so it costs less.</p></div>
-    <div class="card"><div class="big">3</div><h3>Memory across chats</h3><p class="muted">A note saved in one chat, recalled in a new one.</p></div>
+    <div class="card"><div class="big">1</div><h3>What the model sees</h3><p class="muted">The whole chat, sent again at every step. → app tab 1</p></div>
+    <div class="card"><div class="big">2</div><h3>Compaction</h3><p class="muted">Summarise the old part so it costs less. → app tab 2</p></div>
+    <div class="card"><div class="big">3</div><h3>Memory across chats</h3><p class="muted">A fact saved in one chat, recalled in a new one. → app tab 3</p></div>
   </div>
+  <div class="say"><b>Where we are in the AskIT story:</b> Day 5 built the agent loop, Day 6 put it in LangChain with middleware. Today the agent gets a memory, and we look at what that memory costs and risks.</div>
   <div class="row"><button class="btn" onclick="go('c1')">Start the first idea</button></div>
 </section>
-
-<!-- 1 · CONCEPT: CONTEXT -->
 <section data-id="c1">
   <div class="kicker">Idea 1 · Context</div>
   <h2>Every step sends the whole chat again</h2>
   <p class="lead">A chat agent has no memory of its own between model calls. Each time it answers, the model is sent everything it needs: the rules, the chat so far and the tool results.</p>
-
   <h3>Tap each card</h3>
-  <div class="grid g2">
-    <button class="flip" onclick="this.classList.toggle('flipped')"><div class="in">
-      <div class="face front"><b>What is context?</b><span class="hint">tap to flip</span></div>
-      <div class="face back">Everything the model reads in one call: system rules, all earlier messages, tool results.</div>
-    </div></button>
-    <button class="flip" onclick="this.classList.toggle('flipped')"><div class="in">
-      <div class="face front"><b>Why does it cost money?</b><span class="hint">tap to flip</span></div>
-      <div class="face back">You pay for the words sent in each call. A 10-message chat sent 10 times costs far more than 10 messages sent once.</div>
-    </div></button>
-    <button class="flip" onclick="this.classList.toggle('flipped')"><div class="in">
-      <div class="face front"><b>Why does it slow down?</b><span class="hint">tap to flip</span></div>
-      <div class="face back">Longer input takes longer to read, so the first word of the answer arrives later.</div>
-    </div></button>
-    <button class="flip" onclick="this.classList.toggle('flipped')"><div class="in">
-      <div class="face front"><b>Why can quality drop?</b><span class="hint">tap to flip</span></div>
-      <div class="face back">Old, irrelevant text can distract the model. More context is not always better context.</div>
-    </div></button>
-  </div>
-
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>What is context?</b><span class="hint">tap to flip</span></div><div class="face back">Everything the model reads in one call: system rules, all earlier messages, tool results.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Why does it cost money?</b><span class="hint">tap to flip</span></div><div class="face back">You pay for the tokens sent in each call. A 10-message chat sent 10 times costs far more than 10 messages sent once.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Why does it slow down?</b><span class="hint">tap to flip</span></div><div class="face back">Longer input takes longer to read, so the first word of the answer arrives later.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Why can quality drop?</b><span class="hint">tap to flip</span></div><div class="face back">Old, irrelevant text can distract the model. More context is not always better context.</div></div></button></div>
   <div class="say"><b>Say this:</b> "Context is not free. Every word in the chat is paid for again at every step."</div>
   <div class="row"><button class="btn ghost" onclick="go('start')">Back</button><button class="btn" onclick="go('q1')">Quick check</button></div>
 </section>
-
 <section data-id="q1">
   <div class="kicker">Quick check · Idea 1</div>
   <h2>Three questions</h2>
-  <div class="q" data-right="b"><div class="qt">1. What does the model receive at step 5 of a chat?</div>
-    <div class="opts">
-      <button class="opt" data-v="a">Only the newest message</button>
-      <button class="opt" data-v="b">The whole chat so far, plus the rules and tool results</button>
-      <button class="opt" data-v="c">Nothing, because it remembers by itself</button>
-    </div><div class="why">Each call is a fresh request. The chat is sent again every time.</div></div>
-  <div class="q" data-right="c"><div class="qt">2. A chat is 40 messages long. Which costs the least per answer?</div>
-    <div class="opts">
-      <button class="opt" data-v="a">Send all 40 messages every time</button>
-      <button class="opt" data-v="b">Send the 40 messages with the tool results repeated</button>
-      <button class="opt" data-v="c">Summarise the old messages and keep the last few word for word</button>
-    </div><div class="why">Summarising shrinks what is sent. Keeping everything is the most expensive.</div></div>
-  <div class="q" data-right="a"><div class="qt">3. Why can a long chat give worse answers?</div>
-    <div class="opts">
-      <button class="opt" data-v="a">Old, irrelevant text can distract the model</button>
-      <button class="opt" data-v="b">The model gets bored after 10 messages</button>
-      <button class="opt" data-v="c">The database is slower</button>
-    </div><div class="why">More text is not always better. Old details can pull the answer off course.</div></div>
-  <div class="row"><span class="score" id="score1"></span></div>
-  <div class="row"><button class="btn ghost" onclick="go('c1')">Back</button><button class="btn" onclick="go('lab7a')">Lab 7A now</button></div>
+  <div class="q" data-right="b"><div class="qt">1. What does the model receive at step 5 of a chat?</div><div class="opts"><button class="opt" data-v="a">Only the newest message</button><button class="opt" data-v="b">The whole chat so far, plus the rules and tool results</button><button class="opt" data-v="c">Nothing, because it remembers by itself</button></div><div class="why">Each call is a fresh request. The chat is sent again every time.</div></div><div class="q" data-right="c"><div class="qt">2. A chat is 40 messages long. Which costs the least per answer?</div><div class="opts"><button class="opt" data-v="a">Send all 40 messages every time</button><button class="opt" data-v="b">Send the 40 messages with the tool results repeated</button><button class="opt" data-v="c">Summarise the old messages and keep the last few word for word</button></div><div class="why">Summarising shrinks what is sent. Keeping everything is the most expensive.</div></div><div class="q" data-right="a"><div class="qt">3. Why can a long chat give worse answers?</div><div class="opts"><button class="opt" data-v="a">Old, irrelevant text can distract the model</button><button class="opt" data-v="b">The model gets bored after 10 messages</button><button class="opt" data-v="c">The database is slower</button></div><div class="why">More text is not always better. Old details can pull the answer off course.</div></div><div class="row"><span class="score" id="score1"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c1')">Back</button><button class="btn" onclick="go('app')">See the app we will use</button></div>
 </section>
-
-<!-- LAB 7A POINTER -->
-<section data-id="lab7a">
+<section data-id="app">
+  <div class="kicker">Before the lab · How the app works</div>
+  <h2>What happens behind the screen</h2>
+  <p class="lead">The lab is one Streamlit app. Here is what each button really does, which file does it, and which idea it shows.</p>
+  <div class="dg"><svg viewBox="0 0 1210 495" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="ln"><rect x="5" y="10" width="1200" height="228" rx="20"/><text x="25" y="38" class="lt">① One question, end to end</text><text x="1187" y="38" class="lh" text-anchor="end">runs for every message</text></g><g class="ln"><rect x="5" y="266" width="1200" height="222" rx="20"/><text x="25" y="294" class="lt">② The three memory pieces</text><text x="1187" y="294" class="lh" text-anchor="end">dashed = can be switched off in the app</text></g><g class="nd k-ui"><rect x="20" y="66" width="200" height="118" rx="14"/><text x="120.0" y="98" class="ic">👤</text><text x="120.0" y="123" class="tt">You</text><text x="120.0" y="142" class="sb">press ▶ or type</text><text x="120.0" y="159" class="sb">a question</text></g><g class="nd k-ui"><rect x="262" y="66" width="200" height="118" rx="14"/><text x="362.0" y="98" class="ic">🖥️</text><text x="362.0" y="123" class="tt">Streamlit screen</text><text x="362.0" y="142" class="sb">tabs, sliders, charts</text><text x="362.0" y="175" class="fl">app.py</text></g><g class="nd k-ag"><rect x="504" y="66" width="200" height="118" rx="14"/><text x="604.0" y="98" class="ic">🤖</text><text x="604.0" y="123" class="tt">AskIT agent</text><text x="604.0" y="142" class="sb">create_agent loop:</text><text x="604.0" y="159" class="sb">think → tool → answer</text><text x="604.0" y="175" class="fl">memory_agent.py</text></g><g class="nd k-ag"><rect x="746" y="66" width="200" height="118" rx="14"/><text x="846.0" y="98" class="ic">🧩</text><text x="846.0" y="123" class="tt">Middleware</text><text x="846.0" y="142" class="sb">① Summarise (if ON)</text><text x="846.0" y="159" class="sb">② Context meter</text><text x="846.0" y="175" class="fl">before every model call</text></g><g class="nd k-ag"><rect x="988" y="66" width="200" height="118" rx="14"/><text x="1088.0" y="98" class="ic">🧠</text><text x="1088.0" y="123" class="tt">LLM</text><text x="1088.0" y="142" class="sb">Bedrock Nova Micro</text><text x="1088.0" y="159" class="sb">paid per token sent</text><text x="1088.0" y="175" class="fl">model_factory.py</text></g><line x1="223" y1="125" x2="257" y2="125" class="ar" marker-end="url(#ah1)"/><line x1="465" y1="125" x2="499" y2="125" class="ar" marker-end="url(#ah1)"/><line x1="707" y1="125" x2="741" y2="125" class="ar" marker-end="url(#ah1)"/><line x1="949" y1="125" x2="983" y2="125" class="ar" marker-end="url(#ah1)"/><circle cx="242" cy="106" r="13" class="numc"/><text x="242" y="111" class="num">1</text><circle cx="484" cy="106" r="13" class="numc"/><text x="484" y="111" class="num">2</text><circle cx="968" cy="106" r="13" class="numc"/><text x="968" y="111" class="num">4</text><circle cx="1180" cy="74" r="13" class="numc"/><text x="1180" y="79" class="num">5</text><g class="nd k-mem"><rect x="262" y="330" width="200" height="118" rx="14"/><text x="362.0" y="362" class="ic">🧵</text><text x="362.0" y="387" class="tt">Short-term memory</text><text x="362.0" y="406" class="sb">keeps ONE chat</text><text x="362.0" y="423" class="sb">(by thread_id)</text><text x="362.0" y="439" class="fl">checkpointer</text></g><g class="nd k-tool"><rect x="504" y="330" width="200" height="118" rx="14"/><text x="604.0" y="362" class="ic">🛠️</text><text x="604.0" y="387" class="tt">Tools</text><text x="604.0" y="406" class="sb">search_kb · get_ticket</text><text x="604.0" y="423" class="sb">save_note · recall_notes</text><text x="604.0" y="439" class="fl">askit_core/tools.py</text></g><g class="nd k-off"><rect x="746" y="330" width="200" height="118" rx="14" stroke-dasharray="7 5"/><text x="846.0" y="362" class="ic">🗜️</text><text x="846.0" y="387" class="tt">Compacted chat</text><text x="846.0" y="406" class="sb">old part → 1 summary</text><text x="846.0" y="423" class="sb">newest kept word for word</text><text x="846.0" y="439" class="fl">SummarizationMiddleware</text></g><g class="nd k-off"><rect x="988" y="330" width="200" height="118" rx="14" stroke-dasharray="7 5"/><text x="1088.0" y="362" class="ic">🗂️</text><text x="1088.0" y="387" class="tt">Long-term memory</text><text x="1088.0" y="406" class="sb">notes per user</text><text x="1088.0" y="423" class="sb">survive a NEW chat</text><text x="1088.0" y="439" class="fl">store</text></g><path d="M554 187 V226 H362 V325" class="ar" marker-end="url(#ah1)"/><text x="432" y="219" class="al">load + save the chat</text><circle cx="362" cy="256" r="13" class="numc"/><text x="362" y="261" class="num">3</text><line x1="604" y1="187" x2="604" y2="325" class="ar" marker-end="url(#ah1)"/><text x="630" y="256" class="al">calls</text><path d="M846 187 V325" class="ar d" marker-end="url(#ah1)"/><text x="916" y="256" class="al">rewrites the chat</text><path d="M654 187 V234 H1088 V325" class="ar d" marker-end="url(#ah1)"/><text x="1018" y="227" class="al">new chat? read notes</text><circle cx="270" cy="74" r="13" class="numc"/><text x="270" y="79" class="num">6</text></svg><div class="cap">The app you will use. Numbers match the steps below.</div></div>
+  <ol class="flow">
+    <li><b>You</b> press ▶ <i>Next script question</i> or type a question. <span class="tag">app.py</span></li>
+    <li>The screen sends it to the agent with a <b>chat id</b> (thread_id). <span class="tag">memory_agent.py · ask()</span></li>
+    <li>The <b>checkpointer</b> loads this chat's earlier messages: that is short-term memory. <span class="tag">InMemorySaver</span></li>
+    <li><b>Middleware</b> runs before every model call: if compaction is ON and the chat is too big, the old part becomes one summary. Then the <b>context meter</b> counts the tokens. <span class="tag">SummarizationMiddleware · ContextMeter</span></li>
+    <li>The <b>LLM</b> reads it all and either calls a tool (search_kb, get_ticket, save_note…) or answers. A tool call loops back to step 4. <span class="tag">model_factory.py · tools.py</span></li>
+    <li>The answer comes back, the chat is saved, and each model call becomes <b>one bar</b> in the chart. <span class="tag">app.py</span></li>
+  </ol>
+  <h3>The screen, tab by tab</h3>
+  <table><tr><th>Tab</th><th>What you do</th><th>Idea it shows</th><th>Code behind it</th></tr><tr><td>1 · Chat + context meter</td><td>Play the 8-question script, watch the bars</td><td>Context is re-sent at every step</td><td>ContextMeter, checkpointer</td></tr><tr><td>2 · Compare</td><td>One click: same chat with compaction OFF vs ON</td><td>Compaction trades detail for cost</td><td>SummarizationMiddleware</td></tr><tr><td>3 · Long-term memory</td><td>Chat A saves a fact, Chat B (new chat) recalls it</td><td>Short-term vs long-term memory</td><td>store, save_note, recall_notes</td></tr><tr><td>4 · How it works</td><td>Read the live diagram and the production table</td><td>Architecture + trade-offs</td><td>all files</td></tr><tr><td>5 · Questions + takeaway</td><td>Answer 3 questions, press Save</td><td>Your evidence for GitHub</td><td>submission\lab07_answers.md</td></tr></table>
+  <div class="row"><button class="btn ghost" onclick="go('q1')">Back</button><button class="btn" onclick="go('lab1')">Start Lab 7</button></div>
+</section>
+<section data-id="lab1">
   <div class="lab">
-    <h2>Lab 7A · watch the context grow</h2>
-    <p class="now">We are doing Lab 7A now (<code>lab07-askit-memory-context</code>).</p>
-    <p class="now">In VS Code: File &gt; Open Folder &gt; C:\AskIT\dxc-agentic-ai\Day07\Labs\lab07-askit-memory-context</p>
+    <h2>Lab 7 · AskIT Memory Playground · Part 1 (tab 1)</h2>
+    <p class="now">We are doing Lab 7 · AskIT Memory Playground now (<code>lab07-askit-memory-playground</code>).</p>
+    <p class="now">In VS Code: File &gt; Open Folder &gt; C:\AskIT\dxc-agentic-ai\Day07\Labs\lab07-askit-memory-playground</p>
+    <div class="four">
+      <div><b>What we do</b>Chat with AskIT and watch a bar chart of how much text is sent to the model at every step.</div>
+      <div><b>Why</b>The bill and the speed of an agent depend on how much text it sends. You need to see it to manage it.</div>
+      <div><b>Outcome</b>You can explain why long chats cost more, and show it with a number.</div>
+      <div><b>How</b>One command opens the app. Then only buttons and sliders. No code.</div>
+    </div>
     <ol>
-      <li>Open <b>README.md</b> in that folder and follow the section <b>Lab 7A</b>.</li>
-      <li>Everything you need to do is in the README. Nothing else.</li>
+      <li>In VS Code click <b>Terminal</b> &gt; <b>New Terminal</b>. The prompt must end with <b>lab07-askit-memory-playground</b>.</li>
+      <li>Type this and press Enter (first time takes about a minute):</li>
     </ol>
+    <div class="cmd"><code>python run.py</code></div>
+    <ol start="3">
+      <li>The app opens in your browser. If it does not, open this address in the browser: <code>http://localhost:8501</code></li>
+      <li>Open tab <b>1 · Chat + context meter</b>. Keep <b>compaction OFF</b>. Press <b>▶ Next script question</b> 8 times. Watch the bars grow.</li>
+      <li>Press <b>🆕 New chat</b> in the sidebar. Switch <b>compaction ON</b>, keep the slider at <b>1500</b>, play again. Open <b>🗜️ The summary</b> and <b>👀 What the model sees</b>.</li>
+    </ol>
+    <p class="muted">No folder <code>lab07-askit-memory-playground</code>? In File Explorer open <code>C:\AskIT\dxc-agentic-ai</code> and double-click <b>SYNC.bat</b>, then try again. Time: 20 minutes.</p>
+    <p class="muted"><b>Stretch:</b> type your own long questions in the chat box until compaction kicks in. What did the summary keep?</p>
   </div>
-  <div class="row"><button class="btn ghost" onclick="go('q1')">Back</button><button class="btn" onclick="go('c2')">Next idea (after the lab)</button></div>
+  <div class="row"><button class="btn ghost" onclick="go('app')">Back</button><button class="btn" onclick="go('c2')">Next idea (after the lab)</button></div>
 </section>
-
-<!-- 2 · CONCEPT: COMPACTION -->
 <section data-id="c2">
   <div class="kicker">Idea 2 · Compaction</div>
   <h2>Summarise the old part, keep the new part</h2>
   <p class="lead">Compaction means: when the chat gets big, the agent writes a short summary of the old messages and keeps only the newest ones word for word.</p>
-
-  <div class="say"><b>Three knobs decide everything:</b> <br>1. <b>When</b> to compact (the size that triggers it). <br>2. <b>How much</b> to keep word for word. <br>3. <b>What</b> the summary must keep: decisions, ticket ids, open questions.</div>
-
+  <div class="say"><b>Three knobs decide everything:</b><br>1. <b>When</b> to compact (the slider "Summarise when the chat reaches"). <br>2. <b>How much</b> to keep word for word (the slider "Keep the newest messages"). <br>3. <b>What</b> the summary must keep: decisions, ticket ids, open questions.</div>
   <h3>Choose the trade-off</h3>
-  <table>
-    <tr><th>Strategy</th><th>Cost</th><th>Risk</th><th>Use when</th></tr>
-    <tr><td>Keep everything</td><td>High</td><td>Distraction from old text</td><td>Short chats</td></tr>
-    <tr><td>Keep the last few messages only</td><td>Low</td><td>Forgets early facts</td><td>Simple, one-question chats</td></tr>
-    <tr><td>Summarise the old part, keep the last few</td><td>Medium</td><td>Summary may miss a detail</td><td>Long support chats</td></tr>
-    <tr><td>Save facts in a store</td><td>Low per chat</td><td>More engineering</td><td>Facts that must survive a new chat</td></tr>
-  </table>
-
+  <table><tr><th>Strategy</th><th>Cost</th><th>Risk</th><th>Use when</th></tr><tr><td>Keep everything</td><td>High, grows every turn</td><td>Distraction, context limit</td><td>Short chats</td></tr><tr><td>Keep the last few messages only (trim)</td><td>Low</td><td>Forgets early facts silently</td><td>Simple one-question chats</td></tr><tr><td>Summarise the old part, keep the last few</td><td>Medium (+ one summary call)</td><td>Summary may miss a detail</td><td>Long support chats</td></tr><tr><td>Save facts in a store</td><td>Low per chat</td><td>More engineering, privacy</td><td>Facts that must survive a new chat</td></tr></table>
   <div class="say" style="margin-top:14px"><b>Say this:</b> "Compaction is a product choice. You trade a little detail for a lot less cost. Test the answers before you trust it."</div>
-  <div class="row"><button class="btn ghost" onclick="go('lab7a')">Back</button><button class="btn" onclick="go('q2')">Quick check</button></div>
+  <div class="row"><button class="btn ghost" onclick="go('lab1')">Back</button><button class="btn" onclick="go('q2')">Quick check</button></div>
 </section>
-
 <section data-id="q2">
   <div class="kicker">Quick check · Idea 2</div>
   <h2>Three questions</h2>
-  <div class="q" data-right="b"><div class="qt">1. What does compaction do?</div>
-    <div class="opts">
-      <button class="opt" data-v="a">Deletes the whole chat</button>
-      <button class="opt" data-v="b">Replaces the old messages with a short summary</button>
-      <button class="opt" data-v="c">Sends the chat to a second model for checking</button>
-    </div><div class="why">The old part becomes a summary. The newest messages stay word for word.</div></div>
-  <div class="q" data-right="a"><div class="qt">2. If you set the trigger very low (for example 800 tokens), what happens?</div>
-    <div class="opts">
-      <button class="opt" data-v="a">Summaries happen more often, and each call is cheaper</button>
-      <button class="opt" data-v="b">The agent stops answering</button>
-      <button class="opt" data-v="c">Nothing changes</button>
-    </div><div class="why">Compacting early keeps the chat small, but each summary can lose a detail.</div></div>
-  <div class="q" data-right="c"><div class="qt">3. Which detail must the summary keep?</div>
-    <div class="opts">
-      <button class="opt" data-v="a">The weather in the office</button>
-      <button class="opt" data-v="b">Greetings and thanks</button>
-      <button class="opt" data-v="c">The ticket id and what the user decided</button>
-    </div><div class="why">Ticket ids and decisions are the facts the next answer depends on.</div></div>
-  <div class="row"><span class="score" id="score2"></span></div>
-  <div class="row"><button class="btn ghost" onclick="go('c2')">Back</button><button class="btn" onclick="go('lab7b')">Lab 7B now</button></div>
+  <div class="q" data-right="b"><div class="qt">1. What does compaction do?</div><div class="opts"><button class="opt" data-v="a">Deletes the whole chat</button><button class="opt" data-v="b">Replaces the old messages with a short summary</button><button class="opt" data-v="c">Sends the chat to a second model for checking</button></div><div class="why">The old part becomes a summary. The newest messages stay word for word.</div></div><div class="q" data-right="a"><div class="qt">2. If you set the trigger very low (for example 800 tokens), what happens?</div><div class="opts"><button class="opt" data-v="a">Summaries happen more often, and each call is cheaper</button><button class="opt" data-v="b">The agent stops answering</button><button class="opt" data-v="c">Nothing changes</button></div><div class="why">Compacting early keeps the chat small, but each summary can lose a detail and costs one extra call.</div></div><div class="q" data-right="c"><div class="qt">3. Which detail must the summary keep?</div><div class="opts"><button class="opt" data-v="a">The weather in the office</button><button class="opt" data-v="b">Greetings and thanks</button><button class="opt" data-v="c">The ticket id and what the user decided</button></div><div class="why">Ticket ids and decisions are the facts the next answer depends on.</div></div><div class="row"><span class="score" id="score2"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c2')">Back</button><button class="btn" onclick="go('lab2')">Lab 7 · Part 2 now</button></div>
 </section>
-
-<!-- LAB 7B POINTER -->
-<section data-id="lab7b">
+<section data-id="lab2">
   <div class="lab">
-    <h2>Lab 7B · summarise the old messages</h2>
-    <p class="now">We are doing Lab 7B now (<code>lab07-askit-memory-context</code>).</p>
-    <p class="now">In VS Code: File &gt; Open Folder &gt; C:\AskIT\dxc-agentic-ai\Day07\Labs\lab07-askit-memory-context</p>
+    <h2>Lab 7 · Part 2 (tab 2): compaction OFF vs ON</h2>
+    <p class="now">Go back to the app in your browser (still running from Part 1). Open tab <b>2 · Compare</b>.</p>
+    <div class="four">
+      <div><b>What we do</b>Run the same 8-question chat twice: without and with compaction.</div>
+      <div><b>Why</b>A client will ask "how much does it save, and what do we lose?" You need both numbers.</div>
+      <div><b>Outcome</b>A token saving in %, a monthly cost at 10,000 chats a day, and a check of the last two answers.</div>
+      <div><b>How</b>Press one button. Then move the slider to 800 and press it again.</div>
+    </div>
     <ol>
-      <li>Open <b>README.md</b> in that folder and follow the section <b>Lab 7B</b>.</li>
-      <li>Everything you need to do is in the README. Nothing else.</li>
+      <li>Press <b>⚖️ Run the 8-question script twice</b>. Wait about a minute.</li>
+      <li>Read the three numbers at the top and the line chart.</li>
+      <li>Read the last two answers. Did AskIT still know the first ticket and your employee id?</li>
+      <li>In the sidebar set <b>Summarise when the chat reaches</b> to <b>800</b>. Press the button again. Did the extra summary calls eat the saving?</li>
     </ol>
+    <p class="muted">App closed? In the VS Code terminal type <code>python run.py</code> again. Time: 10 minutes.</p>
   </div>
   <div class="row"><button class="btn ghost" onclick="go('q2')">Back</button><button class="btn" onclick="go('c3')">Next idea (after the lab)</button></div>
 </section>
-
-<!-- 3 · CONCEPT: MEMORY -->
 <section data-id="c3">
   <div class="kicker">Idea 3 · Memory</div>
   <h2>Two kinds of memory</h2>
   <div class="grid g2">
-    <div class="card"><h3>Short-term: one chat</h3><p>Everything said in this chat thread. It disappears for a new chat unless it is saved elsewhere.</p><p class="muted">Like the notes on the table during one meeting.</p></div>
-    <div class="card"><h3>Long-term: a store</h3><p>Facts saved on purpose, kept across chats. The agent looks them up when it needs them.</p><p class="muted">Like a notebook in the drawer you open next week.</p></div>
+    <div class="card"><h3>Short-term: one chat</h3><p>Everything said in this chat thread, kept by the <b>checkpointer</b>. A new chat starts empty.</p><p class="muted">Like the notes on the table during one meeting.</p></div>
+    <div class="card"><h3>Long-term: a store</h3><p>Facts saved on purpose, kept across chats, filed per user. The agent looks them up with a tool.</p><p class="muted">Like a notebook in the drawer you open next week.</p></div>
   </div>
-
   <h3>What is worth saving?</h3>
   <div class="grid g2">
-    <div class="card"><b>Save</b><p class="muted">Stable facts the user asked you to remember, for example their laptop model or their preferred contact time.</p></div>
+    <div class="card"><b>Save</b><p class="muted">Stable facts the user asked you to remember: laptop model, location, preferred contact time.</p></div>
     <div class="card"><b>Do not save</b><p class="muted">Passwords, card numbers, health details, anything the user did not ask you to keep. Store facts, not whole transcripts.</p></div>
   </div>
-
   <div class="say"><b>Product choice:</b> a notebook is fine for a few facts per user. Tickets, orders and records belong in the systems that already own them.</div>
-  <div class="row"><button class="btn ghost" onclick="go('lab7b')">Back</button><button class="btn" onclick="go('q3')">Quick check</button></div>
+  <div class="row"><button class="btn ghost" onclick="go('lab2')">Back</button><button class="btn" onclick="go('q3')">Quick check</button></div>
 </section>
-
 <section data-id="q3">
   <div class="kicker">Quick check · Idea 3</div>
   <h2>Three questions</h2>
-  <div class="q" data-right="b"><div class="qt">1. A note is saved in chat 1. Where is it found in chat 2?</div>
-    <div class="opts">
-      <button class="opt" data-v="a">Nowhere, every chat starts empty</button>
-      <button class="opt" data-v="b">In the long-term store, which the agent can search</button>
-      <button class="opt" data-v="c">In the model's own memory</button>
-    </div><div class="why">Only the store keeps facts across chats. The model itself keeps nothing.</div></div>
-  <div class="q" data-right="a"><div class="qt">2. Which fact should NOT be saved as a note?</div>
-    <div class="opts">
-      <button class="opt" data-v="a">A card number the user typed in the chat</button>
-      <button class="opt" data-v="b">The user's laptop model, if they asked you to remember it</button>
-      <button class="opt" data-v="c">The user's preferred contact time</button>
-    </div><div class="why">Payment and identity details should never go into notes. Ask the user to use the secure form instead.</div></div>
-  <div class="q" data-right="c"><div class="qt">3. What is the best place for a ticket's full status?</div>
-    <div class="opts">
-      <button class="opt" data-v="a">A note in the store</button>
-      <button class="opt" data-v="b">The chat summary</button>
-      <button class="opt" data-v="c">The ticket system, read by a tool</button>
-    </div><div class="why">The ticket system owns the ticket. The agent reads it with a tool, rather than keeping a copy.</div></div>
-  <div class="row"><span class="score" id="score3"></span></div>
-  <div class="row"><button class="btn ghost" onclick="go('c3')">Back</button><button class="btn" onclick="go('lab7c')">Lab 7C now</button></div>
+  <div class="q" data-right="b"><div class="qt">1. A note is saved in chat 1. Where is it found in chat 2?</div><div class="opts"><button class="opt" data-v="a">Nowhere, every chat starts empty</button><button class="opt" data-v="b">In the long-term store, which the agent can search</button><button class="opt" data-v="c">In the model's own memory</button></div><div class="why">Only the store keeps facts across chats. The model itself keeps nothing.</div></div><div class="q" data-right="a"><div class="qt">2. Which fact should NOT be saved as a note?</div><div class="opts"><button class="opt" data-v="a">A card number the user typed in the chat</button><button class="opt" data-v="b">The user's laptop model, if they asked you to remember it</button><button class="opt" data-v="c">The user's preferred contact time</button></div><div class="why">Payment and identity details never go into notes.</div></div><div class="q" data-right="c"><div class="qt">3. What is the best place for a ticket's full status?</div><div class="opts"><button class="opt" data-v="a">A note in the store</button><button class="opt" data-v="b">The chat summary</button><button class="opt" data-v="c">The ticket system, read by a tool</button></div><div class="why">The ticket system owns the ticket. The agent reads it with a tool, rather than keeping a copy.</div></div><div class="row"><span class="score" id="score3"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c3')">Back</button><button class="btn" onclick="go('lab3')">Lab 7 · Part 3 now</button></div>
 </section>
-
-<!-- LAB 7C POINTER -->
-<section data-id="lab7c">
+<section data-id="lab3">
   <div class="lab">
-    <h2>Lab 7C · a note that survives a new chat</h2>
-    <p class="now">We are doing Lab 7C now (<code>lab07-askit-memory-context</code>).</p>
-    <p class="now">In VS Code: File &gt; Open Folder &gt; C:\AskIT\dxc-agentic-ai\Day07\Labs\lab07-askit-memory-context</p>
+    <h2>Lab 7 · Part 3 (tabs 3, 4, 5): a fact that survives a new chat</h2>
+    <p class="now">Go back to the app. Open tab <b>3 · Long-term memory</b>.</p>
+    <div class="four">
+      <div><b>What we do</b>Tell AskIT a fact in one chat, then ask for it in a brand-new chat.</div>
+      <div><b>Why</b>Users expect "you should know me". That needs a store, with privacy rules.</div>
+      <div><b>Outcome</b>You see what is stored, per user, and how to delete it.</div>
+      <div><b>How</b>Buttons only, then 3 short answers saved to a file.</div>
+    </div>
     <ol>
-      <li>Open <b>README.md</b> in that folder and follow the section <b>Lab 7C</b>.</li>
-      <li>Everything you need to do is in the README. Nothing else.</li>
+      <li>Press <b>💬 Chat A</b>, then <b>💬 Chat B</b>. Does AskIT know your laptop?</li>
+      <li>In the sidebar switch <b>Remember facts across chats</b> OFF. Press Chat B again.</li>
+      <li>Switch it back ON. Change <b>You are</b> to Rahul. Press Chat B. Can Rahul see Priya's notes?</li>
+      <li>Change back to Priya and press <b>🗑️ Forget me</b>.</li>
+      <li>Open tab <b>4 · How it works</b> for 2 minutes. Then tab <b>5</b>: answer the 3 questions and press <b>💾 Save my answers</b>.</li>
+      <li>In File Explorer open <code>C:\AskIT\dxc-agentic-ai</code> and double-click <b>SYNC.bat</b> to push your answers.</li>
     </ol>
+    <p class="muted">Time: 15 minutes.</p>
   </div>
-  <div class="row"><button class="btn ghost" onclick="go('q3')">Back</button><button class="btn" onclick="go('sum')">Sum-up</button></div>
+  <div class="row"><button class="btn ghost" onclick="go('q3')">Back</button><button class="btn" onclick="go('prod')">How it runs in production</button></div>
 </section>
-
-<!-- 4 · SUM-UP -->
+<section data-id="prod">
+  <div class="kicker">Architect + sales view</div>
+  <h2>How memory runs in production</h2>
+  <p class="lead">Same idea as the lab. What changes: where the memory lives, who can see it, and how long it is kept.</p>
+  <div class="dg"><svg viewBox="0 0 1210 468" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="ln"><rect x="5" y="10" width="1200" height="200" rx="20"/><text x="25" y="38" class="lt">① Request path in production (AWS example)</text><text x="1187" y="38" class="lh" text-anchor="end">same pieces as the lab, managed and secured</text></g><g class="ln"><rect x="5" y="236" width="1200" height="226" rx="20"/><text x="25" y="264" class="lt"></text></g><text x="25" y="452" class="lt" style="fill:var(--ink);font-weight:700;font-size:18px">② Memory, tools and operations</text><g class="nd k-ui"><rect x="20" y="62" width="200" height="118" rx="14"/><text x="120.0" y="94" class="ic">👥</text><text x="120.0" y="119" class="tt">Users</text><text x="120.0" y="138" class="sb">Teams · portal</text><text x="120.0" y="155" class="sb">ServiceNow chat</text></g><g class="nd k-ui"><rect x="262" y="62" width="200" height="118" rx="14"/><text x="362.0" y="94" class="ic">🚪</text><text x="362.0" y="119" class="tt">API layer</text><text x="362.0" y="138" class="sb">API Gateway + auth</text><text x="362.0" y="155" class="sb">(Cognito / Entra ID)</text></g><g class="nd k-ag"><rect x="504" y="62" width="200" height="118" rx="14"/><text x="604.0" y="94" class="ic">🤖</text><text x="604.0" y="119" class="tt">Agent runtime</text><text x="604.0" y="138" class="sb">AgentCore Runtime</text><text x="604.0" y="155" class="sb">or ECS / Lambda</text><text x="604.0" y="171" class="fl">memory_agent.py code</text></g><g class="nd k-ag"><rect x="746" y="62" width="200" height="118" rx="14"/><text x="846.0" y="94" class="ic">🧩</text><text x="846.0" y="119" class="tt">Middleware</text><text x="846.0" y="138" class="sb">compaction, PII redact,</text><text x="846.0" y="155" class="sb">token budget</text></g><g class="nd k-ag"><rect x="988" y="62" width="200" height="118" rx="14"/><text x="1088.0" y="94" class="ic">🧠</text><text x="1088.0" y="119" class="tt">Bedrock model</text><text x="1088.0" y="138" class="sb">Nova / Claude</text><text x="1088.0" y="155" class="sb">inference profile</text></g><line x1="223" y1="121" x2="257" y2="121" class="ar" marker-end="url(#ah2)"/><line x1="465" y1="121" x2="499" y2="121" class="ar" marker-end="url(#ah2)"/><line x1="707" y1="121" x2="741" y2="121" class="ar" marker-end="url(#ah2)"/><line x1="949" y1="121" x2="983" y2="121" class="ar" marker-end="url(#ah2)"/><g class="nd k-mem"><rect x="20" y="286" width="225" height="118" rx="14"/><text x="132.5" y="318" class="ic">🧵</text><text x="132.5" y="343" class="tt">Short-term memory</text><text x="132.5" y="362" class="sb">AgentCore Memory events</text><text x="132.5" y="379" class="sb">or DynamoDB / Postgres</text><text x="132.5" y="395" class="fl">replaces InMemorySaver</text></g><g class="nd k-mem"><rect x="262" y="286" width="225" height="118" rx="14"/><text x="374.5" y="318" class="ic">🗂️</text><text x="374.5" y="343" class="tt">Long-term memory</text><text x="374.5" y="362" class="sb">AgentCore Memory strategies</text><text x="374.5" y="379" class="sb">or Postgres store / Mem0</text><text x="374.5" y="395" class="fl">replaces InMemoryStore</text></g><g class="nd k-tool"><rect x="504" y="286" width="225" height="118" rx="14"/><text x="616.5" y="318" class="ic">🛠️</text><text x="616.5" y="343" class="tt">Tools</text><text x="616.5" y="362" class="sb">ITSM / IAM APIs</text><text x="616.5" y="379" class="sb">via MCP · Gateway</text><text x="616.5" y="395" class="fl">Day 9 + Day 12</text></g><g class="nd k-tool"><rect x="746" y="286" width="225" height="118" rx="14"/><text x="858.5" y="318" class="ic">📈</text><text x="858.5" y="343" class="tt">Observability</text><text x="858.5" y="362" class="sb">tokens, cost, traces</text><text x="858.5" y="379" class="sb">CloudWatch · Langfuse</text><text x="858.5" y="395" class="fl">Day 10</text></g><g class="nd k-hu"><rect x="988" y="286" width="200" height="118" rx="14"/><text x="1088.0" y="318" class="ic">🛡️</text><text x="1088.0" y="343" class="tt">Governance</text><text x="1088.0" y="362" class="sb">retention · TTL</text><text x="1088.0" y="379" class="sb">right to forget · audit</text><text x="1088.0" y="395" class="fl">Day 11</text></g><path d="M604 182 V224 M132 224 H1088" class="ar"/><line x1="132" y1="224" x2="132" y2="281" class="ar" marker-end="url(#ah2)"/><line x1="374" y1="224" x2="374" y2="281" class="ar" marker-end="url(#ah2)"/><line x1="616" y1="224" x2="616" y2="281" class="ar" marker-end="url(#ah2)"/><line x1="858" y1="224" x2="858" y2="281" class="ar" marker-end="url(#ah2)"/><line x1="1088" y1="224" x2="1088" y2="281" class="ar" marker-end="url(#ah2)"/><text x="700" y="219" class="al">the runtime uses all of these</text></svg><div class="cap">Lab piece → production piece. The code idea stays the same; storage, security and scale change.</div></div>
+  <h3>Memory product choices</h3>
+  <table><tr><th>Option</th><th>Good</th><th>Watch out</th><th>Pick when</th></tr><tr><td>AgentCore Memory (AWS)</td><td>Managed short + long-term memory, built-in fact extraction</td><td>AWS only; priced per event/record (check current pricing)</td><td>Already on Bedrock / AgentCore</td></tr><tr><td>DynamoDB / Postgres / Redis checkpointer + store</td><td>Full control, data stays in your DB</td><td>You build retention, extraction, scaling</td><td>Strict data residency, existing DB skills</td></tr><tr><td>Mem0 / Zep (memory vendors)</td><td>Smart extraction, graph memory, quick start</td><td>Another vendor and data processor</td><td>Rich personalisation is the product</td></tr><tr><td>No long-term memory</td><td>Simplest, nothing to leak</td><td>Users repeat themselves</td><td>Anonymous or one-off helpdesk chats</td></tr></table>
+  <h3>Client questions · tap to see a good answer</h3>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“Will the bot remember me next week?”</b><span class="hint">tap to flip</span></div><div class="face back">Only the facts we choose to keep, in a store we control, with expiry and a delete option. The model itself remembers nothing.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“Why does our bill grow with longer chats?”</b><span class="hint">tap to flip</span></div><div class="face back">Every turn re-sends the chat. Compaction or trimming caps it. We can show you the curve.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“Is this safe for GDPR / DPDP?”</b><span class="hint">tap to flip</span></div><div class="face back">We keep minimal facts, redact PII before saving, set retention, and support right-to-forget, like the Forget me button.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“Managed memory or build our own?”</b><span class="hint">tap to flip</span></div><div class="face back">Managed is fastest on AWS; own DB gives control and residency. It is an ADR decision: cost, control, lock-in.</div></div></button></div>
+  <div class="client"><b>💼 Say this:</b> "Memory is a cost and a compliance decision, not just a feature. We design what the agent remembers, for how long, and who can delete it."</div>
+  <div class="row"><button class="btn ghost" onclick="go('lab3')">Back</button><button class="btn" onclick="go('sum')">Sum-up</button></div>
+</section>
 <section data-id="sum">
   <div class="kicker">Sum-up</div>
   <h2>What we learned today</h2>
   <div class="grid g2">
     <div class="card"><div class="big">1</div><h3>Context is paid for at every step</h3><p class="muted">Keep it small, and keep it relevant.</p></div>
     <div class="card"><div class="big">2</div><h3>Compaction trades detail for cost</h3><p class="muted">Choose the trigger and what to keep. Test the answers.</p></div>
-    <div class="card"><div class="big">3</div><h3>Save facts, not transcripts</h3><p class="muted">Notes for stable facts. Records stay in their own systems.</p></div>
+    <div class="card"><div class="big">3</div><h3>Save facts, not transcripts</h3><p class="muted">Per user, with retention and a delete button.</p></div>
   </div>
-  <div class="say" style="margin-top:18px"><b>Coming next · Day 8 (Mon 12 Oct):</b> several agents working together, and a human who approves the risky steps.</div>
-  <div class="row"><button class="btn ghost" onclick="go('lab7c')">Back</button><button class="btn" onclick="go('start')">Back to the start</button></div>
+  <div class="say" style="margin-top:18px"><b>Coming next:</b> several agents working together, and a human who approves the risky steps (Session 8).</div>
+  <div class="row"><button class="btn ghost" onclick="go('prod')">Back</button><button class="btn" onclick="go('start')">Back to the start</button></div>
 </section>
-
 </main>
-
 <footer><div class="inner"><span class="muted" id="pos"></span><span><button class="btn ghost" id="prev">Previous</button> <button class="btn" id="next">Next</button></span></div></footer>
-
 <script>
-const order = ['start','c1','q1','lab7a','c2','q2','lab7b','c3','q3','lab7c','sum'];
-const names = {start:'Start',c1:'1 Context',q1:'Check 1',lab7a:'Lab 7A',c2:'2 Compaction',q2:'Check 2',lab7b:'Lab 7B',c3:'3 Memory',q3:'Check 3',lab7c:'Lab 7C',sum:'Sum-up'};
+const order = ['start', 'c1', 'q1', 'app', 'lab1', 'c2', 'q2', 'lab2', 'c3', 'q3', 'lab3', 'prod', 'sum'];
+const names = {start:'Start',c1:'1 Context',q1:'Check 1',app:'The app',lab1:'Lab 7 · Part 1',c2:'2 Compaction',q2:'Check 2',lab2:'Lab 7 · Part 2',c3:'3 Memory',q3:'Check 3',lab3:'Lab 7 · Part 3',prod:'In production',sum:'Sum-up'};
 
 function go(id){
   document.querySelectorAll('main > section').forEach(s => s.classList.toggle('on', s.dataset.id === id));

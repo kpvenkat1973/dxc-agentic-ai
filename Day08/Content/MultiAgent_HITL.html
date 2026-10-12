@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8 · Multi-Agent Systems and Human-in-the-Loop</title>
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --surface2:#eef1f7; --ink:#141a2a; --muted:#5a6478; --line:#dde2ec;
+  --accent:#0f7c8c; --accent-soft:#d8f0f3; --warn:#b45309; --warn-soft:#fdecd3;
+  --ok:#157f3b; --ok-soft:#dcf3e4; --bad:#b42318; --bad-soft:#fbe0dd;
+  --shadow:0 2px 10px rgba(20,26,42,.07);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17; --shadow:none;}}
+:root[data-theme="dark"]{
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17; --shadow:none;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Aptos Narrow","Aptos","Segoe UI",system-ui,-apple-system,sans-serif;font-size:19px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer}
+header{position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+.bar{max-width:1100px;margin:0 auto;padding:12px 16px 8px;display:flex;align-items:center;gap:12px}
+.brand{font-weight:700;font-size:20px;flex:1;min-width:0}
+.brand small{display:block;font-weight:400;color:var(--muted);font-size:14px}
+.tbtn{border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:7px 14px;font-size:15px;font-weight:600;white-space:nowrap}
+.tbtn:hover{border-color:var(--accent)}
+.navwrap{max-width:1100px;margin:0 auto;padding:0 16px 12px}
+.steps{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding:2px 0 6px}
+.stp{flex:0 0 auto;border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:999px;padding:6px 14px;font-size:15px;font-weight:600;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s}
+.stp:hover{border-color:var(--accent);transform:translateY(-1px)}
+.stp.done{color:var(--muted)}
+.stp.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.stp.islab{border-style:dashed;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.stp.islab.on{background:var(--accent);color:#fff;border-style:solid}
+.stp:focus-visible,.tbtn:focus-visible,.btn:focus-visible,.flip:focus-visible,.opt:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.prog{height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 90px}
+section{display:none}
+section.on{display:block}
+h1{font-size:40px;line-height:1.15;margin:.2em 0 .3em}
+h2{font-size:30px;margin:.2em 0 .4em}
+h3{font-size:22px;margin:1.2em 0 .4em}
+.kicker{color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:14px}
+.lead{font-size:21px;color:var(--muted);max-width:820px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+.big{font-size:44px;line-height:1}
+/* flip cards */
+.flip{perspective:1000px;min-height:150px;border:0;background:none;padding:0;text-align:left;width:100%}
+.flip .in{position:relative;width:100%;height:100%;min-height:150px;transition:transform .5s;transform-style:preserve-3d}
+.flip.flipped .in{transform:rotateY(180deg)}
+.flip .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;padding:16px;border:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}
+.flip .front{background:var(--surface);box-shadow:var(--shadow)}
+.flip .front b{font-size:21px}
+.flip .front .hint{font-size:13px;color:var(--muted);margin-top:8px}
+.flip .back{background:var(--accent-soft);transform:rotateY(180deg);font-size:17px}
+/* quiz */
+.q{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:12px 0}
+.q .qt{font-weight:700;margin-bottom:10px}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--surface2);border-radius:10px;padding:9px 14px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:var(--ok-soft);border-color:var(--ok)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.why{display:none;margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--surface2);font-size:16px}
+.why.show{display:block}
+/* concept box */
+.say{border-left:5px solid var(--accent);background:var(--surface);border-radius:10px;padding:12px 16px;margin:12px 0;box-shadow:var(--shadow)}
+.say b{color:var(--accent)}
+/* table */
+table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:16px}
+th{background:var(--surface2)}
+/* lab pointer */
+.lab{border:2px dashed var(--accent);background:var(--accent-soft);border-radius:16px;padding:22px}
+.lab h2{margin-top:0}
+.lab .now{font-weight:700;font-size:19px}
+.lab ol{margin:.5em 0 0;padding-left:1.3em}
+.lab li{margin:6px 0}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:9px 18px;font-weight:700}
+.btn.ghost{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.score{font-size:24px;font-weight:700;color:var(--warn)}
+footer{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px}
+footer .inner{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;gap:10px}
+@media (max-width:600px){h1{font-size:30px} h2{font-size:24px} body{font-size:17px}}
+:root[data-theme="dark"] .btn:not(.ghost),:root[data-theme="dark"] .stp.on{color:#06222a}
+footer .inner{padding:0 16px}
+
+:root{--blue:#1F5AA6;--blue-soft:#E2EBF7;--plum:#6A3FA0;--plum-soft:#EEE6F7;--teal:#0E7068;--teal-soft:#E3F1EE;
+--amber:#A8570A;--amber-soft:#FBEEDB;--red:#B42318;--red-soft:#FDE7E7;--grey:#8A93A3;--grey-soft:#F1F2F4;--lane:#FAFAF7}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--blue:#86B4F0;--blue-soft:#17253d;--plum:#C4A6EE;--plum-soft:#2a2040;
+--teal:#5FD0C4;--teal-soft:#123532;--amber:#F2B266;--amber-soft:#3a2a14;--red:#FF8A7E;--red-soft:#3d1a17;--grey:#7d8698;--grey-soft:#20263a;--lane:#141a29}}
+:root[data-theme="dark"]{--blue:#86B4F0;--blue-soft:#17253d;--plum:#C4A6EE;--plum-soft:#2a2040;--teal:#5FD0C4;--teal-soft:#123532;
+--amber:#F2B266;--amber-soft:#3a2a14;--red:#FF8A7E;--red-soft:#3d1a17;--grey:#7d8698;--grey-soft:#20263a;--lane:#141a29}
+.dg{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px;margin:14px 0;box-shadow:var(--shadow);overflow-x:auto}
+.dg svg{width:100%;min-width:760px;height:auto;display:block}
+.g2 .dg svg{min-width:0}
+.dg .cap{font-size:15px;color:var(--muted);padding:4px 8px 2px}
+.nd rect{fill:var(--ks);stroke:var(--k);stroke-width:2.2}
+.nd .tt{fill:var(--k);font-weight:700;font-size:19px;text-anchor:middle}
+.nd .ic{font-size:26px;text-anchor:middle}
+.nd .sb{fill:var(--ink);font-size:15px;text-anchor:middle}
+.nd .fl{fill:var(--muted);font-size:13px;text-anchor:middle;font-family:Consolas,monospace}
+.k-ui{--k:var(--blue);--ks:var(--blue-soft)} .k-ag{--k:var(--plum);--ks:var(--plum-soft)} .k-mem{--k:var(--teal);--ks:var(--teal-soft)}
+.k-tool{--k:var(--amber);--ks:var(--amber-soft)} .k-hu{--k:var(--red);--ks:var(--red-soft)} .k-off{--k:var(--grey);--ks:var(--grey-soft)}
+.ln rect{fill:var(--lane);stroke:var(--line);stroke-width:1.4} .ln .lt{fill:var(--ink);font-weight:700;font-size:18px} .ln .lh{fill:var(--muted);font-size:13px}
+.ar{stroke:var(--muted);stroke-width:2;fill:none} .ar.d{stroke-dasharray:6 5} .ahd{fill:var(--muted)}
+.al{fill:var(--muted);font-size:14px;text-anchor:middle;paint-order:stroke;stroke:var(--surface);stroke-width:5px}
+.num{fill:var(--accent);font-weight:700;font-size:14px;text-anchor:middle} .numc{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.flow{counter-reset:f;list-style:none;padding:0;margin:10px 0}
+.flow li{counter-increment:f;position:relative;padding:8px 12px 8px 50px;margin:6px 0;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.flow li::before{content:counter(f);position:absolute;left:12px;top:8px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;text-align:center;line-height:26px;font-size:15px}
+.four{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0}
+.four div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.four b{display:block;color:var(--accent);margin-bottom:4px}
+.cmd{display:flex;gap:8px;align-items:center;margin:6px 0}
+.cmd code{flex:1;background:#0f1320;color:#e8ecf5;padding:10px 14px;border-radius:8px;font-size:17px}
+.tag{display:inline-block;font-size:13px;font-weight:700;padding:2px 10px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);margin-right:6px}
+.client{border-left:5px solid var(--teal);background:var(--surface);border-radius:10px;padding:12px 16px;margin:12px 0;box-shadow:var(--shadow)}
+.client b{color:var(--teal)}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">S8 · Multi-Agent Systems and Human-in-the-Loop<small>Day 8 of 12 · AskIT Multi-Agent Control Room</small></div>
+    <button class="tbtn" id="theme" type="button" aria-label="Toggle dark mode">🌙 Dark</button>
+  </div>
+  <div class="navwrap">
+    <nav class="steps" id="steps" aria-label="Sections"></nav>
+    <div class="prog"><i id="progbar"></i></div>
+  </div>
+</header>
+<main>
+<section data-id="start" class="on">
+  <div class="kicker">Today's flow · Session 8</div>
+  <h1>From one agent to a team of agents, with a human in control.</h1>
+  <p class="lead">Three ideas, ONE lab app (the Control Room). Buttons and pictures, no code to write. Then each team gets a client curveball and defends its design in a one-page decision record (ADR).</p>
+  <div class="grid g2" style="margin-top:18px">
+    <div class="card"><div class="big">1</div><h3>One agent or a team?</h3><p class="muted">When multi-agent helps, and when it only adds cost.</p></div>
+    <div class="card"><div class="big">2</div><h3>Four patterns</h3><p class="muted">Router, subagents, handoffs, skills. Pick by the problem.</p></div>
+    <div class="card"><div class="big">3</div><h3>Graph + human approval</h3><p class="muted">LangGraph state, checkpoints, pause for a human, resume after a crash.</p></div>
+  </div>
+  <div class="say"><b>Where we are in the AskIT story:</b> Day 5–6 built ONE agent with tools. Day 7 gave it memory. Today AskIT becomes a small team: a router, specialists, and a human who signs off risky actions.</div>
+  <div class="row"><button class="btn" onclick="go('c1')">Start the first idea</button></div>
+</section>
+<section data-id="c1">
+  <div class="kicker">Idea 1 · One agent or a team?</div>
+  <h2>Multi-agent is a design choice, not an upgrade</h2>
+  <p class="lead">One agent with 30 tools and a 3-page prompt gets confused and is hard to own. A team of small agents is easier to test and govern, but costs more calls and has more moving parts.</p>
+  <h3>Tap each card</h3>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Why a team? ① Context</b><span class="hint">tap to flip</span></div><div class="face back">Each specialist sees only its own prompt and tools. Smaller context = fewer wrong tool picks and cheaper calls.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Why a team? ② Parallel</b><span class="hint">tap to flip</span></div><div class="face back">Independent jobs (search KB, check ticket, check user) can run at the same time.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Why a team? ③ Ownership</b><span class="hint">tap to flip</span></div><div class="face back">The Network team owns the network agent. Separate tests, releases and budgets.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Why NOT a team?</b><span class="hint">tap to flip</span></div><div class="face back">Every hop is another LLM call: more cost, more latency, more places to fail, harder to debug.</div></div></button></div>
+  <h3>Quick decision rule</h3>
+  <table><tr><th>Ask yourself</th><th>If YES</th></tr><tr><td>Does one prompt try to do very different jobs?</td><td>Split into specialists</td></tr><tr><td>Do different teams own different parts?</td><td>Split by owner</td></tr><tr><td>Must a human approve some actions?</td><td>Add an approval step (any pattern)</td></tr><tr><td>Is the task simple and the same every time?</td><td>Stay with ONE agent, or even a plain workflow</td></tr></table>
+  <div class="say"><b>Say this:</b> "Start with one agent. Split only when a measurement (wrong tools, cost, ownership, risk) tells you to."</div>
+  <div class="row"><button class="btn ghost" onclick="go('start')">Back</button><button class="btn" onclick="go('q1')">Quick check</button></div>
+</section>
+<section data-id="q1">
+  <div class="kicker">Quick check · Idea 1</div>
+  <h2>Three questions</h2>
+  <div class="q" data-right="b"><div class="qt">1. What is the main COST of moving to multi-agent?</div><div class="opts"><button class="opt" data-v="a">You cannot use tools any more</button><button class="opt" data-v="b">More LLM calls, more latency, more parts to debug</button><button class="opt" data-v="c">You need a bigger GPU</button></div><div class="why">Each extra agent hop is another call and another place to fail.</div></div><div class="q" data-right="a"><div class="qt">2. Which is a good reason to split one agent into specialists?</div><div class="opts"><button class="opt" data-v="a">The single prompt mixes very different jobs and picks wrong tools</button><button class="opt" data-v="b">Multi-agent sounds more advanced to the client</button><button class="opt" data-v="c">The chat is long</button></div><div class="why">Split for a measured reason: confusion, ownership, parallel work or risk. Long chats are a memory problem (Day 7).</div></div><div class="q" data-right="b"><div class="qt">3. A task is simple and identical every time. Best design?</div><div class="opts"><button class="opt" data-v="a">Five agents that vote</button><button class="opt" data-v="b">One agent or a plain workflow</button><button class="opt" data-v="c">A router with 20 specialists</button></div><div class="why">Don't add agents to a problem that does not need them.</div></div><div class="row"><span class="score" id="score1"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c1')">Back</button><button class="btn" onclick="go('c2')">Next idea</button></div>
+</section>
+<section data-id="c2">
+  <div class="kicker">Idea 2 · Four coordination patterns</div>
+  <h2>Pick the pattern by the problem</h2>
+  <div class="grid g2" style="grid-template-columns:1fr 1fr"><div class="dg"><svg viewBox="0 0 425 240" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="nd k-ui"><rect x="10" y="95" width="105" height="58" rx="12"/><text x="34" y="133.0" class="ic" style="font-size:22px">🎫</text><text x="54" y="130.0" class="tt" style="text-anchor:start;font-size:16px">Input</text></g><g class="nd k-ag"><rect x="140" y="95" width="115" height="58" rx="12"/><text x="164" y="133.0" class="ic" style="font-size:22px">🧭</text><text x="184" y="130.0" class="tt" style="text-anchor:start;font-size:16px">Router</text></g><g class="nd k-ag"><rect x="290" y="20" width="125" height="58" rx="12"/><text x="314" y="58.0" class="ic" style="font-size:22px">🌐</text><text x="334" y="55.0" class="tt" style="text-anchor:start;font-size:16px">Network</text></g><g class="nd k-ag"><rect x="290" y="95" width="125" height="58" rx="12"/><text x="314" y="133.0" class="ic" style="font-size:22px">🔐</text><text x="334" y="130.0" class="tt" style="text-anchor:start;font-size:16px">Access</text></g><g class="nd k-off"><rect x="290" y="170" width="125" height="58" rx="12" stroke-dasharray="6 4"/><text x="314" y="208.0" class="ic" style="font-size:22px">💻</text><text x="334" y="205.0" class="tt" style="text-anchor:start;font-size:16px">Hardware</text></g><line x1="117" y1="124" x2="137" y2="124" class="ar" marker-end="url(#ah3)"/><line x1="257" y1="124" x2="287" y2="49" class="ar" marker-end="url(#ah3)"/><line x1="257" y1="124" x2="287" y2="124" class="ar" marker-end="url(#ah3)"/><line x1="257" y1="124" x2="287" y2="199" class="ar d" marker-end="url(#ah3)"/></svg><div class="cap"><b>Router</b>: an LLM classifies, ONE specialist runs.</div></div><div class="dg"><svg viewBox="0 0 465 240" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="nd k-ui"><rect x="10" y="95" width="100" height="58" rx="12"/><text x="34" y="133.0" class="ic" style="font-size:22px">👤</text><text x="54" y="130.0" class="tt" style="text-anchor:start;font-size:16px">User</text></g><g class="nd k-ag"><rect x="140" y="95" width="140" height="58" rx="12"/><text x="164" y="133.0" class="ic" style="font-size:22px">🤖</text><text x="184" y="130.0" class="tt" style="text-anchor:start;font-size:16px">Main agent</text></g><g class="nd k-mem"><rect x="320" y="30" width="135" height="58" rx="12"/><text x="344" y="68.0" class="ic" style="font-size:22px">🔎</text><text x="364" y="65.0" class="tt" style="text-anchor:start;font-size:16px">Search sub</text></g><g class="nd k-mem"><rect x="320" y="160" width="135" height="58" rx="12"/><text x="344" y="198.0" class="ic" style="font-size:22px">📝</text><text x="364" y="195.0" class="tt" style="text-anchor:start;font-size:16px">Writer sub</text></g><line x1="112" y1="124" x2="137" y2="124" class="ar" marker-end="url(#ah4)"/><line x1="282" y1="112" x2="317" y2="66" class="ar" marker-end="url(#ah4)"/><line x1="317" y1="52" x2="282" y2="104" class="ar d" marker-end="url(#ah4)"/><line x1="282" y1="136" x2="317" y2="182" class="ar" marker-end="url(#ah4)"/><line x1="317" y1="196" x2="282" y2="146" class="ar d" marker-end="url(#ah4)"/></svg><div class="cap"><b>Subagents</b>: the main agent calls helpers like tools; each has its own small context.</div></div><div class="dg"><svg viewBox="0 0 330 240" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="nd k-ui"><rect x="10" y="95" width="100" height="58" rx="12"/><text x="34" y="133.0" class="ic" style="font-size:22px">👤</text><text x="54" y="130.0" class="tt" style="text-anchor:start;font-size:16px">User</text></g><g class="nd k-ag"><rect x="160" y="30" width="150" height="58" rx="12"/><text x="184" y="68.0" class="ic" style="font-size:22px">🧾</text><text x="204" y="65.0" class="tt" style="text-anchor:start;font-size:16px">Billing agent</text></g><g class="nd k-ag"><rect x="160" y="160" width="150" height="58" rx="12"/><text x="184" y="198.0" class="ic" style="font-size:22px">🔐</text><text x="204" y="195.0" class="tt" style="text-anchor:start;font-size:16px">Access agent</text></g><line x1="112" y1="112" x2="157" y2="66" class="ar" marker-end="url(#ah5)"/><line x1="235" y1="92" x2="235" y2="156" class="ar" marker-end="url(#ah5)"/><text x="275" y="128" class="al">hands off</text><line x1="157" y1="186" x2="112" y2="140" class="ar d" marker-end="url(#ah5)"/></svg><div class="cap"><b>Handoffs</b>: control moves to another agent, which then talks to the user directly.</div></div><div class="dg"><svg viewBox="0 0 455 240" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="nd k-ui"><rect x="10" y="95" width="100" height="58" rx="12"/><text x="34" y="133.0" class="ic" style="font-size:22px">👤</text><text x="54" y="130.0" class="tt" style="text-anchor:start;font-size:16px">User</text></g><g class="nd k-ag"><rect x="140" y="95" width="130" height="58" rx="12"/><text x="164" y="133.0" class="ic" style="font-size:22px">🤖</text><text x="184" y="130.0" class="tt" style="text-anchor:start;font-size:16px">One agent</text></g><g class="nd k-tool"><rect x="305" y="20" width="140" height="58" rx="12"/><text x="329" y="58.0" class="ic" style="font-size:22px">📘</text><text x="349" y="55.0" class="tt" style="text-anchor:start;font-size:16px">VPN skill</text></g><g class="nd k-off"><rect x="305" y="95" width="140" height="58" rx="12" stroke-dasharray="6 4"/><text x="329" y="133.0" class="ic" style="font-size:22px">📗</text><text x="349" y="130.0" class="tt" style="text-anchor:start;font-size:16px">MFA skill</text></g><g class="nd k-off"><rect x="305" y="170" width="140" height="58" rx="12" stroke-dasharray="6 4"/><text x="329" y="208.0" class="ic" style="font-size:22px">📙</text><text x="349" y="205.0" class="tt" style="text-anchor:start;font-size:16px">Laptop skill</text></g><line x1="112" y1="124" x2="137" y2="124" class="ar" marker-end="url(#ah6)"/><line x1="302" y1="49" x2="272" y2="112" class="ar" marker-end="url(#ah6)"/><text x="300" y="90" class="al">loaded</text></svg><div class="cap"><b>Skills</b>: ONE agent loads extra instructions only when needed.</div></div></div>
+  <table><tr><th>Pattern</th><th>Who talks to the user?</th><th>State</th><th>Use it for</th><th>Watch out</th></tr><tr><td><b>Router</b></td><td>The chosen specialist (or a final step)</td><td>Usually stateless per request</td><td>Clear categories: tickets, intents</td><td>A wrong route = a wrong answer; add a fallback</td></tr><tr><td><b>Subagents</b></td><td>The main agent only</td><td>Main keeps state; subs are stateless</td><td>Isolated jobs, parallel work, different owners</td><td>More calls; the main agent must merge results</td></tr><tr><td><b>Handoffs</b></td><td>Whichever agent has control now</td><td>Stateful: who is 'on' is saved</td><td>Long chats that change topic</td><td>Harder to trace who said what</td></tr><tr><td><b>Skills</b></td><td>The one agent</td><td>One agent's state</td><td>Many small capabilities, one voice</td><td>One agent still owns everything</td></tr></table>
+  <div class="say"><b>Today's lab uses Router + Subagent-style specialists + a human approval step.</b> Frameworks such as CrewAI, OpenAI Agents SDK, Claude Agent SDK and Google ADK implement the same four ideas with different names.</div>
+  <div class="row"><button class="btn ghost" onclick="go('q1')">Back</button><button class="btn" onclick="go('q2')">Quick check</button></div>
+</section>
+<section data-id="q2">
+  <div class="kicker">Quick check · Idea 2</div>
+  <h2>Three questions</h2>
+  <div class="q" data-right="b"><div class="qt">1. AskIT reads a ticket and sends it to the Network OR Access OR Hardware agent. Which pattern?</div><div class="opts"><button class="opt" data-v="a">Handoffs</button><button class="opt" data-v="b">Router</button><button class="opt" data-v="c">Skills</button></div><div class="why">An LLM classifies the input and ONE specialist runs.</div></div><div class="q" data-right="a"><div class="qt">2. A sales bot passes the customer to a billing agent, which then chats with the customer directly. Which pattern?</div><div class="opts"><button class="opt" data-v="a">Handoffs</button><button class="opt" data-v="b">Subagents</button><button class="opt" data-v="c">Router</button></div><div class="why">Control moves to another agent that talks to the user.</div></div><div class="q" data-right="c"><div class="qt">3. One agent loads the 'VPN troubleshooting' instructions only when a VPN question arrives. Which pattern?</div><div class="opts"><button class="opt" data-v="a">Subagents</button><button class="opt" data-v="b">Router</button><button class="opt" data-v="c">Skills</button></div><div class="why">Skills load extra context on demand into ONE agent.</div></div><div class="row"><span class="score" id="score2"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c2')">Back</button><button class="btn" onclick="go('c3')">Next idea</button></div>
+</section>
+<section data-id="c3">
+  <div class="kicker">Idea 3 · LangGraph + human-in-the-loop</div>
+  <h2>A graph of steps that can pause, crash and resume</h2>
+  <p class="lead">LangGraph describes the flow as a map. Six words are all you need today.</p>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>State</b><span class="hint">tap to flip</span></div><div class="face back">The shared 'ticket folder' every step reads and adds to: ticket, route, reply, approval, trace.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Node</b><span class="hint">tap to flip</span></div><div class="face back">One step: a Python function. It can call an LLM (router, specialist) or not (policy, act).</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Edge / conditional edge</b><span class="hint">tap to flip</span></div><div class="face back">Which step comes next. A conditional edge decides by looking at the state, e.g. route = Access → access agent.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Checkpointer</b><span class="hint">tap to flip</span></div><div class="face back">Saves the state after EVERY node. That is what makes pause, crash-recovery and time-travel possible.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>interrupt()</b><span class="hint">tap to flip</span></div><div class="face back">Pauses the graph and waits for a human. The state is saved, nothing runs, no cost while waiting.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Command(resume=…)</b><span class="hint">tap to flip</span></div><div class="face back">The human's answer. The graph continues from exactly where it paused.</div></div></button></div>
+  <h3>Where should a human approve?</h3>
+  <table><tr><th>Action</th><th>Reversible?</th><th>Human?</th></tr><tr><td>Search the knowledge base, read a ticket</td><td>Nothing changes</td><td>No</td></tr><tr><td>Add a note to a ticket</td><td>Easy to undo</td><td>Usually no, but log it</td></tr><tr><td>Reset a password, grant access, delete data</td><td>Hard to undo, security risk</td><td><b>Yes, always</b></td></tr><tr><td>Anything for a VIP or above a cost limit</td><td>Business rule</td><td>Whatever the client's policy says</td></tr></table>
+  <div class="say"><b>Golden rule:</b> the LLM may <b>suggest</b>. Plain-code <b>policy</b> decides what needs a human. The <b>write</b> runs only after a YES.</div>
+  <div class="row"><button class="btn ghost" onclick="go('q2')">Back</button><button class="btn" onclick="go('q3')">Quick check</button></div>
+</section>
+<section data-id="q3">
+  <div class="kicker">Quick check · Idea 3</div>
+  <h2>Three questions</h2>
+  <div class="q" data-right="b"><div class="qt">1. What does the checkpointer do?</div><div class="opts"><button class="opt" data-v="a">Checks the spelling of the answer</button><button class="opt" data-v="b">Saves the graph's state after every node</button><button class="opt" data-v="c">Counts tokens</button></div><div class="why">Saved state is what lets the graph pause for a human and resume after a crash.</div></div><div class="q" data-right="b"><div class="qt">2. Who should decide whether a password reset needs approval?</div><div class="opts"><button class="opt" data-v="a">The LLM, it is smart enough</button><button class="opt" data-v="b">Plain-code policy written from the client's rules</button><button class="opt" data-v="c">The user who asked</button></div><div class="why">Policy must be predictable and auditable. An LLM can be talked into anything.</div></div><div class="q" data-right="b"><div class="qt">3. The approver answers two days later. What happens?</div><div class="opts"><button class="opt" data-v="a">The graph must start again from the router</button><button class="opt" data-v="b">The graph resumes at the approval step; earlier steps are not repeated</button><button class="opt" data-v="c">The request is lost</button></div><div class="why">The state was checkpointed; resume continues from the pause.</div></div><div class="row"><span class="score" id="score3"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c3')">Back</button><button class="btn" onclick="go('app')">See the app we will use</button></div>
+</section>
+<section data-id="app">
+  <div class="kicker">Before the lab · How the app works</div>
+  <h2>What happens behind the Control Room</h2>
+  <p class="lead">One Streamlit app runs this graph. Follow the numbers.</p>
+  <div class="dg"><svg viewBox="0 0 1294 612" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="ln"><rect x="2" y="6" width="1290" height="470" rx="20"/><text x="22" y="34" class="lt">① The graph you will run (LangGraph StateGraph)</text><text x="1274" y="34" class="lh" text-anchor="end">dashed = not every ticket goes this way</text></g><g class="nd k-ui"><rect x="12" y="180" width="160" height="118" rx="14"/><text x="92.0" y="212" class="ic">🎫</text><text x="92.0" y="237" class="tt">Ticket</text><text x="92.0" y="256" class="sb">text + sender</text><text x="92.0" y="289" class="fl">app.py</text></g><g class="nd k-ag"><rect x="194" y="180" width="160" height="118" rx="14"/><text x="274.0" y="212" class="ic">🧭</text><text x="274.0" y="237" class="tt">Router</text><text x="274.0" y="256" class="sb">ONE LLM call</text><text x="274.0" y="273" class="sb">picks a team</text><text x="274.0" y="289" class="fl">router()</text></g><g class="nd k-ag"><rect x="376" y="44" width="190" height="100" rx="14"/><text x="471.0" y="76" class="ic">🌐</text><text x="471.0" y="101" class="tt">Network agent</text><text x="471.0" y="120" class="sb">own prompt</text><text x="471.0" y="137" class="sb">READ tools only</text></g><line x1="357" y1="239" x2="371" y2="94" class="ar d" marker-end="url(#ah1)"/><line x1="569" y1="94" x2="567" y2="239" class="ar d" marker-end="url(#ah1)"/><g class="nd k-ag"><rect x="376" y="152" width="190" height="100" rx="14"/><text x="471.0" y="184" class="ic">🔐</text><text x="471.0" y="209" class="tt">Access agent</text><text x="471.0" y="228" class="sb">own prompt</text><text x="471.0" y="245" class="sb">READ tools only</text></g><line x1="357" y1="239" x2="371" y2="202" class="ar" marker-end="url(#ah1)"/><line x1="569" y1="202" x2="567" y2="239" class="ar" marker-end="url(#ah1)"/><g class="nd k-ag"><rect x="376" y="260" width="190" height="100" rx="14"/><text x="471.0" y="292" class="ic">💻</text><text x="471.0" y="317" class="tt">Hardware agent</text><text x="471.0" y="336" class="sb">own prompt</text><text x="471.0" y="353" class="sb">READ tools only</text></g><line x1="357" y1="239" x2="371" y2="310" class="ar d" marker-end="url(#ah1)"/><line x1="569" y1="310" x2="567" y2="239" class="ar d" marker-end="url(#ah1)"/><g class="nd k-ag"><rect x="376" y="368" width="190" height="100" rx="14"/><text x="471.0" y="400" class="ic">📦</text><text x="471.0" y="425" class="tt">General agent</text><text x="471.0" y="444" class="sb">own prompt</text><text x="471.0" y="461" class="sb">READ tools only</text></g><line x1="357" y1="239" x2="371" y2="418" class="ar d" marker-end="url(#ah1)"/><line x1="569" y1="418" x2="567" y2="239" class="ar d" marker-end="url(#ah1)"/><g class="nd k-tool"><rect x="572" y="180" width="160" height="118" rx="14"/><text x="652.0" y="212" class="ic">📏</text><text x="652.0" y="237" class="tt">Policy</text><text x="652.0" y="256" class="sb">plain code, NO LLM</text><text x="652.0" y="273" class="sb">needs a human?</text><text x="652.0" y="289" class="fl">policy()</text></g><g class="nd k-hu"><rect x="754" y="180" width="160" height="118" rx="14"/><text x="834.0" y="212" class="ic">🙋</text><text x="834.0" y="237" class="tt">Human approval</text><text x="834.0" y="256" class="sb">graph PAUSES</text><text x="834.0" y="273" class="sb">interrupt()</text><text x="834.0" y="289" class="fl">human_approval()</text></g><g class="nd k-tool"><rect x="936" y="180" width="160" height="118" rx="14"/><text x="1016.0" y="212" class="ic">⚙️</text><text x="1016.0" y="237" class="tt">Act</text><text x="1016.0" y="256" class="sb">the ONLY write</text><text x="1016.0" y="273" class="sb">after a YES</text><text x="1016.0" y="289" class="fl">act()</text></g><g class="nd k-ui"><rect x="1118" y="180" width="160" height="118" rx="14"/><text x="1198.0" y="212" class="ic">✉️</text><text x="1198.0" y="237" class="tt">Respond</text><text x="1198.0" y="256" class="sb">reply, no LLM</text><text x="1198.0" y="289" class="fl">respond()</text></g><line x1="175" y1="239" x2="189" y2="239" class="ar" marker-end="url(#ah1)"/><line x1="735" y1="239" x2="749" y2="239" class="ar" marker-end="url(#ah1)"/><line x1="917" y1="239" x2="931" y2="239" class="ar" marker-end="url(#ah1)"/><line x1="1099" y1="239" x2="1113" y2="239" class="ar" marker-end="url(#ah1)"/><path d="M652 301 V365 H1198 V303" class="ar d" marker-end="url(#ah1)"/><text x="925.0" y="358" class="al">no approval needed → straight to Respond</text><circle cx="20" cy="176" r="13" class="numc"/><text x="20" y="181" class="num">1</text><circle cx="202" cy="176" r="13" class="numc"/><text x="202" y="181" class="num">2</text><circle cx="558" cy="56" r="13" class="numc"/><text x="558" y="61" class="num">3</text><circle cx="580" cy="176" r="13" class="numc"/><text x="580" y="181" class="num">4</text><circle cx="762" cy="176" r="13" class="numc"/><text x="762" y="181" class="num">5</text><circle cx="944" cy="176" r="13" class="numc"/><text x="944" y="181" class="num">6</text><circle cx="1126" cy="176" r="13" class="numc"/><text x="1126" y="181" class="num">7</text><g class="ln"><rect x="2" y="492" width="1290" height="112" rx="20"/><text x="22" y="520" class="lt">② Under every node</text></g><g class="nd k-mem"><rect x="250" y="530" width="330" height="60" rx="14"/><text x="415" y="555" class="tt" style="font-size:17px">💾 Checkpointer</text><text x="415" y="578" class="sb">saves the state after EVERY node</text></g><g class="nd k-mem"><rect x="600" y="530" width="330" height="60" rx="14"/><text x="765" y="555" class="tt" style="font-size:17px">🧠 LLM (Bedrock Nova)</text><text x="765" y="578" class="sb">used by router + specialists only</text></g><g class="nd k-mem"><rect x="950" y="530" width="330" height="60" rx="14"/><text x="1115" y="555" class="tt" style="font-size:17px">🛠️ Tools (askit_core)</text><text x="1115" y="578" class="sb">read tools in agents · write tool only in Act</text></g></svg><div class="cap">The app you will use. The picture in the app lights up green / amber / red as your ticket moves.</div></div>
+  <ol class="flow">
+    <li>You pick a sample ticket and press <b>▶ Send to AskIT</b>. The app starts the graph with a new id. <span class="tag">app.py</span></li>
+    <li><b>Router</b>: ONE LLM call reads the ticket and returns a team name. <span class="tag">multi_agent.py · router()</span></li>
+    <li>A <b>conditional edge</b> sends the state to ONE specialist: a small agent with its own prompt and READ-only tools. <span class="tag">make_specialist()</span></li>
+    <li><b>Policy</b>: plain Python decides if a human must approve (password reset; VIP rule after the curveball). <span class="tag">policy()</span></li>
+    <li><b>Human approval</b>: <code>interrupt()</code> pauses the graph. The checkpointer saves everything. The app shows Approve / Reject. <span class="tag">human_approval()</span></li>
+    <li>Your click resumes the graph. <b>Act</b> runs the write tool ONLY if you approved. <span class="tag">act() · reset_password</span></li>
+    <li><b>Respond</b> builds the reply. The trace shows every node, its tokens and time. <span class="tag">respond()</span></li>
+  </ol>
+  <h3>The screen, tab by tab</h3>
+  <table><tr><th>Tab</th><th>What you do</th><th>Idea it shows</th></tr><tr><td>1 · Route + approve</td><td>Send sample tickets, approve and reject</td><td>Router pattern, HITL with interrupt()</td></tr><tr><td>2 · Crash + resume</td><td>Crash the graph at Policy, then resume</td><td>Checkpointer = durable execution</td></tr><tr><td>3 · One agent vs a team</td><td>One click: 6 tickets both ways</td><td>Cost vs control trade-off</td></tr><tr><td>4 · How it works</td><td>Diagram, code map, patterns, frameworks</td><td>Architecture + product choice</td></tr><tr><td>5 · Questions + takeaway</td><td>3 answers, press Save</td><td>Evidence for GitHub</td></tr><tr><td>6 · Team design decision</td><td>Team ADR with your lab numbers</td><td>Architecture decision + curveball</td></tr></table>
+  <div class="row"><button class="btn ghost" onclick="go('q3')">Back</button><button class="btn" onclick="go('lab1')">Start Lab 8</button></div>
+</section>
+<section data-id="lab1">
+  <div class="lab">
+    <h2>Lab 8 · AskIT Multi-Agent Control Room · Part 1 (tab 1)</h2>
+    <p class="now">We are doing Lab 8 · Multi-Agent Control Room now (<code>lab08-askit-multi-agent</code>).</p>
+    <p class="now">In VS Code: File &gt; Open Folder &gt; C:\AskIT\dxc-agentic-ai\Day08\Labs\lab08-askit-multi-agent</p>
+    <div class="four">
+      <div><b>What we do</b>Send helpdesk tickets to a team of agents and approve the risky ones.</div>
+      <div><b>Why</b>Clients ask "who controls the AI?". This is the answer you can show.</div>
+      <div><b>Outcome</b>You see routing, a pause for a human, and a write that only happens after YES.</div>
+      <div><b>How</b>One command opens the app. Then only buttons. No code.</div>
+    </div>
+    <ol>
+      <li>In VS Code click <b>Terminal</b> &gt; <b>New Terminal</b>. The prompt must end with <b>lab08-askit-multi-agent</b>.</li>
+      <li>Type this and press Enter (first time takes about a minute):</li>
+    </ol>
+    <div class="cmd"><code>python run.py</code></div>
+    <ol start="3">
+      <li>The app opens in your browser. If it does not, open <code>http://localhost:8501</code></li>
+      <li>Tab <b>1 · Route + approve</b>: click <b>🌐 VPN error 809</b>, then <b>▶ Send to AskIT</b>. Which agent lit up?</li>
+      <li>Click <b>🔐 Locked out, please reset</b>, then <b>▶ Send</b>. The graph PAUSES. Read the request and press <b>✅ Approve</b>.</li>
+      <li>Send the same ticket again and press <b>❌ Reject</b>. What does the reply say now?</li>
+      <li>Try <b>💻</b>, <b>📦</b> and <b>🎣</b>. Open the <b>📋 Trace</b> each time: how many LLM calls?</li>
+    </ol>
+    <p class="muted">No folder <code>lab08-askit-multi-agent</code>? In File Explorer open <code>C:\AskIT\dxc-agentic-ai</code> and double-click <b>SYNC.bat</b>. Lab 7 app still running? Close its black window first. Time: 20 minutes.</p>
+    <p class="muted"><b>Stretch:</b> write your own ticket in the text box that confuses the router. Which team did it pick?</p>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('app')">Back</button><button class="btn" onclick="go('lab2')">Lab 8 · Part 2</button></div>
+</section>
+<section data-id="lab2">
+  <div class="lab">
+    <h2>Lab 8 · Part 2 (tabs 2 + 3): crash, resume, compare</h2>
+    <p class="now">Go back to the app in your browser.</p>
+    <div class="four">
+      <div><b>What we do</b>Crash the graph halfway, resume it. Then run 6 tickets through ONE agent and through the team.</div>
+      <div><b>Why</b>Production agents crash and wait for people. And clients ask "is multi-agent worth the cost?"</div>
+      <div><b>Outcome</b>Proof that work is not repeated after a crash, and real numbers for cost vs control.</div>
+      <div><b>How</b>Three buttons.</div>
+    </div>
+    <ol>
+      <li>Tab <b>2 · Crash + resume</b>: press <b>💥 Run the VPN ticket with a crash</b>. Which steps are green, which is red?</li>
+      <li>Press <b>🔄 Resume from the last checkpoint</b>. In the trace, did the router run twice?</li>
+      <li>Tab <b>3 · One agent vs a team</b>: press <b>⚖️ Run 6 tickets</b> (about 1–2 minutes).</li>
+      <li>Read the four numbers: right team, tokens, and <b>writes with NO human approval</b>.</li>
+    </ol>
+    <p class="muted">Time: 15 minutes.</p>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('lab1')">Back</button><button class="btn" onclick="go('prod')">How it runs in production</button></div>
+</section>
+<section data-id="prod">
+  <div class="kicker">Architect + sales view</div>
+  <h2>How a multi-agent system runs in production</h2>
+  <div class="dg"><svg viewBox="0 0 1210 468" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="ln"><rect x="5" y="10" width="1200" height="200" rx="20"/><text x="25" y="38" class="lt">① Request path in production (AWS example)</text></g><g class="nd k-ui"><rect x="20" y="62" width="200" height="118" rx="14"/><text x="120.0" y="94" class="ic">👥</text><text x="120.0" y="119" class="tt">Users</text><text x="120.0" y="138" class="sb">Teams · portal</text><text x="120.0" y="155" class="sb">ServiceNow</text></g><g class="nd k-ui"><rect x="262" y="62" width="200" height="118" rx="14"/><text x="362.0" y="94" class="ic">🚪</text><text x="362.0" y="119" class="tt">API layer</text><text x="362.0" y="138" class="sb">API Gateway + auth</text></g><g class="nd k-ag"><rect x="504" y="62" width="200" height="118" rx="14"/><text x="604.0" y="94" class="ic">🕸️</text><text x="604.0" y="119" class="tt">Graph runtime</text><text x="604.0" y="138" class="sb">AgentCore Runtime</text><text x="604.0" y="155" class="sb">or ECS / EKS</text><text x="604.0" y="171" class="fl">multi_agent.py code</text></g><g class="nd k-ag"><rect x="746" y="62" width="200" height="118" rx="14"/><text x="846.0" y="94" class="ic">🧭</text><text x="846.0" y="119" class="tt">Router model</text><text x="846.0" y="138" class="sb">small + cheap</text><text x="846.0" y="155" class="sb">Nova Micro</text></g><g class="nd k-ag"><rect x="988" y="62" width="200" height="118" rx="14"/><text x="1088.0" y="94" class="ic">🧠</text><text x="1088.0" y="119" class="tt">Specialist models</text><text x="1088.0" y="138" class="sb">Nova Lite / Claude</text><text x="1088.0" y="155" class="sb">per team</text></g><line x1="223" y1="121" x2="257" y2="121" class="ar" marker-end="url(#ah2)"/><line x1="465" y1="121" x2="499" y2="121" class="ar" marker-end="url(#ah2)"/><line x1="707" y1="121" x2="741" y2="121" class="ar" marker-end="url(#ah2)"/><line x1="949" y1="121" x2="983" y2="121" class="ar" marker-end="url(#ah2)"/><g class="ln"><rect x="5" y="236" width="1200" height="226" rx="20"/><text x="25" y="264" class="lt"></text></g><text x="25" y="452" style="fill:var(--ink);font-weight:700;font-size:18px">② Durable state, people and controls</text><path d="M604 182 V224 M132 224 H1088" class="ar"/><line x1="132" y1="224" x2="132" y2="281" class="ar" marker-end="url(#ah2)"/><line x1="374" y1="224" x2="374" y2="281" class="ar" marker-end="url(#ah2)"/><line x1="616" y1="224" x2="616" y2="281" class="ar" marker-end="url(#ah2)"/><line x1="858" y1="224" x2="858" y2="281" class="ar" marker-end="url(#ah2)"/><line x1="1088" y1="224" x2="1088" y2="281" class="ar" marker-end="url(#ah2)"/><text x="700" y="219" class="al">the graph uses all of these</text><g class="nd k-mem"><rect x="20" y="286" width="225" height="118" rx="14"/><text x="132.5" y="318" class="ic">💾</text><text x="132.5" y="343" class="tt">Checkpointer</text><text x="132.5" y="362" class="sb">DynamoDB / Postgres</text><text x="132.5" y="379" class="sb">resume after days</text><text x="132.5" y="395" class="fl">replaces InMemorySaver</text></g><g class="nd k-hu"><rect x="262" y="286" width="225" height="118" rx="14"/><text x="374.5" y="318" class="ic">🙋</text><text x="374.5" y="343" class="tt">Approval channel</text><text x="374.5" y="362" class="sb">Teams card / ServiceNow</text><text x="374.5" y="379" class="sb">approval → resume</text><text x="374.5" y="395" class="fl">replaces the buttons</text></g><g class="nd k-tool"><rect x="504" y="286" width="225" height="118" rx="14"/><text x="616.5" y="318" class="ic">📏</text><text x="616.5" y="343" class="tt">Policy engine</text><text x="616.5" y="362" class="sb">Cedar · AgentCore Policy</text><text x="616.5" y="379" class="sb">OPA · plain code</text><text x="616.5" y="395" class="fl">replaces policy()</text></g><g class="nd k-tool"><rect x="746" y="286" width="225" height="118" rx="14"/><text x="858.5" y="318" class="ic">🛠️</text><text x="858.5" y="343" class="tt">Tools</text><text x="858.5" y="362" class="sb">ITSM / IAM APIs</text><text x="858.5" y="379" class="sb">via MCP · Gateway</text><text x="858.5" y="395" class="fl">Day 9 + Day 12</text></g><g class="nd k-tool"><rect x="988" y="286" width="200" height="118" rx="14"/><text x="1088.0" y="318" class="ic">📈</text><text x="1088.0" y="343" class="tt">Observability</text><text x="1088.0" y="362" class="sb">trace per node</text><text x="1088.0" y="379" class="sb">Langfuse · CloudWatch</text><text x="1088.0" y="395" class="fl">Day 10</text></g></svg><div class="cap">Lab piece → production piece. The graph code stays; state, approvals and policy move to managed services.</div></div>
+  <h3>Frameworks a client may name (concepts only)</h3>
+  <table><tr><th>Framework</th><th>Idea</th><th>Good for</th><th>Watch out</th></tr><tr><td>LangGraph (today)</td><td>Explicit graph, checkpoints, interrupts, any model</td><td>Control, audit, long-running flows</td><td>More code</td></tr><tr><td>CrewAI</td><td>Role-based crew of agents with tasks</td><td>Fast prototypes</td><td>Less control of the exact flow</td></tr><tr><td>OpenAI Agents SDK</td><td>Agents + handoffs + guardrails</td><td>Simple handoff apps</td><td>Best with OpenAI models</td></tr><tr><td>Claude Agent SDK</td><td>The agent loop behind Claude Code: tools, subagents, skills</td><td>Coding / ops / file agents</td><td>Claude-centric</td></tr><tr><td>Google ADK</td><td>Agent Development Kit, multi-agent, A2A</td><td>Google Cloud / Gemini shops</td><td>Younger ecosystem</td></tr><tr><td>AWS Strands + AgentCore</td><td>Model-driven agents; managed runtime, memory, gateway, policy</td><td>Hosting any of the above on AWS</td><td>AWS lock-in; check current pricing</td></tr></table>
+  <h3>Client questions · tap to see a good answer</h3>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“Why not one big agent?”</b><span class="hint">tap to flip</span></div><div class="face back">Smaller prompts per team, separate owners and releases, and one clean place for approvals. It costs about one extra call per ticket; tab 3 shows the numbers.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“Can the AI reset passwords on its own?”</b><span class="hint">tap to flip</span></div><div class="face back">No. The AI only requests. Policy decides who must approve. The write runs after a YES and is logged.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“What if the server crashes while waiting for an approver?”</b><span class="hint">tap to flip</span></div><div class="face back">The state is saved after every step. It resumes exactly there: no repeated LLM cost, no duplicate action.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“Which framework should we use?”</b><span class="hint">tap to flip</span></div><div class="face back">LangGraph for control and audit, CrewAI for quick prototypes, a vendor SDK if you are all-in on one vendor. AgentCore can host any of them on AWS.</div></div></button></div>
+  <div class="client"><b>💼 Say this:</b> "We don't let the AI approve its own actions. It drafts, a policy decides who signs off, and every step is saved and auditable."</div>
+  <div class="row"><button class="btn ghost" onclick="go('lab2')">Back</button><button class="btn" onclick="go('adr1')">What is an ADR?</button></div>
+</section>
+<section data-id="adr1">
+  <div class="kicker">Architect skill · 3 minutes</div>
+  <h2>What is an ADR, and why do clients care?</h2>
+  <p class="lead">An <b>Architecture Decision Record</b> is one page about ONE important decision: what we decided, what we rejected, and what it costs. Review boards (ARB) and clients read it before they approve money or go-live. On Day 1 you wrote one on model choice. Today your team writes a real one, with lab numbers.</p>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Why write it down?</b><span class="hint">tap to flip</span></div><div class="face back">Six months later nobody remembers WHY. The ADR answers the auditor, the new team member and the client.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Why do sales people need it?</b><span class="hint">tap to flip</span></div><div class="face back">A client trusts a design that shows its alternatives and its cost. 'We considered X and rejected it because…' wins deals.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>What makes a GOOD ADR?</b><span class="hint">tap to flip</span></div><div class="face back">One clear decision, at least one rejected option with a real reason, numbers, and honest downsides.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>What makes a BAD ADR?</b><span class="hint">tap to flip</span></div><div class="face back">Buzzwords, no alternatives, no numbers, no downsides. The board rejects it.</div></div></button></div>
+  <h3>A finished example (read it in 1 minute)</h3>
+  <div class="card">
+    <p><b>ADR-EXAMPLE: Which model powers AskIT's router?</b> · Status: Accepted</p>
+    <p><b>Context:</b> the router makes ONE short classification per ticket (Network / Access / Hardware / General). 10,000 tickets a day. It must answer in under a second.</p>
+    <p><b>Decision:</b> use a <b>small model (Amazon Nova Micro)</b> for the router.</p>
+    <p><b>Alternatives rejected:</b> <i>Claude Sonnet</i>: better on vague tickets, but many times the price per token for a one-word answer. <i>Nova Lite</i>: a middle option, keep as plan B if accuracy drops.</p>
+    <p><b>Evidence:</b> routed all 6 Lab 8 test tickets to the right team; a few hundred tokens per ticket.</p>
+    <p><b>Consequences:</b> + lowest cost and latency. − vague tickets may be misrouted → they fall back to General and a human. Revisit if misroutes go above 5%.</p>
+  </div>
+  <table><tr><th>ADR part</th><th>Answers the question</th></tr><tr><td>Context</td><td>What problem, what limits, what did the client ask?</td></tr><tr><td>Decision</td><td>What did we choose? One sentence.</td></tr><tr><td>Alternatives</td><td>What else did we consider, and why not?</td></tr><tr><td>Evidence</td><td>Which numbers support it?</td></tr><tr><td>Consequences</td><td>What do we gain, what do we pay, when do we revisit?</td></tr></table>
+  <div class="row"><button class="btn ghost" onclick="go('prod')">Back</button><button class="btn" onclick="go('adr2')">Your team task</button></div>
+</section>
+<section data-id="adr2">
+  <div class="kicker">Team task · Review Board</div>
+  <h2>Your team's design decision: ADR-AskIT-01</h2>
+  <p class="lead">Each team gets a different curveball from Orbit Corp. You defend the design you ran in Lab 8, with your own numbers.</p>
+  <div class="four">
+    <div><b>What we do</b>Make 3 design choices, write why, handle your curveball. The app writes the ADR with your numbers.</div>
+    <div><b>Why</b>Architects and pre-sales defend designs on paper before money is spent.</div>
+    <div><b>Outcome</b>A one-page ADR in your team folder, a 2-minute pitch, and leaderboard points.</div>
+    <div><b>How</b>Lab 8 app, tab 6 "Team design decision". One person per team shares the screen.</div>
+  </div>
+  <table><tr><th>Team</th><th>Curveball</th><th>From</th><th>Syllabus topic it tests</th></tr><tr><td><code>team-a</code></td><td>VIP users must always go to a human</td><td>CIO</td><td>Human-in-the-loop policy</td></tr><tr><td><code>team-b</code></td><td>AI budget capped at $500/month, but the business wants Claude Sonnet</td><td>CFO</td><td>Model selection and cost</td></tr><tr><td><code>team-c</code></td><td>Nobody approves at night (8 pm – 8 am)</td><td>Service Desk Manager</td><td>Durable execution, timeouts, escalation</td></tr><tr><td><code>team-d</code></td><td>Auditors want proof of every approval</td><td>Internal Audit</td><td>Audit trail, checkpoints, observability</td></tr></table>
+  <ol>
+    <li>Breakout room, 10 minutes. Open the Lab 8 app, tab <b>3</b>: make sure <b>⚖️ Run 6 tickets</b> has been run once.</li>
+    <li>Tab <b>6</b>: pick your team, read your curveball, check the evidence it points to.</li>
+    <li>Make the 3 choices, fill <b>Why</b>, <b>rejected alternative</b>, <b>curveball answer</b> and the approval table. Press <b>📝 Create our design decision</b>.</li>
+    <li>In File Explorer open <code>C:\AskIT\dxc-agentic-ai</code> and double-click <b>SYNC.bat</b>.</li>
+    <li>Back in the main room: each team pitches in <b>2 minutes</b>. The board (trainer + one person from each other team) scores it.</li>
+  </ol>
+  <h3>How the board scores (0-5 each, 25 points to the leaderboard)</h3>
+  <table><tr><th>Criterion</th><th>Full marks when</th></tr><tr><td>Decision</td><td>One clear sentence a CIO understands</td></tr><tr><td>Alternatives</td><td>At least one option rejected, with a real reason</td></tr><tr><td>Human approval</td><td>What needs approval, who approves, what happens if nobody answers</td></tr><tr><td>Evidence</td><td>Numbers from the lab: right team, tokens, $ per ticket, $ per month</td></tr><tr><td>Curveball</td><td>What changed in the design, and what did NOT change</td></tr></table>
+  <div class="client"><b>💼 This is a sales skill:</b> the same one page answers a client's architect, their CFO and their auditor.</div>
+  <div class="row"><button class="btn ghost" onclick="go('adr1')">Back</button><button class="btn" onclick="go('sum')">Sum-up</button></div>
+</section>
+<section data-id="sum">
+  <div class="kicker">Sum-up</div>
+  <h2>What we learned today</h2>
+  <div class="grid g2">
+    <div class="card"><div class="big">1</div><h3>Split only for a reason</h3><p class="muted">Confusion, ownership, parallel work or risk. Otherwise one agent.</p></div>
+    <div class="card"><div class="big">2</div><h3>Pick the pattern by the problem</h3><p class="muted">Router, subagents, handoffs, skills.</p></div>
+    <div class="card"><div class="big">3</div><h3>LLM routes, policy decides, human approves</h3><p class="muted">Writes only after YES. The checkpointer makes pauses and crashes safe.</p></div>
+  </div>
+  <div class="say" style="margin-top:18px"><b>Coming next · Session 9:</b> MCP. Instead of tools written inside our code, AskIT connects to tool servers over a standard protocol.</div>
+  <div class="row"><button class="btn ghost" onclick="go('adr2')">Back</button><button class="btn" onclick="go('start')">Back to the start</button></div>
+</section>
+</main>
+<footer><div class="inner"><span class="muted" id="pos"></span><span><button class="btn ghost" id="prev">Previous</button> <button class="btn" id="next">Next</button></span></div></footer>
+<script>
+const order = ['start', 'c1', 'q1', 'c2', 'q2', 'c3', 'q3', 'app', 'lab1', 'lab2', 'prod', 'adr1', 'adr2', 'sum'];
+const names = {start:'Start',c1:'1 One or a team',q1:'Check 1',c2:'2 Patterns',q2:'Check 2',c3:'3 Graph + HITL',q3:'Check 3',app:'The app',lab1:'Lab 8 · Part 1',lab2:'Lab 8 · Part 2',prod:'In production',adr1:'What is an ADR',adr2:'Team ADR',sum:'Sum-up'};
+
+function go(id){
+  document.querySelectorAll('main > section').forEach(s => s.classList.toggle('on', s.dataset.id === id));
+  render(id);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function render(id){
+  const i = order.indexOf(id);
+  document.getElementById('steps').innerHTML = order.map((k,n) =>
+    `<button type="button" class="stp ${k===id?'on':''} ${n<i?'done':''} ${k.startsWith('lab')?'islab':''}" data-go="${k}" ${k===id?'aria-current="step"':''}>${names[k]}</button>`).join('');
+  document.querySelectorAll('.stp').forEach(b => b.onclick = () => go(b.dataset.go));
+  const on = document.querySelector('.stp.on'); if (on) on.scrollIntoView({block:'nearest',inline:'center'});
+  document.getElementById('pos').textContent = `${i+1} of ${order.length}`;
+  document.getElementById('progbar').style.width = ((i+1)/order.length*100)+'%';
+  document.getElementById('prev').disabled = i === 0;
+  document.getElementById('next').disabled = i === order.length - 1;
+  try{ history.replaceState(null,'','#'+id); }catch(e){}
+}
+document.getElementById('prev').onclick = () => go(order[order.indexOf(current())-1]);
+document.getElementById('next').onclick = () => go(order[order.indexOf(current())+1]);
+function current(){ return document.querySelector('main > section.on').dataset.id; }
+
+// quick checks: pick an answer, see if it is right, see the reason
+document.querySelectorAll('.q').forEach(q => {
+  q.querySelectorAll('.opt').forEach(btn => btn.onclick = () => {
+    if (q.dataset.answered) return;
+    q.dataset.answered = '1';
+    const right = q.dataset.right;
+    q.querySelectorAll('.opt').forEach(o => {
+      o.disabled = true;
+      if (o.dataset.v === right) o.classList.add('right');
+      else if (o === btn) o.classList.add('wrong');
+    });
+    q.querySelector('.why').classList.add('show');
+    const section = q.closest('section');
+    const total = section.querySelectorAll('.q').length;
+    const got = section.querySelectorAll('.q .opt.right').length;
+    const answered = [...section.querySelectorAll('.q')].filter(x => x.dataset.answered).length;
+    if (answered === total) {
+      const score = section.querySelector('.score');
+      score.textContent = `${got} of ${total} right`;
+    }
+  });
+});
+
+// dark / light toggle (remembers choice)
+const root=document.documentElement, tb=document.getElementById('theme');
+function applyTheme(t){ root.setAttribute('data-theme',t); tb.textContent = t==='dark' ? '☀️ Light' : '🌙 Dark'; }
+let saved=null; try{ saved=localStorage.getItem('s8theme'); }catch(e){}
+applyTheme(saved || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark':'light'));
+tb.onclick=()=>{ const t=root.getAttribute('data-theme')==='dark'?'light':'dark'; applyTheme(t); try{localStorage.setItem('s8theme',t);}catch(e){} };
+
+// keyboard: left/right arrows
+document.addEventListener('keydown',e=>{
+  if(e.target.closest('input,textarea')) return;
+  const i=order.indexOf(current());
+  if(e.key==='ArrowRight' && i<order.length-1) go(order[i+1]);
+  if(e.key==='ArrowLeft' && i>0) go(order[i-1]);
+});
+
+const h=location.hash.slice(1);
+if(order.includes(h)) go(h); else render('start');
+</script>
+</body>
+</html>
