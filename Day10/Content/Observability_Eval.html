@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10 · Observability, Cost and Evaluation</title>
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --surface2:#eef1f7; --ink:#141a2a; --muted:#5a6478; --line:#dde2ec;
+  --accent:#0f7c8c; --accent-soft:#d8f0f3; --warn:#b45309; --warn-soft:#fdecd3;
+  --ok:#157f3b; --ok-soft:#dcf3e4; --bad:#b42318; --bad-soft:#fbe0dd;
+  --shadow:0 2px 10px rgba(20,26,42,.07);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17; --shadow:none;}}
+:root[data-theme="dark"]{
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17; --shadow:none;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Aptos Narrow","Aptos","Segoe UI",system-ui,-apple-system,sans-serif;font-size:18px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer}
+header{position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+.bar{max-width:1100px;margin:0 auto;padding:12px 16px 8px;display:flex;align-items:center;gap:12px}
+.brand{font-weight:700;font-size:20px;flex:1;min-width:0}
+.brand small{display:block;font-weight:400;color:var(--muted);font-size:14px}
+.tbtn{border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:7px 14px;font-size:15px;font-weight:600;white-space:nowrap}
+.tbtn:hover{border-color:var(--accent)}
+.navwrap{max-width:1100px;margin:0 auto;padding:0 16px 12px}
+.steps{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding:2px 0 6px}
+.stp{flex:0 0 auto;border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:999px;padding:6px 14px;font-size:15px;font-weight:600;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s}
+.stp:hover{border-color:var(--accent);transform:translateY(-1px)}
+.stp.done{color:var(--muted)}
+.stp.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.stp.islab{border-style:dashed;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.stp.islab.on{background:var(--accent);color:#fff;border-style:solid}
+.stp:focus-visible,.tbtn:focus-visible,.btn:focus-visible,.flip:focus-visible,.opt:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.prog{height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 90px}
+section{display:none}
+section.on{display:block}
+h1{font-size:40px;line-height:1.15;margin:.2em 0 .3em}
+h2{font-size:30px;margin:.2em 0 .4em}
+h3{font-size:22px;margin:1.2em 0 .4em}
+.kicker{color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:14px}
+.lead{font-size:21px;color:var(--muted);max-width:820px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+.big{font-size:44px;line-height:1}
+/* flip cards */
+.flip{perspective:1000px;min-height:150px;border:0;background:none;padding:0;text-align:left;width:100%}
+.flip .in{position:relative;width:100%;height:100%;min-height:150px;transition:transform .5s;transform-style:preserve-3d}
+.flip.flipped .in{transform:rotateY(180deg)}
+.flip .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;padding:16px;border:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}
+.flip .front{background:var(--surface);box-shadow:var(--shadow)}
+.flip .front b{font-size:21px}
+.flip .front .hint{font-size:13px;color:var(--muted);margin-top:8px}
+.flip .back{background:var(--accent-soft);transform:rotateY(180deg);font-size:17px}
+/* quiz */
+.q{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:12px 0}
+.q .qt{font-weight:700;margin-bottom:10px}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--surface2);border-radius:10px;padding:9px 14px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:var(--ok-soft);border-color:var(--ok)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.why{display:none;margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--surface2);font-size:16px}
+.why.show{display:block}
+/* concept box */
+.say{border-left:5px solid var(--accent);background:var(--surface);border-radius:10px;padding:12px 16px;margin:12px 0;box-shadow:var(--shadow)}
+.say b{color:var(--accent)}
+/* table */
+table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:16px}
+th{background:var(--surface2)}
+/* lab pointer */
+.lab{border:2px dashed var(--accent);background:var(--accent-soft);border-radius:16px;padding:22px}
+.lab h2{margin-top:0}
+.lab .now{font-weight:700;font-size:19px}
+.lab ol{margin:.5em 0 0;padding-left:1.3em}
+.lab li{margin:6px 0}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:9px 18px;font-weight:700}
+.btn.ghost{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.score{font-size:24px;font-weight:700;color:var(--warn)}
+footer{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px}
+footer .inner{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;gap:10px}
+@media (max-width:600px){h1{font-size:30px} h2{font-size:24px} body{font-size:17px}}
+:root[data-theme="dark"] .btn:not(.ghost),:root[data-theme="dark"] .stp.on{color:#06222a}
+footer .inner{padding:0 16px}
+
+:root{--blue:#1F5AA6;--blue-soft:#E2EBF7;--plum:#6A3FA0;--plum-soft:#EEE6F7;--teal:#0E7068;--teal-soft:#E3F1EE;
+--amber:#A8570A;--amber-soft:#FBEEDB;--red:#B42318;--red-soft:#FDE7E7;--grey:#8A93A3;--grey-soft:#F1F2F4;--lane:#FAFAF7}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--blue:#86B4F0;--blue-soft:#17253d;--plum:#C4A6EE;--plum-soft:#2a2040;
+--teal:#5FD0C4;--teal-soft:#123532;--amber:#F2B266;--amber-soft:#3a2a14;--red:#FF8A7E;--red-soft:#3d1a17;--grey:#7d8698;--grey-soft:#20263a;--lane:#141a29}}
+:root[data-theme="dark"]{--blue:#86B4F0;--blue-soft:#17253d;--plum:#C4A6EE;--plum-soft:#2a2040;--teal:#5FD0C4;--teal-soft:#123532;
+--amber:#F2B266;--amber-soft:#3a2a14;--red:#FF8A7E;--red-soft:#3d1a17;--grey:#7d8698;--grey-soft:#20263a;--lane:#141a29}
+.dg{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px;margin:14px 0;box-shadow:var(--shadow);overflow-x:auto}
+.dg svg{width:100%;min-width:760px;height:auto;display:block}
+.g2 .dg svg{min-width:0}
+.dg .cap{font-size:15px;color:var(--muted);padding:4px 8px 2px}
+.nd rect{fill:var(--ks);stroke:var(--k);stroke-width:2.2}
+.nd .tt{fill:var(--k);font-weight:700;font-size:19px;text-anchor:middle}
+.nd .ic{font-size:26px;text-anchor:middle}
+.nd .sb{fill:var(--ink);font-size:15px;text-anchor:middle}
+.nd .fl{fill:var(--muted);font-size:13px;text-anchor:middle;font-family:Consolas,monospace}
+.k-ui{--k:var(--blue);--ks:var(--blue-soft)} .k-ag{--k:var(--plum);--ks:var(--plum-soft)} .k-mem{--k:var(--teal);--ks:var(--teal-soft)}
+.k-tool{--k:var(--amber);--ks:var(--amber-soft)} .k-hu{--k:var(--red);--ks:var(--red-soft)} .k-off{--k:var(--grey);--ks:var(--grey-soft)}
+.ln rect{fill:var(--lane);stroke:var(--line);stroke-width:1.4} .ln .lt{fill:var(--ink);font-weight:700;font-size:18px} .ln .lh{fill:var(--muted);font-size:13px}
+.ar{stroke:var(--muted);stroke-width:2;fill:none} .ar.d{stroke-dasharray:6 5} .ahd{fill:var(--muted)}
+.al{fill:var(--muted);font-size:14px;text-anchor:middle;paint-order:stroke;stroke:var(--surface);stroke-width:5px}
+.num{fill:var(--accent);font-weight:700;font-size:14px;text-anchor:middle} .numc{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.flow{counter-reset:f;list-style:none;padding:0;margin:10px 0}
+.flow li{counter-increment:f;position:relative;padding:8px 12px 8px 50px;margin:6px 0;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.flow li::before{content:counter(f);position:absolute;left:12px;top:8px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;text-align:center;line-height:26px;font-size:15px}
+.four{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0}
+.four div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.four b{display:block;color:var(--accent);margin-bottom:4px}
+.cmd{display:flex;gap:8px;align-items:center;margin:6px 0}
+.cmd code{flex:1;background:#0f1320;color:#e8ecf5;padding:10px 14px;border-radius:8px;font-size:17px}
+.tag{display:inline-block;font-size:13px;font-weight:700;padding:2px 10px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);margin-right:6px}
+.client{border-left:5px solid var(--teal);background:var(--surface);border-radius:10px;padding:12px 16px;margin:12px 0;box-shadow:var(--shadow)}
+.client b{color:var(--teal)}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">S10 · Observability, Cost and Evaluation<small>Day 10 of 12 · AskIT Ops Control Room</small></div>
+    <button class="tbtn" id="theme" type="button" aria-label="Toggle dark mode">🌙 Dark</button>
+  </div>
+  <div class="navwrap">
+    <nav class="steps" id="steps" aria-label="Sections"></nav>
+    <div class="prog"><i id="progbar"></i></div>
+  </div>
+</header>
+<main>
+<section data-id="start" class="on">
+  <div class="kicker">Today's flow · Session 10</div>
+  <h1>See it, afford it, prove it.</h1>
+  <p class="lead">AskIT works in a demo. Today we make it ready for operations. Three ideas, ONE lab app (the Ops Control Room). You will read traces, find four hidden failures, price a ticket and run an exam on the agent. No code to write.</p>
+  <div class="grid g2" style="margin-top:18px">
+    <div class="card"><div class="big">1</div><h3>See it</h3><p class="muted">Traces and spans. Langfuse. What AWS logs for free.</p></div>
+    <div class="card"><div class="big">2</div><h3>Afford it</h3><p class="muted">Tokens, cost per ticket, the levers, which model.</p></div>
+    <div class="card"><div class="big">3</div><h3>Prove it</h3><p class="muted">Evals: pass or fail per risk, one change at a time.</p></div>
+  </div>
+  <div class="say"><b>Where we are in the AskIT story:</b> Day 9 moved the tools into a server. Today we ask the questions a client asks before go-live: <i>what is it doing, what will it cost, and how do you know it works?</i></div>
+  <div class="row"><button class="btn" onclick="go('c1')">Start the first idea</button></div>
+</section>
+<section data-id="c1">
+  <div class="kicker">Idea 1 · See it</div>
+  <h2>Most agent failures do not crash anything</h2>
+  <p class="lead">A normal program fails loudly. An agent fails quietly: it loops, reads too much, picks the wrong tool or is simply slow, and still returns an answer. To find these you need to record <b>every step</b>. That record is a <b>trace</b>.</p>
+  <div class="grid g2" style="grid-template-columns:1fr 1fr"><div class="dg"><svg viewBox="0 0 700 135" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><text x="150" y="40" class="sb" style="text-anchor:end">1. model call</text><rect x="170" y="20" width="120" height="28" rx="6" style="fill:var(--plum-soft);stroke:var(--plum);stroke-width:2"/><text x="298" y="42" class="sb" style="text-anchor:start">0.4 s</text><text x="150" y="76" class="sb" style="text-anchor:end">2. search_kb</text><rect x="290" y="56" width="30" height="28" rx="6" style="fill:var(--amber-soft);stroke:var(--amber);stroke-width:2"/><text x="328" y="78" class="sb" style="text-anchor:start">0.1 s</text><text x="150" y="112" class="sb" style="text-anchor:end">3. model call</text><rect x="320" y="92" width="150" height="28" rx="6" style="fill:var(--plum-soft);stroke:var(--plum);stroke-width:2"/><text x="478" y="114" class="sb" style="text-anchor:start">0.5 s · answer</text></svg><div class="cap"><b>A healthy run</b>: model, tool, model. Short bars, three rows.</div></div><div class="dg"><svg viewBox="0 0 700 270" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><text x="150" y="40" class="sb" style="text-anchor:end">model call 1</text><rect x="170" y="20" width="70" height="22" rx="6" style="fill:var(--plum-soft);stroke:var(--plum);stroke-width:2"/><text x="150" y="64" class="sb" style="text-anchor:end">get_ticket</text><rect x="240" y="44" width="14" height="22" rx="6" style="fill:var(--amber-soft);stroke:var(--amber);stroke-width:2"/><text x="150" y="88" class="sb" style="text-anchor:end">model call 2</text><rect x="254" y="68" width="70" height="22" rx="6" style="fill:var(--plum-soft);stroke:var(--plum);stroke-width:2"/><text x="150" y="112" class="sb" style="text-anchor:end">get_ticket</text><rect x="324" y="92" width="14" height="22" rx="6" style="fill:var(--amber-soft);stroke:var(--amber);stroke-width:2"/><text x="150" y="136" class="sb" style="text-anchor:end">model call 3</text><rect x="338" y="116" width="70" height="22" rx="6" style="fill:var(--plum-soft);stroke:var(--plum);stroke-width:2"/><text x="150" y="160" class="sb" style="text-anchor:end">get_ticket</text><rect x="408" y="140" width="14" height="22" rx="6" style="fill:var(--amber-soft);stroke:var(--amber);stroke-width:2"/><text x="150" y="184" class="sb" style="text-anchor:end">model call 4</text><rect x="422" y="164" width="70" height="22" rx="6" style="fill:var(--plum-soft);stroke:var(--plum);stroke-width:2"/><text x="150" y="208" class="sb" style="text-anchor:end">get_ticket</text><rect x="492" y="188" width="14" height="22" rx="6" style="fill:var(--amber-soft);stroke:var(--amber);stroke-width:2"/><text x="150" y="232" class="sb" style="text-anchor:end">model call 5</text><rect x="506" y="212" width="70" height="22" rx="6" style="fill:var(--plum-soft);stroke:var(--plum);stroke-width:2"/><text x="150" y="256" class="sb" style="text-anchor:end">get_ticket</text><rect x="576" y="236" width="14" height="22" rx="6" style="fill:var(--amber-soft);stroke:var(--amber);stroke-width:2"/></svg><div class="cap"><b>A looping run</b>: the same two bars again and again, each model call a little wider. Nothing crashed.</div></div></div>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Trace</b><span class="hint">tap to flip</span></div><div class="face back">One run of the agent from question to answer: total time, tokens, cost, the answer, and who asked.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Span</b><span class="hint">tap to flip</span></div><div class="face back">One step inside a trace: a model call or a tool call. Each has start, duration, input, output, tokens, errors.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Langfuse</b><span class="hint">tap to flip</span></div><div class="face back">An open-source website that stores traces and lets you search, filter, score and compare them. Your team has a project. Cloud or self-hosted.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>What AWS records for you</b><span class="hint">tap to flip</span></div><div class="face back">Bedrock can log every model call into CloudWatch: who called, which model, how many tokens. It does not see your tools, so it complements a tracer, it does not replace one.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Logs vs metrics vs traces</b><span class="hint">tap to flip</span></div><div class="face back"><b>Logs</b>: lines of text. <b>Metrics</b>: numbers over time (cost per hour). <b>Traces</b>: the story of one run. You need all three; the trace answers 'why was THIS answer bad?'.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>OpenTelemetry (OTel)</b><span class="hint">tap to flip</span></div><div class="face back">A vendor-neutral standard for traces. Langfuse, CloudWatch and most APM tools can receive it, so you are not locked in.</div></div></button></div>
+  <div class="say"><b>Say this:</b> "A trace is the flight recorder of an AI agent. When something goes wrong we open it, instead of guessing."</div>
+  <div class="say"><b>The biggest takeaway of the lab:</b> you cannot diagnose an agent from the complaint or from the final answer. Only the trace shows which step caused the problem.</div>
+  <div class="say"><b>⭐ The most important difference.</b> <b>CloudWatch sees the model calls only</b> (who called, which model, how many tokens). <b>Langfuse sees the whole agent run</b> (model calls + tool calls + order + answer). CloudWatch answers "who spent the money?". Langfuse answers "why was this answer wrong?". You need both.</div>
+  <div class="row"><button class="btn ghost" onclick="go('start')">Back</button><button class="btn" onclick="go('q1')">Quick check</button></div>
+</section>
+<section data-id="q1">
+  <div class="kicker">Quick check · Idea 1</div>
+  <h2>Three questions</h2>
+  <div class="q" data-right="a"><div class="qt">1. A trace shows the same tool span five times in a row. What is the likely problem?</div><div class="opts"><button class="opt" data-v="a">A loop with no stop rule</button><button class="opt" data-v="b">The knowledge base is too small</button><button class="opt" data-v="c">The model is too cheap</button></div><div class="why">Repeated identical spans are the signature of a loop.</div></div><div class="q" data-right="b"><div class="qt">2. The answer is wrong but nothing crashed. Where do you look first?</div><div class="opts"><button class="opt" data-v="a">The VM settings</button><button class="opt" data-v="b">Which tools ran and which one is missing</button><button class="opt" data-v="c">The font size</button></div><div class="why">Silent failures show up as a wrong or missing step.</div></div><div class="q" data-right="c"><div class="qt">3. What can the AWS Bedrock log NOT show?</div><div class="opts"><button class="opt" data-v="a">Which user called the model</button><button class="opt" data-v="b">How many tokens a call used</button><button class="opt" data-v="c">Which tool your agent ran</button></div><div class="why">It sits at the model API. Tools run in your code, so you also trace in the app.</div></div><div class="row"><span class="score" id="score1"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c1')">Back</button><button class="btn" onclick="go('c2')">Next idea</button></div>
+</section>
+<section data-id="c2">
+  <div class="kicker">Idea 2 · Afford it</div>
+  <h2>Cost = tokens × price × tickets</h2>
+  <p class="lead">You pay for every token the model <b>reads</b> and every token it <b>writes</b>, at every call. An agent makes several calls per question, and each call re-reads the whole history.</p>
+  <div class="dg"><svg viewBox="0 0 700 235" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><text x="20" y="22" class="sb" style="text-anchor:start">Tokens the model READS at each call (every call re-reads the whole history)</text><rect x="60" y="154.19847328244276" width="70" height="45.80152671755725" rx="6" style="fill:var(--plum-soft);stroke:var(--plum);stroke-width:2"/><text x="95" y="148.19847328244276" class="sb">400</text><text x="95" y="222" class="sb">call 1</text><rect x="165" y="132.44274809160305" width="70" height="67.55725190839695" rx="6" style="fill:var(--plum-soft);stroke:var(--plum);stroke-width:2"/><text x="200" y="126.44274809160305" class="sb">590</text><text x="200" y="222" class="sb">call 2</text><rect x="270" y="111.83206106870229" width="70" height="88.16793893129771" rx="6" style="fill:var(--plum-soft);stroke:var(--plum);stroke-width:2"/><text x="305" y="105.83206106870229" class="sb">770</text><text x="305" y="222" class="sb">call 3</text><rect x="375" y="91.22137404580153" width="70" height="108.77862595419847" rx="6" style="fill:var(--plum-soft);stroke:var(--plum);stroke-width:2"/><text x="410" y="85.22137404580153" class="sb">950</text><text x="410" y="222" class="sb">call 4</text><rect x="480" y="70.61068702290078" width="70" height="129.38931297709922" rx="6" style="fill:var(--plum-soft);stroke:var(--plum);stroke-width:2"/><text x="515" y="64.61068702290078" class="sb">1130</text><text x="515" y="222" class="sb">call 5</text><rect x="585" y="50.0" width="70" height="150.0" rx="6" style="fill:var(--plum-soft);stroke:var(--plum);stroke-width:2"/><text x="620" y="44.0" class="sb">1310</text><text x="620" y="222" class="sb">call 6</text></svg><div class="cap">Six steps cost far more than six times one step: <b>history is paid for again at every call</b>.</div></div>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Lever 1 · Fewer tokens</b><span class="hint">tap to flip</span></div><div class="face back">Trim tool results (3 short snippets, not 20 articles), shorten the system prompt, stop loops. Biggest saving, no quality risk.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Lever 2 · Prompt caching</b><span class="hint">tap to flip</span></div><div class="face back">A stable prefix (instructions + tool list) is stored by the provider and re-read at about a tenth of the price. The changing question goes last.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Lever 3 · Right-size the model</b><span class="hint">tap to flip</span></div><div class="face back">Start with the smallest model that passes your eval. Use a bigger one only for the cases that fail. Never choose by brand.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Lever 4 · Limits</b><span class="hint">tap to flip</span></div><div class="face back">A step limit, a budget alarm, a cost-per-ticket alert. A loop must not become an invoice.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Latency is a cost too</b><span class="hint">tap to flip</span></div><div class="face back">A slow answer loses users. The waterfall shows if the model or a tool is slow, so you fix the right thing.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Why a cheap model can cost more</b><span class="hint">tap to flip</span></div><div class="face back">If it needs more steps, or fails the exam and a human redoes the ticket, the cheap price per token is a false saving. Always read cost next to pass rate.</div></div></button></div>
+  <table><tr><th>Model (per 1M tokens, checked 12 Oct 2026)</th><th>Input</th><th>Output</th><th>When it fits</th></tr><tr><td>Amazon Nova Micro (Bedrock)</td><td>$0.035</td><td>$0.14</td><td>Our lab model. Simple lookup and routing; text only</td></tr><tr><td>Amazon Nova Lite (Bedrock)</td><td>$0.06</td><td>$0.24</td><td>Light reasoning, image input</td></tr><tr><td>Amazon Nova Pro (Bedrock)</td><td>$0.80</td><td>$3.20</td><td>Harder reasoning; 20× Micro</td></tr><tr><td>Claude Haiku 5.5 (Anthropic API)</td><td>$0.10</td><td>$0.50</td><td>Strong small model; prompts above 100k tokens cost 5× more</td></tr><tr><td>Claude Sonnet 5.5 (Anthropic API)</td><td>$2.00</td><td>$10.00</td><td>Complex, high-value work. Check the Bedrock price separately</td></tr><tr><td>gpt-5.4-mini (Azure, approximate)</td><td>$0.25</td><td>$2.00</td><td>Check your own Azure price list</td></tr></table>
+  <div class="client"><b>💼 Say this:</b> "We measure cost per ticket on your data and show it at your volume with each model. A step limit and a budget alarm stop surprises."</div>
+  <div class="row"><button class="btn ghost" onclick="go('q1')">Back</button><button class="btn" onclick="go('q2')">Quick check</button></div>
+</section>
+<section data-id="q2">
+  <div class="kicker">Quick check · Idea 2</div>
+  <h2>Three questions</h2>
+  <div class="q" data-right="a"><div class="qt">1. One question made 6 model calls. Why is the cost more than 6 times one call?</div><div class="opts"><button class="opt" data-v="a">Each call re-reads the growing history</button><button class="opt" data-v="b">Tools cost extra</button><button class="opt" data-v="c">Models charge a fee per call</button></div><div class="why">Input tokens grow at every step because the history is sent again.</div></div><div class="q" data-right="b"><div class="qt">2. You must cut the bill. What is the first thing to try?</div><div class="opts"><button class="opt" data-v="a">A bigger model</button><button class="opt" data-v="b">Fewer tokens: trim prompts and tool results</button><button class="opt" data-v="c">More retries</button></div><div class="why">Tokens drive the price, so reduce tokens before changing the model.</div></div><div class="q" data-right="b"><div class="qt">3. A model is half the price per token but needs twice the steps. Cost per ticket is...</div><div class="opts"><button class="opt" data-v="a">Half</button><button class="opt" data-v="b">The same, before counting failures</button><button class="opt" data-v="c">Always lower</button></div><div class="why">Compare cost per TICKET and pass rate, not the price per token.</div></div><div class="row"><span class="score" id="score2"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c2')">Back</button><button class="btn" onclick="go('c3')">Next idea</button></div>
+</section>
+<section data-id="c3">
+  <div class="kicker">Idea 3 · Prove it</div>
+  <h2>An eval is a unit test for AI behaviour</h2>
+  <p class="lead">A good demo proves nothing. An <b>eval</b> is a fixed set of questions where each answer is checked for a <b>named risk</b> and marked <b>PASS or FAIL</b>. Run it before every release.</p>
+  <div class="dg"><svg viewBox="0 0 990 190" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="nd k-ag"><rect x="20" y="40" width="200" height="56" rx="14"/><text x="120.0" y="68" class="tt" style="font-size:17px">▶ Run the exam</text><text x="120.0" y="90" class="sb">same questions</text></g><g class="nd k-tool"><rect x="270" y="40" width="200" height="56" rx="14"/><text x="370.0" y="68" class="tt" style="font-size:17px">🔎 Read the ❌</text><text x="370.0" y="90" class="sb">which risk failed?</text></g><g class="nd k-mem"><rect x="520" y="40" width="200" height="56" rx="14"/><text x="620.0" y="68" class="tt" style="font-size:17px">🔧 Change ONE thing</text><text x="620.0" y="90" class="sb">prompt, tool or model</text></g><g class="nd k-ui"><rect x="770" y="40" width="200" height="56" rx="14"/><text x="870.0" y="68" class="tt" style="font-size:17px">⚖️ Run again, compare</text><text x="870.0" y="90" class="sb">did anything get worse?</text></g><line x1="223" y1="68" x2="267" y2="68" class="ar" marker-end="url(#ah4)"/><line x1="473" y1="68" x2="517" y2="68" class="ar" marker-end="url(#ah4)"/><line x1="723" y1="68" x2="767" y2="68" class="ar" marker-end="url(#ah4)"/><path d="M870 100 V150 H120 V100" class="ar d" marker-end="url(#ah4)"/><text x="500" y="170" class="al">repeat; every production failure becomes a NEW test question</text></svg><div class="cap">The loop behind every evaluation. You do it in tab 4.</div></div>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Risk categories come from failures you SAW</b><span class="hint">tap to flip</span></div><div class="face back">Not from guesses. Today's five: right tool first, no runaway loop, grounded in the knowledge base, safe write (VIPs), within budget.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Binary, not scores</b><span class="hint">tap to flip</span></div><div class="face back">'7.3 out of 10' tells nobody what to fix. A FAIL on 'safe write' does.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Test set = happy + failed-before + tricky</b><span class="hint">tap to flip</span></div><div class="face back">Start with 20 to 50 real cases. Each production failure adds one. Quality beats quantity.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Plain-code checks vs AI judge</b><span class="hint">tap to flip</span></div><div class="face back">Code checks are free, fast and repeatable. An AI judge (a second model reads the answer) handles open-ended quality, costs tokens, and can be wrong: spot-check it.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>RAGAS and DeepEval</b><span class="hint">tap to flip</span></div><div class="face back">Libraries that package ready-made metrics: faithfulness, context precision and recall, tool-call correctness, task completion. Trainer shows them live; the idea is the same as tab 4.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Where evals run</b><span class="hint">tap to flip</span></div><div class="face back">On your laptop while developing, in CI before release, and on sampled production traces after release. Langfuse and AgentCore Evaluations can store and score them.</div></div></button></div>
+  <div class="say"><b>Say this:</b> "We do not say it works because the demo looked good. We say: 14 of 14 on safe writes, 12 of 12 on grounded answers, and here is what we changed when it was not."</div>
+  <div class="row"><button class="btn ghost" onclick="go('q2')">Back</button><button class="btn" onclick="go('q3')">Quick check</button></div>
+</section>
+<section data-id="q3">
+  <div class="kicker">Quick check · Idea 3</div>
+  <h2>Three questions</h2>
+  <div class="q" data-right="a"><div class="qt">1. Where should your risk categories come from?</div><div class="opts"><button class="opt" data-v="a">Failures you observed in traces</button><button class="opt" data-v="b">A list from the internet</button><button class="opt" data-v="c">The vendor</button></div><div class="why">Derive them from observed outputs, then check them every release.</div></div><div class="q" data-right="c"><div class="qt">2. A developer changes the prompt on Friday evening. What happens before it goes live?</div><div class="opts"><button class="opt" data-v="a">A colleague reads it</button><button class="opt" data-v="b">Nothing, prompts are not code</button><button class="opt" data-v="c">The eval set runs and is compared with the last run</button></div><div class="why">Prompts are code. Same exam, one change, compare.</div></div><div class="q" data-right="a"><div class="qt">3. Why is a PASS/FAIL check better than a 1 to 10 score?</div><div class="opts"><button class="opt" data-v="a">It is easier to act on</button><button class="opt" data-v="b">Models cannot count</button><button class="opt" data-v="c">Scores are illegal</button></div><div class="why">A named FAIL tells you exactly what to fix.</div></div><div class="row"><span class="score" id="score3"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c3')">Back</button><button class="btn" onclick="go('tour')">How enterprises run evals</button></div>
+</section>
+<section data-id="app">
+  <div class="kicker">Before the lab · How the app works</div>
+  <h2>What happens behind the Ops Control Room</h2>
+  <p class="lead">One Streamlit app. Follow the numbers.</p>
+  <div class="dg"><svg viewBox="0 0 1306 485" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="ln"><rect x="2" y="6" width="1300" height="300" rx="20"/><text x="22" y="34" class="lt">① One run, end to end</text><text x="1284" y="34" class="lh" text-anchor="end">numbers = order</text></g><g class="nd k-ui"><rect x="14" y="100" width="170" height="118" rx="14"/><text x="99.0" y="132" class="ic">💬</text><text x="99.0" y="157" class="tt">Question</text><text x="99.0" y="176" class="sb">a ticket question</text><text x="99.0" y="193" class="sb">from tab 1, 3 or 4</text><text x="99.0" y="209" class="fl">app.py</text></g><g class="nd k-ag"><rect x="226" y="100" width="170" height="118" rx="14"/><text x="311.0" y="132" class="ic">🤖</text><text x="311.0" y="157" class="tt">AskIT agent</text><text x="311.0" y="176" class="sb">model → tool → model</text><text x="311.0" y="193" class="sb">stops after 6 calls</text><text x="311.0" y="209" class="fl">ops_agent.py</text></g><g class="nd k-ag"><rect x="438" y="100" width="170" height="118" rx="14"/><text x="523.0" y="132" class="ic">🧠</text><text x="523.0" y="157" class="tt">The model</text><text x="523.0" y="176" class="sb">Bedrock Nova /</text><text x="523.0" y="193" class="sb">Azure / Offline</text><text x="523.0" y="209" class="fl">model_factory.py</text></g><g class="nd k-tool"><rect x="650" y="100" width="170" height="118" rx="14"/><text x="735.0" y="132" class="ic">🛠️</text><text x="735.0" y="157" class="tt">4 AskIT tools</text><text x="735.0" y="176" class="sb">same as Days 5–9</text><text x="735.0" y="193" class="sb">+ failure switches</text><text x="735.0" y="209" class="fl">askit_core/tools.py</text></g><g class="nd k-mem"><rect x="862" y="100" width="170" height="118" rx="14"/><text x="947.0" y="132" class="ic">🧾</text><text x="947.0" y="157" class="tt">Tracer</text><text x="947.0" y="176" class="sb">a span per step</text><text x="947.0" y="193" class="sb">time · tokens · cost</text><text x="947.0" y="209" class="fl">ops_trace.py</text></g><g class="nd k-ui"><rect x="1074" y="100" width="170" height="118" rx="14"/><text x="1159.0" y="132" class="ic">📁</text><text x="1159.0" y="157" class="tt">Saved</text><text x="1159.0" y="176" class="sb">traces.jsonl</text><text x="1159.0" y="193" class="sb">eval_runs.json</text><text x="1159.0" y="209" class="fl">submission/</text></g><line x1="187" y1="159" x2="221" y2="159" class="ar" marker-end="url(#ah5)"/><line x1="399" y1="159" x2="433" y2="159" class="ar" marker-end="url(#ah5)"/><line x1="611" y1="159" x2="645" y2="159" class="ar" marker-end="url(#ah5)"/><line x1="823" y1="159" x2="857" y2="159" class="ar" marker-end="url(#ah5)"/><line x1="1035" y1="159" x2="1069" y2="159" class="ar" marker-end="url(#ah5)"/><circle cx="22" cy="96" r="13" class="numc"/><text x="22" y="101" class="num">1</text><circle cx="234" cy="96" r="13" class="numc"/><text x="234" y="101" class="num">2</text><circle cx="446" cy="96" r="13" class="numc"/><text x="446" y="101" class="num">3</text><circle cx="658" cy="96" r="13" class="numc"/><text x="658" y="101" class="num">4</text><circle cx="870" cy="96" r="13" class="numc"/><text x="870" y="101" class="num">5</text><circle cx="1082" cy="96" r="13" class="numc"/><text x="1082" y="101" class="num">6</text><g class="ln"><rect x="2" y="322" width="1300" height="150" rx="20"/><text x="22" y="350" class="lt">② Where the same run can be seen</text></g><g class="nd k-mem"><rect x="40" y="372" width="380" height="68" rx="14"/><text x="230" y="400" class="tt" style="font-size:17px">📈 This app (tabs 1–3)</text><text x="230" y="424" class="sb">waterfall, table, cost</text></g><g class="nd k-mem"><rect x="460" y="372" width="380" height="68" rx="14"/><text x="650" y="400" class="tt" style="font-size:17px">🪢 Langfuse</text><text x="650" y="424" class="sb">your team&#x27;s project</text></g><g class="nd k-mem"><rect x="880" y="372" width="380" height="68" rx="14"/><text x="1070" y="400" class="tt" style="font-size:17px">☁️ AWS CloudWatch (tab 5)</text><text x="1070" y="424" class="sb">Bedrock logs every model call</text></g></svg><div class="cap">The app you will use. Tab 4 (exam) runs the whole line 14 times and checks each run.</div></div>
+  <ol class="flow">
+    <li>You ask a question, or the exam asks 14 of them. <span class="tag">app.py</span></li>
+    <li>The <b>agent</b> loop: ask the model, run the tool it asks for, ask again. It stops after 6 model calls. <span class="tag">run_agent()</span></li>
+    <li>The <b>model</b> is Bedrock Nova (or Azure, OpenAI, or the Offline stand-in). <span class="tag">model_factory.py</span></li>
+    <li>The <b>tools</b> are the same four as Days 5 to 9. The failure switches (stuck, huge, slow) are added in front. <span class="tag">askit_core/tools.py</span></li>
+    <li>The <b>tracer</b> wraps every model call and tool call in a span with time, tokens and cost. <span class="tag">ops_trace.py</span></li>
+    <li>Saved in your folder; sent live to <b>Langfuse</b> if you entered the keys. AWS logs the model calls on its own side.</li>
+  </ol>
+  <h3>The screen, tab by tab</h3>
+  <table><tr><th>Tab</th><th>What you do</th><th>Idea it shows</th></tr><tr><td>1 · Run and trace</td><td>Run AskIT, read the waterfall, tick a failure switch</td><td>See it</td></tr><tr><td>2 · Find the failure</td><td>Four recorded failures; pick the root cause</td><td>See it</td></tr><tr><td>3 · Cost report</td><td>Cost per ticket for 10 tickets; what-if for each model</td><td>Afford it</td></tr><tr><td>4 · Evals</td><td>Run the exam with prompt v1, v2, v3 and compare</td><td>Prove it</td></tr><tr><td>5 · See it in AWS</td><td>Find your own model calls in CloudWatch</td><td>AWS side</td></tr><tr><td>6 · How it works</td><td>Diagram and file map</td><td>Architecture</td></tr><tr><td>7 · Questions + products</td><td>Quiz, product choices, client questions</td><td>Pre-sales</td></tr><tr><td>8 · Team ADR</td><td>ADR-AskIT-05 in 7 steps, with your lab numbers</td><td>Board 5</td></tr><tr><td>🎓 Lessons learnt</td><td>Every tab ends with 2 thinking questions; answering them unlocks a lesson, collected here</td><td>Recap</td></tr></table>
+  <h3>Which mode do I run each tab in?</h3>
+  <style>.stabs .sbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.stabs .sbtn{border:1px solid var(--line);background:var(--surface2);border-radius:10px 10px 0 0;padding:9px 16px;font:inherit;cursor:pointer}.stabs .sbtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}.stabs .spanel{display:none;border:1px solid var(--line);border-radius:0 12px 12px 12px;padding:14px 18px;background:var(--surface)}.stabs .spanel.on{display:block}</style>
+  <div class="stabs"><div class="sbar"><button type="button" class="sbtn on" data-t="mode0" onclick="var g=this.closest('.stabs');g.querySelectorAll('.sbtn').forEach(function(b){b.classList.remove('on')});g.querySelectorAll('.spanel').forEach(function(p){p.classList.remove('on')});this.classList.add('on');document.getElementById(this.dataset.t).classList.add('on')">1 · Offline first</button><button type="button" class="sbtn" data-t="mode1" onclick="var g=this.closest('.stabs');g.querySelectorAll('.sbtn').forEach(function(b){b.classList.remove('on')});g.querySelectorAll('.spanel').forEach(function(p){p.classList.remove('on')});this.classList.add('on');document.getElementById(this.dataset.t).classList.add('on')">2 · Then AWS Bedrock</button><button type="button" class="sbtn" data-t="mode2" onclick="var g=this.closest('.stabs');g.querySelectorAll('.sbtn').forEach(function(b){b.classList.remove('on')});g.querySelectorAll('.spanel').forEach(function(p){p.classList.remove('on')});this.classList.add('on');document.getElementById(this.dataset.t).classList.add('on')">3 · Langfuse keys</button><button type="button" class="sbtn" data-t="mode3" onclick="var g=this.closest('.stabs');g.querySelectorAll('.sbtn').forEach(function(b){b.classList.remove('on')});g.querySelectorAll('.spanel').forEach(function(p){p.classList.remove('on')});this.classList.add('on');document.getElementById(this.dataset.t).classList.add('on')">4 · LangSmith (separate)</button></div><div class="spanel on" id="mode0"><p><b>Sidebar &gt; Model &gt; Offline stand-in.</b> No AI, no AWS: fast, free, the same for everyone. You learn the <b>mechanics</b>.</p><table><tr><th>Tab</th><th>What you do offline</th></tr><tr><td>1 · Run and trace</td><td>Read the waterfall, tick each failure switch, compare with a plain run of the same question</td></tr><tr><td>2 · Find the failure</td><td>Four recorded traces (same in any mode)</td></tr><tr><td>3 · Cost report</td><td>Shape of the cost (tokens are estimated)</td></tr><tr><td>4 · Evals</td><td>v1 → v2 → v3 with golden-set checks; hit rate and MRR</td></tr><tr><td>6 · 7 · 8</td><td>Any mode</td></tr></table><p class='muted'>Tab 5 shows nothing offline: no AWS call was made.</p></div><div class="spanel" id="mode1"><p><b>Sidebar &gt; Model &gt; AWS Bedrock.</b> A real model (Nova Micro). Repeat these to see the difference:</p><table><tr><th>Repeat</th><th>What is different on Bedrock</th></tr><tr><td>Tab 1</td><td>Real tokens and real times. These are the numbers CloudWatch also records</td></tr><tr><td>Tab 3</td><td>Real cost per ticket (offline numbers are estimates)</td></tr><tr><td>Tab 4</td><td>A real model may <b>ignore a prompt rule</b> (for example the VIP rule). Compare with offline</td></tr><tr><td>Tab 5</td><td><b>Required.</b> Step 0: run tab 1 on Bedrock, wait 1–2 minutes, then query CloudWatch</td></tr></table></div><div class="spanel" id="mode2"><p><b>Sidebar &gt; 2 · Langfuse.</b> Paste two keys, one per line: the public key (<code>pk-lf-…</code>) and the secret key (<code>sk-lf-…</code>). Choose the <b>region</b> of the project from the list. Save, then Test.</p>
+          <p><b>Only runs after connecting are sent.</b> Run a question again, then click <b>Open this trace in Langfuse</b>.</p><div class="say"><b>⭐ The most important difference.</b> <b>CloudWatch sees the model calls only</b> (who called, which model, how many tokens). <b>Langfuse sees the whole agent run</b> (model calls + tool calls + order + answer). CloudWatch answers "who spent the money?". Langfuse answers "why was this answer wrong?". You need both.</div></div><div class="spanel" id="mode3"><p>LangSmith is <b>not</b> part of the app. It is two scripts in a second terminal (Part D): <code>langsmith_setup.py</code> then <code>langsmith_lab.py</code>. It uses your own free LangSmith account.</p></div></div>
+  <div class="row"><button class="btn ghost" onclick="go('tour')">Back</button><button class="btn" onclick="go('labA')">Start Lab 10 · Part A</button></div>
+</section>
+<section data-id="labA">
+  <div class="lab">
+    <h2>Lab 10 · Part A · Run it, then find the failures (tabs 1 and 2)</h2>
+    <p class="now">We are doing Lab 10 · AskIT Ops Control Room now (<code>lab10-askit-ops-control-room</code>).</p>
+    <p class="now">In VS Code: File &gt; Open Folder &gt; C:\AskIT\dxc-agentic-ai\Day10\Labs\lab10-askit-ops-control-room</p>
+    <div class="four">
+      <div><b>What we do</b>Run the AskIT agent, read every step in a waterfall, break it on purpose, and name the root cause of four recorded failures.</div>
+      <div><b>Why</b>When someone says "the AI is slow or wrong", this is how you find out why in one minute.</div>
+      <div><b>Outcome</b>You can read a trace and tell a loop, a bloated tool result, a wrong tool and a slow dependency apart.</div>
+      <div><b>How</b>One command, then buttons. No code.</div>
+    </div>
+    <ol>
+      <li>In VS Code click <b>Terminal</b> &gt; <b>New Terminal</b>. The prompt must end with <b>lab10-askit-ops-control-room</b>. Lab 9 app still running? Close its black window first.</li>
+      <li>Type this and press Enter (first time a few minutes):</li>
+    </ol>
+    <div class="cmd"><code>python run.py</code></div>
+    <ol start="3">
+      <li>Sidebar: leave <b>Model</b> on Bedrock (or Offline stand-in if it shows a problem).</li>
+      <li>Sidebar &gt; <b>Langfuse</b>: paste your <b>two keys</b> (<code>pk-lf-…</code> and <code>sk-lf-…</code>), one per line, choose the region, click <b>Save the keys</b>, then <b>Test the connection</b>. Then run a question <b>again</b>: only runs after connecting are sent.</li>
+      <li>Tab <b>1</b>: pick <b>Summarise ticket TKT-0004…</b> and press <b>▶ Run AskIT</b> with no switch. Read the six numbers and the waterfall. Which bar is widest?</li>
+      <li>Tick <b>one</b> failure switch, run the <b>same</b> question, compare the two rows: 🔁 stuck and 🐌 slow hit the ticket question, 🐘 huge results hits the how-to question (VPN), 📚 padded hits all.</li>
+      <li>Tab <b>2</b>: do the four mysteries. Which one has no error anywhere?</li>
+      <li>At the bottom of each tab answer the <b>two thinking questions</b>: they unlock a lesson. All lessons are in the last tab, <b>🎓 Lessons learnt</b>.</li>
+    </ol>
+    <table><tr><th>Number in tab 1</th><th>What it means</th></tr><tr><td>Time</td><td>From the question to the final answer</td></tr><tr><td>Model calls / Tool calls</td><td>How many times the AI was asked / how many lookups it ran</td></tr><tr><td>Tokens in</td><td>Everything the model READ on every call: instructions + history + tool results</td></tr><tr><td>Tokens out</td><td>What the model WROTE</td></tr><tr><td>Cost</td><td>tokens in × price + tokens out × price</td></tr></table>
+    <p class="muted">No folder? Open <code>C:\AskIT\dxc-agentic-ai</code> and double-click <b>SYNC.bat</b>. Time: 40 minutes.</p>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('app')">Back</button><button class="btn" onclick="go('labB')">Lab 10 · Part B</button></div>
+</section>
+<section data-id="labB">
+  <div class="lab">
+    <h2>Lab 10 · Part B · What does one ticket cost? (tab 3)</h2>
+    <p class="now">We are doing Lab 10 · AskIT Ops Control Room now (<code>lab10-askit-ops-control-room</code>). The app is still open in your browser.</p>
+    <p class="now">In VS Code: File &gt; Open Folder &gt; C:\AskIT\dxc-agentic-ai\Day10\Labs\lab10-askit-ops-control-room</p>
+    <div class="four">
+      <div><b>What we do</b>Run 10 tickets and measure cost, typical time and slowest 5%. Then change one thing and compare.</div>
+      <div><b>Why</b>A CFO asks "what will it cost at our volume?" You answer with a measured number.</div>
+      <div><b>Outcome</b>Cost per ticket, p50, p95, and a monthly what-if for six models.</div>
+      <div><b>How</b>Two checkboxes, a button and three sliders.</div>
+    </div>
+    <ol>
+      <li>Tab <b>3</b>: press <b>▶ Run the batch</b>. Write down the cost per ticket and p95.</li>
+      <li>Tick <b>📚 Padded instructions</b>. Run the batch again. How many times more expensive is it?</li>
+      <li>Part C: set 20,000 tickets a month. Move <b>cache</b> to 60% and <b>shorter prompts</b> to 30%. Which models fit US$50?</li>
+      <li>Press <b>💾 Save this table</b>.</li>
+    </ol>
+    <p class="muted">Time: 25 minutes.</p>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('labA')">Back</button><button class="btn" onclick="go('c4')">Now the AWS side</button></div>
+</section>
+<section data-id="c4">
+  <div class="kicker">Before Lab C · The AWS side</div>
+  <h2>AWS already logs your model calls</h2>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Bedrock model invocation logging</b><span class="hint">tap to flip</span></div><div class="face back">A setting in the AWS account. When on, every call to a Bedrock model is written to a CloudWatch log group: time, user, model, input tokens, output tokens. The trainer has switched it on.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>CloudWatch Logs Insights</b><span class="hint">tap to flip</span></div><div class="face back">A search box for logs. You type a small query, it returns rows. Filter by your user name and you see only your calls.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>GenAI Observability dashboard</b><span class="hint">tap to flip</span></div><div class="face back">Ready-made charts in the console: how many model calls, how slow, how many tokens. The team view an operations group watches.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Who called?</b><span class="hint">tap to flip</span></div><div class="face back">Because you sign in as user101 to user116, AWS records WHO made each call. That is how a cloud team sees usage and cost by person, team or project.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>What it cannot see</b><span class="hint">tap to flip</span></div><div class="face back">Your tools, your prompt design, your agent's decisions. It sees only the model call. Production teams use BOTH: cloud log for audit and billing, agent tracer for debugging.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Cost by team in AWS</b><span class="hint">tap to flip</span></div><div class="face back">Trainer demo: tag a model profile per team and read the cost per tag in Cost Explorer, with a budget alarm. Concept for your ADR.</div></div></button></div>
+  <table><tr><th></th><th>App tracer (this lab)</th><th>Langfuse</th><th>AWS CloudWatch</th></tr><tr><td>Sees tool calls</td><td>Yes</td><td>Yes</td><td><b>No</b></td></tr><tr><td>Setup</td><td>Built into the lab</td><td>Keys + SDK</td><td>One account setting, no code</td></tr><tr><td>Best for</td><td>Learning</td><td>Debugging, evals, prompt history</td><td>Audit, usage, cost by user</td></tr><tr><td>Data stays in</td><td>Your folder</td><td>Langfuse cloud or your own server</td><td>Your AWS account</td></tr></table>
+  <div class="say"><b>⭐ The most important difference.</b> <b>CloudWatch sees the model calls only</b> (who called, which model, how many tokens). <b>Langfuse sees the whole agent run</b> (model calls + tool calls + order + answer). CloudWatch answers "who spent the money?". Langfuse answers "why was this answer wrong?". You need both.</div>
+  <div class="say"><b>If something fails:</b> tell the trainer what the tab shows. Offline stand-in does not call AWS, so its calls never appear in CloudWatch.</div>
+  <div class="row"><button class="btn ghost" onclick="go('labB')">Back</button><button class="btn" onclick="go('labC')">Start Lab 10 · Part C</button></div>
+</section>
+<section data-id="labC">
+  <div class="lab">
+    <h2>Lab 10 · Part C · Run the exam, then find your calls in AWS (tabs 4 and 5)</h2>
+    <p class="now">We are doing Lab 10 · AskIT Ops Control Room now (<code>lab10-askit-ops-control-room</code>). The app is still open in your browser; the AWS console is in another browser tab.</p>
+    <p class="now">In VS Code: File &gt; Open Folder &gt; C:\AskIT\dxc-agentic-ai\Day10\Labs\lab10-askit-ops-control-room</p>
+    <div class="four">
+      <div><b>What we do</b>Run an exam of 14 questions three times with three versions of the instructions and compare. Then find your own model calls in CloudWatch.</div>
+      <div><b>Why</b>"How do you know it works?" is the first client question. And on AWS, the cloud log is the audit trail.</div>
+      <div><b>Outcome</b>A table showing which risk each change fixed, and one query that finds your calls in AWS.</div>
+      <div><b>How</b>Tab 4 buttons, then 6 clicks in the console.</div>
+    </div>
+    <ol>
+      <li>Tab <b>4</b>: prompt <b>v1</b>, press <b>▶ Run the exam</b>. Which risk fails most? Open the failing cases.</li>
+      <li>Prompt <b>v2</b> (VIP rule), run again. Prompt <b>v3</b> (not-found rule), run again. Read <b>Compare all exams</b>: what got better, what got worse?</li>
+      <li>Press <b>Check the search on 10 questions</b>. Is the problem the search or the model?</li>
+      <li>Tab <b>5</b>, <b>Step 0 first</b>: sidebar &gt; <b>AWS Bedrock</b>, tab 1, run <b>Summarise ticket TKT-0004</b>, note <i>Tokens in</i>, wait 1–2 minutes.</li>
+      <li>AWS console, region <b>N. Virginia</b>: CloudWatch &gt; Logs &gt; <b>Log Analytics</b> (Logs Insights query box). Choose the log group, paste the query from tab 5. You get <b>2 rows</b>: one per model call. Do the two <code>tokens_in</code> add up to tab 1?</li>
+      <li>CloudWatch &gt; GenAI Observability &gt; Model invocations. Whose calls do you see?</li>
+    </ol>
+    <p class="muted">Time: 30 minutes. No rows in CloudWatch? Wait a minute, check the region says N. Virginia, and that tab 1 ran on Bedrock. Tab 4 on Bedrock: a real model may ignore the VIP rule. A rule in a prompt is a request, not a guarantee.</p>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('c4')">Back</button><button class="btn" onclick="go('labD')">Start Lab 10 · Part D</button></div>
+</section>
+<section data-id="tour">
+  <div class="kicker">Tour · How enterprises run evals (5 minutes, trainer screen)</div>
+  <h2>The same exam, run the way big companies run it</h2>
+  <p class="lead">Tab 4 is the idea. In a company the same idea runs as a <b>loop</b>, on a <b>platform</b>, and blocks a bad release.</p>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>1 · Golden dataset</b><span class="hint">tap to flip</span></div><div class="face back">A versioned list of questions with the expected tool, article or behaviour. Starts with 20 to 50 real cases. Every production failure adds one.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>2 · Offline eval on every change</b><span class="hint">tap to flip</span></div><div class="face back">A new prompt, model or tool runs the whole dataset. Results are stored and compared with the last release: an experiment.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>3 · Release gate (CI)</b><span class="hint">tap to flip</span></div><div class="face back">The pipeline fails the build if a safety check fails or the pass rate drops. Nobody argues about a Friday prompt change: the exam decides.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>4 · Online checks</b><span class="hint">tap to flip</span></div><div class="face back">A small sample of real production traces is scored by the same checks or an AI judge. New failures go back into the dataset.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>5 · Human review</b><span class="hint">tap to flip</span></div><div class="face back">People look at the cases the machine cannot judge (tone, policy). Their verdicts become new test cases and calibrate the AI judge.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>6 · Audit trail</b><span class="hint">tap to flip</span></div><div class="face back">Who changed what, which dataset version, which results. Compliance asks for this in regulated clients.</div></div></button></div>
+  <h3>Where each part runs</h3>
+  <table><tr><th>Layer</th><th>Examples</th><th>Typical use</th></tr><tr><td>Cloud-native evaluation</td><td><b>Amazon Bedrock Evaluations</b>, Azure AI Foundry Evaluations, Vertex AI Gen AI Evaluation</td><td>Data stays in the client's cloud; IAM and audit; model comparison; AI-judge metrics</td></tr><tr><td>Eval platform (dev loop)</td><td><b>LangSmith</b> (our lab), Langfuse datasets and experiments, Braintrust</td><td>Datasets, experiments, side-by-side compare, annotation queues</td></tr><tr><td>Eval libraries in CI</td><td>DeepEval, RAGAS, promptfoo</td><td>Ready-made metrics (faithfulness, tool-call correctness); gate in the pipeline</td></tr><tr><td>Your own checks</td><td>Plain code like our 5 checks</td><td>Free, fast, repeatable: always the first layer</td></tr></table>
+  <div class="client"><b>💼 Trainer demo · Amazon Bedrock Evaluations (console, 5 minutes):</b> the same 14 questions as a job. Pick the model, pick an AI judge, read the scores. Participants only watch: jobs are slow and billed.</div>
+  <div class="say"><b>Say this:</b> "Cloud-native evals give you audit and data residency. A platform like LangSmith gives you the daily loop. Your own code checks give you the cheap gate. Big clients use all three."</div>
+  <div class="row"><button class="btn ghost" onclick="go('q3')">Back</button><button class="btn" onclick="go('app')">See the app we will use</button></div>
+</section>
+<section data-id="labD">
+  <div class="lab">
+    <h2>Lab 10 · Part D · The same exam as a LangSmith experiment</h2>
+    <p class="now">We are doing Lab 10 · AskIT Ops Control Room now (<code>lab10-askit-ops-control-room</code>), Part D. Keep the app running in the first terminal. Use a <b>second terminal</b>.</p>
+    <p class="now">Folder: C:\AskIT\dxc-agentic-ai\Day10\Labs\lab10-askit-ops-control-room</p>
+    <div class="four">
+      <div><b>What we do</b>Upload the 14 questions to your own free LangSmith account, run the exam for prompt v1 and v3, compare the two runs in the browser.</div>
+      <div><b>Why</b>This is how teams keep an exam, run it on every change and see a regression before release.</div>
+      <div><b>Outcome</b>A compare screen showing which risks v3 fixed and whether any question got worse, plus the trace of one failing answer.</div>
+      <div><b>How</b>Two commands, then 5 clicks in LangSmith.</div>
+    </div>
+    <ol>
+      <li>Sign up free at <b>smith.langchain.com</b> (Google, GitHub or email).</li>
+      <li>VS Code: <b>Terminal</b> &gt; <b>New Terminal</b>. The prompt must end with <b>lab10-askit-ops-control-room</b>. Type:<div class="cmd"><code>python langsmith_setup.py</code></div>Follow its 4 steps: <b>Settings &gt; API Keys &gt; Create API Key</b>, copy, paste. It tries all four LangSmith regions for you. Wait for <b>OK Connected to LangSmith</b>.</li>
+      <li>Run the experiments (about 3 minutes):<div class="cmd"><code>python langsmith_lab.py</code></div></li>
+      <li>In the browser: <b>Datasets &amp; Experiments</b> &gt; <b>askit-ops-14</b> &gt; tick <b>v1</b> and <b>v3</b> &gt; <b>Compare</b>.</li>
+      <li>Click a cell with <b>0</b>, open its <b>trace</b>. Which risk failed, and which span shows why?</li>
+      <li>Did any question get <b>worse</b> from v1 to v3? Screenshot the compare screen into <code>submission</code>.</li>
+    </ol>
+    <p class="muted">Time: 25 minutes. Short of time: <code>python langsmith_lab.py --quick</code> (only 5 questions, all pass, so v1 and v3 look the same; the differences are in the full run). Blocked site: watch the trainer's screen.</p>
+    <p class="muted"><b>Privacy:</b> only the made-up Orbit Corp questions, answers and traces go to LangSmith. With real data you would mask first and ask security. That is the CISO curveball.</p>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('labC')">Back</button><button class="btn" onclick="go('ls')">LangSmith tour</button></div>
+</section>
+<section data-id="ls">
+  <div class="kicker">Lab 10 · Part D · Trainer-led tour (about 8 minutes)</div>
+  <h2>What else is in LangSmith? A feature walk-through</h2>
+  <p class="lead">You compared two experiments. Now look around the same account. Follow on your screen. Menu names can differ slightly: if you cannot find one, watch the trainer.</p>
+  <style>.stabs .sbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.stabs .sbtn{border:1px solid var(--line);background:var(--surface2);border-radius:10px 10px 0 0;padding:9px 16px;font:inherit;cursor:pointer}.stabs .sbtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}.stabs .spanel{display:none;border:1px solid var(--line);border-radius:0 12px 12px 12px;padding:14px 18px;background:var(--surface)}.stabs .spanel.on{display:block}</style>
+  <div class="stabs"><div class="sbar"><button type="button" class="sbtn on" data-t="ls0" onclick="var g=this.closest('.stabs');g.querySelectorAll('.sbtn').forEach(function(b){b.classList.remove('on')});g.querySelectorAll('.spanel').forEach(function(p){p.classList.remove('on')});this.classList.add('on');document.getElementById(this.dataset.t).classList.add('on')">① Traces</button><button type="button" class="sbtn" data-t="ls1" onclick="var g=this.closest('.stabs');g.querySelectorAll('.sbtn').forEach(function(b){b.classList.remove('on')});g.querySelectorAll('.spanel').forEach(function(p){p.classList.remove('on')});this.classList.add('on');document.getElementById(this.dataset.t).classList.add('on')">② Datasets and experiments</button><button type="button" class="sbtn" data-t="ls2" onclick="var g=this.closest('.stabs');g.querySelectorAll('.sbtn').forEach(function(b){b.classList.remove('on')});g.querySelectorAll('.spanel').forEach(function(p){p.classList.remove('on')});this.classList.add('on');document.getElementById(this.dataset.t).classList.add('on')">③ Playground and prompts</button><button type="button" class="sbtn" data-t="ls3" onclick="var g=this.closest('.stabs');g.querySelectorAll('.sbtn').forEach(function(b){b.classList.remove('on')});g.querySelectorAll('.spanel').forEach(function(p){p.classList.remove('on')});this.classList.add('on');document.getElementById(this.dataset.t).classList.add('on')">④ Monitoring and human review</button><button type="button" class="sbtn" data-t="ls4" onclick="var g=this.closest('.stabs');g.querySelectorAll('.sbtn').forEach(function(b){b.classList.remove('on')});g.querySelectorAll('.spanel').forEach(function(p){p.classList.remove('on')});this.classList.add('on');document.getElementById(this.dataset.t).classList.add('on')">⑤ LangSmith vs Langfuse vs CloudWatch</button></div><div class="spanel on" id="ls0"><ol><li>Left menu <b>Tracing</b> (or <b>Projects</b>) &gt; your project <code>askit-day10-…</code>.</li><li>Click a run: the <b>tree</b> shows every model call and tool call, like our waterfall.</li><li>Click one model call: <b>input, output, tokens, cost, latency</b>.</li><li>Use the <b>filter</b> bar: show only runs with an <b>error</b>, or only slow ones.</li></ol><p class='muted'>Same idea as tab 1, but stored for the whole team and searchable.</p></div><div class="spanel" id="ls1"><ol><li><b>Datasets &amp; Experiments</b> &gt; <b>askit-ops-14</b> &gt; <b>Examples</b>: our 14 questions with the expected tool and article. This is the golden set.</li><li><b>Experiments</b> tab: one row per prompt version, with the average of each check (right tool, runaway loop, grounded, safe write, budget).</li><li>Tick two experiments &gt; <b>Compare</b>: red cells are regressions. Click a cell to open its trace.</li></ol><p class='muted'>The numbers equal tab 4 because the checks are the same code.</p></div><div class="spanel" id="ls2"><ol><li>Open a trace &gt; look for <b>Open in Playground</b>: edit the system prompt and run the same input again. Needs a model key set in your LangSmith settings, so this one is a <b>trainer demo</b>.</li><li><b>Prompts</b> (prompt hub): save a prompt with versions and a commit history, like code.</li></ol><p class='muted'>Think: v1, v2, v3 of our instructions are exactly this.</p></div><div class="spanel" id="ls3"><ol><li>In your project open the <b>Monitor</b> tab: charts of run count, latency, errors, tokens and cost over time.</li><li><b>Annotation queues</b>: send runs to a person to rate. Used when a check cannot be written as code.</li><li><b>Automations / online evaluators</b>: run a check on live traffic and raise an alert. Concept only today.</li></ol><p class='muted'>This is the “what wakes a human at 3 a.m.” side of your ADR.</p></div><div class="spanel" id="ls4"><table><tr><th></th><th>LangSmith</th><th>Langfuse</th><th>AWS CloudWatch</th></tr><tr><td>Sees tool calls and steps</td><td>Yes</td><td>Yes</td><td><b>No</b> (model calls only)</td></tr><tr><td>Datasets and experiments</td><td>Yes, strong</td><td>Yes</td><td>No (Bedrock Evaluations is separate)</td></tr><tr><td>Hosting</td><td>Vendor cloud (US, EU, APAC) or enterprise self-host</td><td>Cloud or open-source self-host</td><td>Your AWS account</td></tr><tr><td>Best for</td><td>LangChain / LangGraph teams, eval loops</td><td>Any framework, data in your own cloud</td><td>Audit, usage, billing by user</td></tr><tr><td>Watch out for</td><td>Closed source; data leaves your account</td><td>You run it if self-hosted</td><td>Less polish for debugging answers</td></tr></table></div></div>
+  <div class="say"><b>Say this:</b> "The tool matters less than the habit: record every step, keep a golden set, run it on every change."</div>
+  <div class="row"><button class="btn ghost" onclick="go('labD')">Back</button><button class="btn" onclick="go('adr')">Team ADR</button></div>
+</section>
+<section data-id="adr">
+  <div class="kicker">Team task · Board 5 · breakout room</div>
+  <h2>Ops &amp; FinOps Review · ADR-AskIT-05, “How do we see, afford and prove AskIT in production?”</h2>
+  <p class="lead">An <b>ADR</b> is a one-page note: <i>“we chose X, not Y, because of these numbers.”</i> You write one with your team in <b>10 minutes</b>, then pitch it in <b>90 seconds</b>. The client curveball comes <b>late</b>, after the basic design.</p>
+  <div class="four">
+    <div><b>What we do</b>Choose where traces live, what wakes a human, what must pass before release, the model strategy, the budget.</div>
+    <div><b>Why</b>Go-live boards ask exactly these things.</div>
+    <div><b>Outcome</b>A one-page ADR in your team folder, a 90-second pitch, leaderboard points.</div>
+    <div><b>How</b>Lab 10 app, tab 8: seven steps, top to bottom. One person shares the screen.</div>
+  </div>
+  <h3>Roles (decide in 30 seconds)</h3>
+  <table><tr><th>Role</th><th>Job</th></tr><tr><td>👤 Driver</td><td>Shares the screen and types</td></tr><tr><td>📖 Reader</td><td>Reads each step aloud</td></tr><tr><td>🤔 Challenger</td><td>Asks “why not the other option?” at every choice</td></tr><tr><td>🎤 Presenter</td><td>Gives the 90-second pitch</td></tr></table>
+  <h3>The seven steps</h3>
+  <table><tr><th>Step</th><th>Minutes</th><th>What the team does</th></tr><tr><td>1 · Team</td><td>1</td><td>Pick the team name, type first names</td></tr><tr><td>2 · Your numbers</td><td>1</td><td>Look at the lab numbers in the box (from tabs 2, 3, 4). Empty? Do those tabs first</td></tr><tr><td>3 · Basic design</td><td>3</td><td>Make 5 choices: where traces live · what must pass · model strategy · what wakes a human · the budget</td></tr><tr><td>4 · Explain</td><td>2</td><td>Write why, and which option you rejected. Use one number</td></tr><tr><td>5 · Curveball</td><td>3</td><td>Tick <b>Reveal the curveball</b>. Write what changes and what does NOT</td></tr><tr><td>6 · Create</td><td>0.5</td><td>Press <b>📝 Create our design decision (ADR)</b>, then SYNC.bat</td></tr><tr><td>7 · Pitch</td><td>1.5 each</td><td>Say: our decision · one number · what we rejected · how the curveball changed us</td></tr></table>
+  <p class="muted">The curveball you will get (hidden in the app until Step 5):</p>
+  <table><tr><th>Team</th><th>Curveball</th><th>From</th><th>Topic</th></tr><tr><td><code>team-a</code></td><td>AI cost per department, under US$0.01 per ticket</td><td>CFO</td><td>Cost attribution, tags, budgets</td></tr><tr><td><code>team-b</code></td><td>Traces contain employee data</td><td>CISO</td><td>Where traces live, masking, retention</td></tr><tr><td><code>team-c</code></td><td>What wakes a human at 3 a.m.?</td><td>Head of Operations</td><td>Alerts, SLOs, on-call</td></tr><tr><td><code>team-d</code></td><td>A prompt was changed on Friday evening</td><td>Head of Quality</td><td>Evals as a release gate</td></tr></table>
+  <table><tr><th>Criterion</th><th>Full marks when</th></tr><tr><td>Decision</td><td>One clear sentence a CFO and a CISO both understand</td></tr><tr><td>Alternatives</td><td>At least one option rejected, with a real reason</td></tr><tr><td>See / afford / prove</td><td>Where traces live, what costs how much, what must pass before release</td></tr><tr><td>Evidence</td><td>Numbers from the lab: cost per ticket, p95, eval pass rates, the failure you found</td></tr><tr><td>Curveball</td><td>What changed in the design, and what did NOT change</td></tr></table>
+  <div class="say"><b>Bonus reading after class:</b> <code>Day10\Content\Eval_Harness_FDE_Guide.html</code>, how a forward-deployed engineer builds an eval harness for a client.</div>
+  <div class="row"><button class="btn ghost" onclick="go('ls')">Back</button><button class="btn" onclick="go('prod')">Production view</button></div>
+</section>
+<section data-id="prod">
+  <div class="kicker">Architect + sales view</div>
+  <h2>How this runs in production</h2>
+  <div class="dg"><svg viewBox="0 0 1210 410" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="ln"><rect x="5" y="10" width="1200" height="210" rx="20"/><text x="25" y="38" class="lt">① In production</text></g><g class="nd k-ag"><rect x="20" y="62" width="200" height="118" rx="14"/><text x="120.0" y="94" class="ic">🤖</text><text x="120.0" y="119" class="tt">Agents</text><text x="120.0" y="138" class="sb">AskIT + others</text><text x="120.0" y="155" class="sb">SDK / OTel inside</text></g><g class="nd k-tool"><rect x="262" y="62" width="200" height="118" rx="14"/><text x="362.0" y="94" class="ic">📡</text><text x="362.0" y="119" class="tt">Collector</text><text x="362.0" y="138" class="sb">Langfuse · OTel</text><text x="362.0" y="155" class="sb">mask personal data</text><text x="362.0" y="171" class="fl">mask HERE</text></g><g class="nd k-mem"><rect x="504" y="62" width="200" height="118" rx="14"/><text x="604.0" y="94" class="ic">🗄️</text><text x="604.0" y="119" class="tt">Trace store</text><text x="604.0" y="138" class="sb">Langfuse · CloudWatch</text><text x="604.0" y="155" class="sb">retention, access</text></g><g class="nd k-ui"><rect x="746" y="62" width="200" height="118" rx="14"/><text x="846.0" y="94" class="ic">📊</text><text x="846.0" y="119" class="tt">Dashboards</text><text x="846.0" y="138" class="sb">cost · p95 · loops</text><text x="846.0" y="155" class="sb">per team / dept</text></g><g class="nd k-hu"><rect x="988" y="62" width="200" height="118" rx="14"/><text x="1088.0" y="94" class="ic">🚨</text><text x="1088.0" y="119" class="tt">Alerts</text><text x="1088.0" y="138" class="sb">to the on-call</text><text x="1088.0" y="155" class="sb">budget alarms</text></g><line x1="223" y1="121" x2="257" y2="121" class="ar" marker-end="url(#ah6)"/><line x1="465" y1="121" x2="499" y2="121" class="ar" marker-end="url(#ah6)"/><line x1="707" y1="121" x2="741" y2="121" class="ar" marker-end="url(#ah6)"/><line x1="949" y1="121" x2="983" y2="121" class="ar" marker-end="url(#ah6)"/><g class="ln"><rect x="5" y="246" width="1200" height="150" rx="20"/><text x="25" y="274" class="lt">② Around it</text></g><g class="nd k-mem"><rect x="30" y="295" width="370" height="60" rx="14"/><text x="215" y="320" class="tt" style="font-size:17px">🧪 Evals in CI</text><text x="215" y="343" class="sb">no release if a risk drops</text></g><g class="nd k-mem"><rect x="420" y="295" width="370" height="60" rx="14"/><text x="605" y="320" class="tt" style="font-size:17px">🔁 Failures → test set</text><text x="605" y="343" class="sb">every incident adds a case</text></g><g class="nd k-mem"><rect x="810" y="295" width="370" height="60" rx="14"/><text x="995" y="320" class="tt" style="font-size:17px">💸 Budgets</text><text x="995" y="343" class="sb">per team, with alarms</text></g></svg><div class="cap">From the lab to production: the same ideas, with masking, retention, access control and alarms added.</div></div>
+  <h3>Product choices a client may ask about</h3>
+  <table><tr><th>Option</th><th>What it is</th><th>Good for</th><th>Watch out</th></tr><tr><td>Langfuse</td><td>Open-source tracing, prompts, datasets, evals; cloud or self-hosted</td><td>Any framework; data in your own cloud; mixed stacks</td><td>You run and secure it if self-hosted</td></tr><tr><td>LangSmith</td><td>LangChain's managed tracing, datasets and experiments (Lab 10 Part D)</td><td>Dev-loop evals, compare runs, annotation; works with any framework via tracing</td><td>Closed source; vendor-hosted data</td></tr><tr><td>AWS CloudWatch GenAI + AgentCore Observability</td><td>Logs, metrics and traces in your AWS account</td><td>Everything on AWS; one audit place for security</td><td>Fewer 'debug this answer' features than agent-first tools</td></tr><tr><td>OpenTelemetry + your APM</td><td>Standard traces sent to Datadog, Dynatrace, Grafana</td><td>A platform team already owns monitoring</td><td>LLM-specific views vary by vendor</td></tr><tr><td>RAGAS / DeepEval</td><td>Libraries of ready-made RAG and agent metrics</td><td>Standard metrics in CI</td><td>Most use an AI judge: tokens cost money and results vary</td></tr><tr><td>Bedrock Evaluations / AgentCore Evaluations</td><td>Managed evaluation runs on AWS (trainer demo)</td><td>AWS-centric teams; sampled production traces</td><td>You still write the test cases</td></tr></table>
+  <h3>Client questions · tap to see a good answer</h3>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“Do traces put our employees' data at risk?”</b><span class="hint">tap to flip</span></div><div class="face back">They can: they store questions and tool results. Decide where traces live (your account or self-hosted), mask names and ids before sending, set retention, limit who can open them.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“Why not just use CloudWatch?”</b><span class="hint">tap to flip</span></div><div class="face back">It sees the model call, not the agent's decisions or tools. Use it for audit, usage and billing; add agent-level traces to debug wrong answers.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“Which model should we start with?”</b><span class="hint">tap to flip</span></div><div class="face back">The smallest one that passes your eval. Move up only for the risk categories that fail. Then compare cost per ticket.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“Can we cap the spend?”</b><span class="hint">tap to flip</span></div><div class="face back">In layers: a step limit in the agent, a cost-per-ticket alert, budgets and alarms in the cloud account, and (Days 11 to 12) a gateway that enforces limits per team.</div></div></button></div>
+  <div class="client"><b>💼 Say this:</b> "Before go-live you get a dashboard (cost, speed, loops), an alert plan, and an exam that must pass on every change."</div>
+  <div class="row"><button class="btn ghost" onclick="go('adr')">Back</button><button class="btn" onclick="go('sum')">Sum-up</button></div>
+</section>
+<section data-id="sum">
+  <div class="kicker">Sum-up</div>
+  <h2>What we learned today</h2>
+  <div class="grid g2">
+    <div class="card"><div class="big">1</div><h3>See it: traces and spans</h3><p class="muted">Loops, huge results, wrong tools and slow tools show up in the waterfall, not as errors.</p></div>
+    <div class="card"><div class="big">2</div><h3>Afford it: tokens × price × tickets</h3><p class="muted">Cut tokens first, then cache, then right-size the model. Read cost next to pass rate.</p></div>
+    <div class="card"><div class="big">3</div><h3>Prove it: evals</h3><p class="muted">Pass or fail per named risk. Change one thing, run again, compare.</p></div>
+  </div>
+  <div class="say" style="margin-top:18px"><b>Tonight:</b> delete your Day 9 Lambda if you have not, run SYNC.bat, and do the homework: write 5 pass/fail checks for your Gatekeeper server. <b>Coming next · Session 11:</b> security and guardrails. We attack AskIT and defend it.</div>
+  <div class="row"><button class="btn ghost" onclick="go('prod')">Back</button><button class="btn" onclick="go('start')">Back to the start</button></div>
+</section>
+</main>
+<footer><div class="inner"><span class="muted" id="pos"></span><span><button class="btn ghost" id="prev">Previous</button> <button class="btn" id="next">Next</button></span></div></footer>
+<script>
+const order = ['start', 'c1', 'q1', 'c2', 'q2', 'c3', 'q3', 'tour', 'app', 'labA', 'labB', 'c4', 'labC', 'labD', 'ls', 'adr', 'prod', 'sum'];
+const names = {start:'Start',c1:'1 See it',q1:'Check 1',c2:'2 Afford it',q2:'Check 2',c3:'3 Prove it',q3:'Check 3',tour:'Evals in industry',app:'The app',labA:'Lab 10 · A',labB:'Lab 10 · B',c4:'AWS side',labC:'Lab 10 · C',labD:'Lab 10 · D',ls:'LangSmith tour',adr:'Team ADR',prod:'In production',sum:'Sum-up'};
+
+function go(id){
+  document.querySelectorAll('main > section').forEach(s => s.classList.toggle('on', s.dataset.id === id));
+  render(id);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function render(id){
+  const i = order.indexOf(id);
+  document.getElementById('steps').innerHTML = order.map((k,n) =>
+    `<button type="button" class="stp ${k===id?'on':''} ${n<i?'done':''} ${k.startsWith('lab')?'islab':''}" data-go="${k}" ${k===id?'aria-current="step"':''}>${names[k]}</button>`).join('');
+  document.querySelectorAll('.stp').forEach(b => b.onclick = () => go(b.dataset.go));
+  const on = document.querySelector('.stp.on'); if (on) on.scrollIntoView({block:'nearest',inline:'center'});
+  document.getElementById('pos').textContent = `${i+1} of ${order.length}`;
+  document.getElementById('progbar').style.width = ((i+1)/order.length*100)+'%';
+  document.getElementById('prev').disabled = i === 0;
+  document.getElementById('next').disabled = i === order.length - 1;
+  try{ history.replaceState(null,'','#'+id); }catch(e){}
+}
+document.getElementById('prev').onclick = () => go(order[order.indexOf(current())-1]);
+document.getElementById('next').onclick = () => go(order[order.indexOf(current())+1]);
+function current(){ return document.querySelector('main > section.on').dataset.id; }
+
+// quick checks: pick an answer, see if it is right, see the reason
+document.querySelectorAll('.q').forEach(q => {
+  q.querySelectorAll('.opt').forEach(btn => btn.onclick = () => {
+    if (q.dataset.answered) return;
+    q.dataset.answered = '1';
+    const right = q.dataset.right;
+    q.querySelectorAll('.opt').forEach(o => {
+      o.disabled = true;
+      if (o.dataset.v === right) o.classList.add('right');
+      else if (o === btn) o.classList.add('wrong');
+    });
+    q.querySelector('.why').classList.add('show');
+    const section = q.closest('section');
+    const total = section.querySelectorAll('.q').length;
+    const got = section.querySelectorAll('.q .opt.right').length;
+    const answered = [...section.querySelectorAll('.q')].filter(x => x.dataset.answered).length;
+    if (answered === total) {
+      const score = section.querySelector('.score');
+      score.textContent = `${got} of ${total} right`;
+    }
+  });
+});
+
+// dark / light toggle (remembers choice)
+const root=document.documentElement, tb=document.getElementById('theme');
+function applyTheme(t){ root.setAttribute('data-theme',t); tb.textContent = t==='dark' ? '☀️ Light' : '🌙 Dark'; }
+let saved=null; try{ saved=localStorage.getItem('s10theme'); }catch(e){}
+applyTheme(saved || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark':'light'));
+tb.onclick=()=>{ const t=root.getAttribute('data-theme')==='dark'?'light':'dark'; applyTheme(t); try{localStorage.setItem('s10theme',t);}catch(e){} };
+
+// keyboard: left/right arrows
+document.addEventListener('keydown',e=>{
+  if(e.target.closest('input,textarea')) return;
+  const i=order.indexOf(current());
+  if(e.key==='ArrowRight' && i<order.length-1) go(order[i+1]);
+  if(e.key==='ArrowLeft' && i>0) go(order[i-1]);
+});
+
+const h=location.hash.slice(1);
+if(order.includes(h)) go(h); else render('start');
+</script>
+</body>
+</html>

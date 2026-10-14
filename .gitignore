@@ -22,3 +22,7 @@ Day*/Labs/*/chroma_db/
 Day*/Labs/*/evals_agentic/
 
 Day*/Labs/*/vector_store/
+
+# Day 9 MCP lab (local wire logs and each person's own Lambda address)
+Day*/Labs/*/.wire/
+Day*/Labs/*/aws/my_lambda.json

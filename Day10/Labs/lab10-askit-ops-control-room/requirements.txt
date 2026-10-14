@@ -1,0 +1,9 @@
+langchain>=1.0
+langchain-aws>=1.0
+langchain-openai>=1.0
+langfuse>=3.0
+boto3
+python-dotenv
+streamlit>=1.40
+pandas
+langsmith>=0.4

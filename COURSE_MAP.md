@@ -1,7 +1,7 @@
 # AskIT Program — Course Map
 
 Each day has its own folder: `DayNN\Content\` holds the session page and `DayNN\Labs\` holds that day's lab code.
-New content appears the morning of each session — run `START_DAY.bat` to get it.
+New content appears the morning of each session — double-click `SYNC.bat` to get it.
 
 | Day | Date | Topic | Session page | Labs | Status |
 |---|---|---|---|---|---|
@@ -13,9 +13,9 @@ New content appears the morning of each session — run `START_DAY.bat` to get i
 | 5 | Wed 7 Oct | Agents, ReAct, tools and function calling | `Day05\Content` | `Day05\Labs\lab05-askit-agent-loop` | Ready |
 | 6 | Thu 8 Oct | LangChain agents, middleware, streaming | `Day06\Content` | `Day06\Labs\lab06-askit-langchain-agent` | Ready |
 | 7 | Fri 9 Oct | Context, compaction and memory | `Day07\Content` | `Day07\Labs\lab07-askit-memory-context` | Ready |
-| 8 | Mon 12 Oct | Multi-agent and human-in-the-loop | `Day08\Content` | `Day08\Labs\lab09-...` | Coming |
-| 9 | Tue 13 Oct | MCP | `Day09\Content` | `Day09\Labs\lab10-...` | Coming |
-| 10 | Wed 14 Oct | Observability, cost, evaluation | `Day10\Content` | `Day10\Labs\lab11-...`, `lab13-...` | Coming |
+| 8 | Mon 12 Oct | Multi-agent and human-in-the-loop | `Day08\Content` | `Day08\Labs\lab08-askit-multi-agent`, `labADR-askit-design-review`, `homework-askit-gatekeeper` | Ready |
+| 9 | Tue 13 Oct | MCP: one tool server, controls, stdio / HTTP / AWS Lambda | `Day09\Content` | `Day09\Labs\lab09-askit-mcp-control-room`, `homework-gatekeeper-mcp` | Ready |
+| 10 | Wed 14 Oct | Observability, cost, evaluation (traces, Langfuse, CloudWatch, evals) | `Day10\Content` | `Day10\Labs\lab10-askit-ops-control-room`, `homework-gatekeeper-evals` | Ready |
 | 11 | Thu 15 Oct | Security, guardrails, red team, UI | `Day11\Content` | `Day11\Labs\lab12-...`, `lab14-...` | Coming |
 | 12 | Fri 16 Oct | Production on AWS + capstone | `Day12\Content` | `Day12\Labs\lab15-...`, `lab16-...` | Coming |
 

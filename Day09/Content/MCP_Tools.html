@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9 · MCP: Tools for Agents</title>
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --surface2:#eef1f7; --ink:#141a2a; --muted:#5a6478; --line:#dde2ec;
+  --accent:#0f7c8c; --accent-soft:#d8f0f3; --warn:#b45309; --warn-soft:#fdecd3;
+  --ok:#157f3b; --ok-soft:#dcf3e4; --bad:#b42318; --bad-soft:#fbe0dd;
+  --shadow:0 2px 10px rgba(20,26,42,.07);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17; --shadow:none;}}
+:root[data-theme="dark"]{
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17; --shadow:none;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Aptos Narrow","Aptos","Segoe UI",system-ui,-apple-system,sans-serif;font-size:19px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer}
+header{position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+.bar{max-width:1100px;margin:0 auto;padding:12px 16px 8px;display:flex;align-items:center;gap:12px}
+.brand{font-weight:700;font-size:20px;flex:1;min-width:0}
+.brand small{display:block;font-weight:400;color:var(--muted);font-size:14px}
+.tbtn{border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:7px 14px;font-size:15px;font-weight:600;white-space:nowrap}
+.tbtn:hover{border-color:var(--accent)}
+.navwrap{max-width:1100px;margin:0 auto;padding:0 16px 12px}
+.steps{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding:2px 0 6px}
+.stp{flex:0 0 auto;border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:999px;padding:6px 14px;font-size:15px;font-weight:600;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s}
+.stp:hover{border-color:var(--accent);transform:translateY(-1px)}
+.stp.done{color:var(--muted)}
+.stp.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.stp.islab{border-style:dashed;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.stp.islab.on{background:var(--accent);color:#fff;border-style:solid}
+.stp:focus-visible,.tbtn:focus-visible,.btn:focus-visible,.flip:focus-visible,.opt:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.prog{height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 90px}
+section{display:none}
+section.on{display:block}
+h1{font-size:40px;line-height:1.15;margin:.2em 0 .3em}
+h2{font-size:30px;margin:.2em 0 .4em}
+h3{font-size:22px;margin:1.2em 0 .4em}
+.kicker{color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:14px}
+.lead{font-size:21px;color:var(--muted);max-width:820px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+.big{font-size:44px;line-height:1}
+/* flip cards */
+.flip{perspective:1000px;min-height:150px;border:0;background:none;padding:0;text-align:left;width:100%}
+.flip .in{position:relative;width:100%;height:100%;min-height:150px;transition:transform .5s;transform-style:preserve-3d}
+.flip.flipped .in{transform:rotateY(180deg)}
+.flip .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;padding:16px;border:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}
+.flip .front{background:var(--surface);box-shadow:var(--shadow)}
+.flip .front b{font-size:21px}
+.flip .front .hint{font-size:13px;color:var(--muted);margin-top:8px}
+.flip .back{background:var(--accent-soft);transform:rotateY(180deg);font-size:17px}
+/* quiz */
+.q{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:12px 0}
+.q .qt{font-weight:700;margin-bottom:10px}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--surface2);border-radius:10px;padding:9px 14px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:var(--ok-soft);border-color:var(--ok)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.why{display:none;margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--surface2);font-size:16px}
+.why.show{display:block}
+/* concept box */
+.say{border-left:5px solid var(--accent);background:var(--surface);border-radius:10px;padding:12px 16px;margin:12px 0;box-shadow:var(--shadow)}
+.say b{color:var(--accent)}
+/* table */
+table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:16px}
+th{background:var(--surface2)}
+/* lab pointer */
+.lab{border:2px dashed var(--accent);background:var(--accent-soft);border-radius:16px;padding:22px}
+.lab h2{margin-top:0}
+.lab .now{font-weight:700;font-size:19px}
+.lab ol{margin:.5em 0 0;padding-left:1.3em}
+.lab li{margin:6px 0}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:9px 18px;font-weight:700}
+.btn.ghost{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.score{font-size:24px;font-weight:700;color:var(--warn)}
+footer{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px}
+footer .inner{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;gap:10px}
+@media (max-width:600px){h1{font-size:30px} h2{font-size:24px} body{font-size:17px}}
+:root[data-theme="dark"] .btn:not(.ghost),:root[data-theme="dark"] .stp.on{color:#06222a}
+footer .inner{padding:0 16px}
+
+:root{--blue:#1F5AA6;--blue-soft:#E2EBF7;--plum:#6A3FA0;--plum-soft:#EEE6F7;--teal:#0E7068;--teal-soft:#E3F1EE;
+--amber:#A8570A;--amber-soft:#FBEEDB;--red:#B42318;--red-soft:#FDE7E7;--grey:#8A93A3;--grey-soft:#F1F2F4;--lane:#FAFAF7}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--blue:#86B4F0;--blue-soft:#17253d;--plum:#C4A6EE;--plum-soft:#2a2040;
+--teal:#5FD0C4;--teal-soft:#123532;--amber:#F2B266;--amber-soft:#3a2a14;--red:#FF8A7E;--red-soft:#3d1a17;--grey:#7d8698;--grey-soft:#20263a;--lane:#141a29}}
+:root[data-theme="dark"]{--blue:#86B4F0;--blue-soft:#17253d;--plum:#C4A6EE;--plum-soft:#2a2040;--teal:#5FD0C4;--teal-soft:#123532;
+--amber:#F2B266;--amber-soft:#3a2a14;--red:#FF8A7E;--red-soft:#3d1a17;--grey:#7d8698;--grey-soft:#20263a;--lane:#141a29}
+.dg{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px;margin:14px 0;box-shadow:var(--shadow);overflow-x:auto}
+.dg svg{width:100%;min-width:760px;height:auto;display:block}
+.g2 .dg svg{min-width:0}
+.dg .cap{font-size:15px;color:var(--muted);padding:4px 8px 2px}
+.nd rect{fill:var(--ks);stroke:var(--k);stroke-width:2.2}
+.nd .tt{fill:var(--k);font-weight:700;font-size:19px;text-anchor:middle}
+.nd .ic{font-size:26px;text-anchor:middle}
+.nd .sb{fill:var(--ink);font-size:15px;text-anchor:middle}
+.nd .fl{fill:var(--muted);font-size:13px;text-anchor:middle;font-family:Consolas,monospace}
+.k-ui{--k:var(--blue);--ks:var(--blue-soft)} .k-ag{--k:var(--plum);--ks:var(--plum-soft)} .k-mem{--k:var(--teal);--ks:var(--teal-soft)}
+.k-tool{--k:var(--amber);--ks:var(--amber-soft)} .k-hu{--k:var(--red);--ks:var(--red-soft)} .k-off{--k:var(--grey);--ks:var(--grey-soft)}
+.ln rect{fill:var(--lane);stroke:var(--line);stroke-width:1.4} .ln .lt{fill:var(--ink);font-weight:700;font-size:18px} .ln .lh{fill:var(--muted);font-size:13px}
+.ar{stroke:var(--muted);stroke-width:2;fill:none} .ar.d{stroke-dasharray:6 5} .ahd{fill:var(--muted)}
+.al{fill:var(--muted);font-size:14px;text-anchor:middle;paint-order:stroke;stroke:var(--surface);stroke-width:5px}
+.num{fill:var(--accent);font-weight:700;font-size:14px;text-anchor:middle} .numc{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.flow{counter-reset:f;list-style:none;padding:0;margin:10px 0}
+.flow li{counter-increment:f;position:relative;padding:8px 12px 8px 50px;margin:6px 0;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.flow li::before{content:counter(f);position:absolute;left:12px;top:8px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;text-align:center;line-height:26px;font-size:15px}
+.four{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0}
+.four div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.four b{display:block;color:var(--accent);margin-bottom:4px}
+.cmd{display:flex;gap:8px;align-items:center;margin:6px 0}
+.cmd code{flex:1;background:#0f1320;color:#e8ecf5;padding:10px 14px;border-radius:8px;font-size:17px}
+.tag{display:inline-block;font-size:13px;font-weight:700;padding:2px 10px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);margin-right:6px}
+.client{border-left:5px solid var(--teal);background:var(--surface);border-radius:10px;padding:12px 16px;margin:12px 0;box-shadow:var(--shadow)}
+.client b{color:var(--teal)}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">S9 · MCP: Tools for Agents<small>Day 9 of 12 · AskIT MCP Control Room</small></div>
+    <button class="tbtn" id="theme" type="button" aria-label="Toggle dark mode">🌙 Dark</button>
+  </div>
+  <div class="navwrap">
+    <nav class="steps" id="steps" aria-label="Sections"></nav>
+    <div class="prog"><i id="progbar"></i></div>
+  </div>
+</header>
+<main>
+<section data-id="start" class="on">
+  <div class="kicker">Today's flow · Session 9</div>
+  <h1>MCP: one tool server, many agents, any home.</h1>
+  <p class="lead">Three ideas, ONE lab app (the MCP Control Room). You will see the real messages, add controls around the tools, and then <b>build the same server on AWS Lambda yourself</b>. No code to write.</p>
+  <div class="grid g2" style="margin-top:18px">
+    <div class="card"><div class="big">1</div><h3>Why MCP?</h3><p class="muted">Tools written once, used by every agent. What goes over the wire.</p></div>
+    <div class="card"><div class="big">2</div><h3>Controls around tools</h3><p class="muted">Descriptions, logging, masking, role checks, timeouts, confirmation.</p></div>
+    <div class="card"><div class="big">3</div><h3>Same server, three homes</h3><p class="muted">This VM (stdio), this VM (HTTP), AWS Lambda.</p></div>
+  </div>
+  <div class="say"><b>Where we are in the AskIT story:</b> Day 8 built a team of agents with tools written inside our code. Today the tools move out into a server that any agent can connect to.</div>
+  <div class="row"><button class="btn" onclick="go('c1')">Start the first idea</button></div>
+</section>
+<section data-id="c1">
+  <div class="kicker">Idea 1 · Why MCP</div>
+  <h2>Tools should be written once and shared</h2>
+  <p class="lead">Until now every agent had its tool functions inside its own code. With 5 agents and 6 systems that is 30 hand-made connections, each with its own logging, security and bugs. <b>MCP (Model Context Protocol)</b> is a standard way for an agent to ask a server: who are you, what tools do you have, please call this one.</p>
+  <div class="grid g2" style="grid-template-columns:1fr 1fr"><div class="dg"><svg viewBox="0 0 370 235" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="nd k-ag"><rect x="10" y="20" width="120" height="50" rx="14"/><text x="70.0" y="48" class="tt" style="font-size:17px">🤖 Agent 1</text><text x="70.0" y="70" class="sb"></text></g><line x1="130" y1="45" x2="250" y2="45" class="ar d" style="opacity:.55"/><line x1="130" y1="45" x2="250" y2="115" class="ar d" style="opacity:.55"/><line x1="130" y1="45" x2="250" y2="185" class="ar d" style="opacity:.55"/><g class="nd k-ag"><rect x="10" y="90" width="120" height="50" rx="14"/><text x="70.0" y="118" class="tt" style="font-size:17px">🤖 Agent 2</text><text x="70.0" y="140" class="sb"></text></g><line x1="130" y1="115" x2="250" y2="45" class="ar d" style="opacity:.55"/><line x1="130" y1="115" x2="250" y2="115" class="ar d" style="opacity:.55"/><line x1="130" y1="115" x2="250" y2="185" class="ar d" style="opacity:.55"/><g class="nd k-ag"><rect x="10" y="160" width="120" height="50" rx="14"/><text x="70.0" y="188" class="tt" style="font-size:17px">🤖 Agent 3</text><text x="70.0" y="210" class="sb"></text></g><line x1="130" y1="185" x2="250" y2="45" class="ar d" style="opacity:.55"/><line x1="130" y1="185" x2="250" y2="115" class="ar d" style="opacity:.55"/><line x1="130" y1="185" x2="250" y2="185" class="ar d" style="opacity:.55"/><g class="nd k-tool"><rect x="250" y="20" width="110" height="50" rx="14"/><text x="305.0" y="48" class="tt" style="font-size:17px">🛠️ Tickets</text><text x="305.0" y="70" class="sb"></text></g><g class="nd k-tool"><rect x="250" y="90" width="110" height="50" rx="14"/><text x="305.0" y="118" class="tt" style="font-size:17px">🛠️ Users</text><text x="305.0" y="140" class="sb"></text></g><g class="nd k-tool"><rect x="250" y="160" width="110" height="50" rx="14"/><text x="305.0" y="188" class="tt" style="font-size:17px">🛠️ KB</text><text x="305.0" y="210" class="sb"></text></g></svg><div class="cap"><b>Without MCP</b>: 3 agents × 3 tools = 9 hand-made connections.</div></div><div class="dg"><svg viewBox="0 0 370 235" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="nd k-ag"><rect x="10" y="20" width="120" height="50" rx="14"/><text x="70.0" y="48" class="tt" style="font-size:17px">🤖 Agent 1</text><text x="70.0" y="70" class="sb"></text></g><g class="nd k-ag"><rect x="10" y="90" width="120" height="50" rx="14"/><text x="70.0" y="118" class="tt" style="font-size:17px">🤖 Agent 2</text><text x="70.0" y="140" class="sb"></text></g><g class="nd k-ag"><rect x="10" y="160" width="120" height="50" rx="14"/><text x="70.0" y="188" class="tt" style="font-size:17px">🤖 Agent 3</text><text x="70.0" y="210" class="sb"></text></g><g class="nd k-mem"><rect x="190" y="70" width="150" height="90" rx="14"/><text x="265.0" y="98" class="tt" style="font-size:17px">🔌 MCP server</text><text x="265.0" y="120" class="sb">one place</text></g><line x1="133" y1="45" x2="187" y2="115" class="ar" marker-end="url(#ah5)"/><line x1="133" y1="115" x2="187" y2="115" class="ar" marker-end="url(#ah5)"/><line x1="133" y1="185" x2="187" y2="115" class="ar" marker-end="url(#ah5)"/></svg><div class="cap"><b>With MCP</b>: 3 + 1 connections. A 4th agent adds ONE.</div></div></div>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Three messages</b><span class="hint">tap to flip</span></div><div class="face back"><b>server/discover</b>: who are you? <b>tools/list</b>: what can you do (names, descriptions, inputs)? <b>tools/call</b>: run this tool with these inputs. All are small JSON messages.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Stateless in the 2026 version</b><span class="hint">tap to flip</span></div><div class="face back">The newest MCP version has no login handshake and no session. Every message stands alone, so a plain Lambda function can be an MCP server. Older clients still use an <b>initialize</b> handshake; our servers accept both.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Two ways to travel</b><span class="hint">tap to flip</span></div><div class="face back"><b>stdio</b>: the client starts the server as a child process and talks through pipes. <b>HTTP</b>: the server is a web service, many clients connect. Same messages in both.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Not only tools</b><span class="hint">tap to flip</span></div><div class="face back">A server can also offer <b>resources</b> (read-only data such as a KB article) and <b>prompts</b> (ready-made instructions). Tools are 90% of real use.</div></div></button></div>
+  <table><tr><th></th><th>Function calling (Day 5)</th><th>REST API</th><th>MCP</th></tr><tr><td>Who defines the tool?</td><td>Inside each agent's code</td><td>A service, documented for developers</td><td>A server, described for AI agents</td></tr><tr><td>Discoverable by an agent at run time?</td><td>No</td><td>Only if someone reads the docs</td><td><b>Yes</b>: tools/list</td></tr><tr><td>Shared by many agents?</td><td>Copy the code</td><td>Yes, every agent writes its own client</td><td><b>Yes</b>: one standard client</td></tr></table>
+  <div class="say"><b>Say this:</b> "MCP does for AI tools what USB did for devices: one plug, any agent, any tool."</div>
+  <div class="row"><button class="btn ghost" onclick="go('start')">Back</button><button class="btn" onclick="go('q1')">Quick check</button></div>
+</section>
+<section data-id="q1">
+  <div class="kicker">Quick check · Idea 1</div>
+  <h2>Three questions</h2>
+  <div class="q" data-right="b"><div class="qt">1. 5 agents need 6 systems. With no MCP, how many connections are built?</div><div class="opts"><button class="opt" data-v="a">11</button><button class="opt" data-v="b">30</button><button class="opt" data-v="c">6</button></div><div class="why">5 × 6 = 30 (N × M). With MCP each system has one server and each agent one client: 5 + 6 = 11.</div></div><div class="q" data-right="a"><div class="qt">2. Which message tells the agent WHAT the server can do?</div><div class="opts"><button class="opt" data-v="a">tools/list</button><button class="opt" data-v="b">tools/call</button><button class="opt" data-v="c">ping</button></div><div class="why">tools/list returns names, descriptions and input schemas. The model decides from these.</div></div><div class="q" data-right="b"><div class="qt">3. Why can a simple Lambda function be an MCP server in the newest version?</div><div class="opts"><button class="opt" data-v="a">Lambda has a special MCP feature</button><button class="opt" data-v="b">The protocol is stateless: no handshake, no session</button><button class="opt" data-v="c">MCP only needs one tool</button></div><div class="why">Every message stands alone, so any web function that answers JSON can serve MCP.</div></div><div class="row"><span class="score" id="score1"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c1')">Back</button><button class="btn" onclick="go('c2')">Next idea</button></div>
+</section>
+<section data-id="c2">
+  <div class="kicker">Idea 2 · Descriptions and controls</div>
+  <h2>The model only sees descriptions. You control the rest.</h2>
+  <p class="lead">The agent never reads your tool code. It chooses a tool by its <b>name and description</b>. A bad description means a wrong tool, and a wrong tool is a real incident (a password reset instead of a lookup).</p>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Tool descriptions are design</b><span class="hint">tap to flip</span></div><div class="face back">Tab 3 swaps four description sets and tests 6 questions. Vague or misleading words lower the score. Treat descriptions like a public interface.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Control: log</b><span class="hint">tap to flip</span></div><div class="face back">Every call written down: who, which tool, how long, success or failure. The CISO's first demand.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Control: mask (redact)</b><span class="hint">tap to flip</span></div><div class="face back">Names, e-mails and phones are hidden BEFORE the AI sees them. Strict mode also hides employee ids: safer, but the agent may lose the key it needs.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Control: role and VIP</b><span class="hint">tap to flip</span></div><div class="face back">A read-only agent cannot call write tools. A VIP's account is never changed by an AI. Plain code, not a prompt.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Control: timeout and retry</b><span class="hint">tap to flip</span></div><div class="face back">Wait at most N seconds, try again M times, then say honestly that the tool failed. Agents that hang cost money and trust.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Confirm with the user (elicitation)</b><span class="hint">tap to flip</span></div><div class="face back">A server can pause a call and ask the person “are you sure?”. Short demo only today.</div></div></button></div>
+  <table><tr><th>Where can a control live?</th><th>Good</th><th>Risk</th></tr><tr><td>In each agent (client side)</td><td>Quick to start; the agent knows its own user</td><td>A careless team forgets it</td></tr><tr><td>Inside the MCP server</td><td>Everyone gets it, enforced in one place</td><td>The server team must own security</td></tr><tr><td>In a gateway in front (production)</td><td>Central policy, audit and identity</td><td>One more service to run</td></tr></table>
+  <div class="say"><b>Golden rule:</b> controls go <b>around</b> the tools, in plain code. Never rely on “please be careful” in a prompt.</div>
+  <div class="row"><button class="btn ghost" onclick="go('q1')">Back</button><button class="btn" onclick="go('q2')">Quick check</button></div>
+</section>
+<section data-id="q2">
+  <div class="kicker">Quick check · Idea 2</div>
+  <h2>Three questions</h2>
+  <div class="q" data-right="a"><div class="qt">1. Two tools have almost the same description. What happens?</div><div class="opts"><button class="opt" data-v="a">The model may pick the wrong one</button><button class="opt" data-v="b">MCP rejects the server</button><button class="opt" data-v="c">Nothing: the model reads the code</button></div><div class="why">The model never sees the code. Distinct, specific descriptions are your main defence.</div></div><div class="q" data-right="b"><div class="qt">2. Strict masking hides employee ids. What is the cost?</div><div class="opts"><button class="opt" data-v="a">None</button><button class="opt" data-v="b">The agent may no longer have the id it needs to call a tool</button><button class="opt" data-v="c">The server crashes</button></div><div class="why">Masking is a trade-off between privacy and usefulness. Decide per field.</div></div><div class="q" data-right="b"><div class="qt">3. The CISO says: every agent team must log calls, and we do not trust them to remember. Best home for the control?</div><div class="opts"><button class="opt" data-v="a">In each agent</button><button class="opt" data-v="b">In the server or a gateway</button><button class="opt" data-v="c">In the prompt</button></div><div class="why">Enforce it once, where agents cannot skip it.</div></div><div class="row"><span class="score" id="score2"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c2')">Back</button><button class="btn" onclick="go('c3')">Next idea</button></div>
+</section>
+<section data-id="c3">
+  <div class="kicker">Idea 3 · Homes for a tool server</div>
+  <h2>Same agent, same tools: only the home changes</h2>
+  <div class="dg"><svg viewBox="0 0 1050 245" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="nd k-ui"><rect x="20" y="40" width="320" height="100" rx="14"/><text x="180.0" y="72" class="ic">💻</text><text x="180.0" y="97" class="tt">1 · This VM · stdio</text><text x="180.0" y="116" class="sb">child process, pipes</text><text x="180.0" y="133" class="sb">nothing outside can reach it</text></g><g class="nd k-ag"><rect x="365" y="40" width="320" height="100" rx="14"/><text x="525.0" y="72" class="ic">🌐</text><text x="525.0" y="97" class="tt">2 · This VM · HTTP</text><text x="525.0" y="116" class="sb">small web service :8777</text><text x="525.0" y="133" class="sb">any client on the machine</text></g><g class="nd k-tool"><rect x="710" y="40" width="320" height="100" rx="14"/><text x="870.0" y="72" class="ic">☁️</text><text x="870.0" y="97" class="tt">3 · AWS Lambda</text><text x="870.0" y="116" class="sb">HTTPS Function URL</text><text x="870.0" y="133" class="sb">anyone with URL + key</text></g><g class="nd k-mem"><rect x="20" y="175" width="1010" height="52" rx="14"/><text x="525.0" y="203" class="tt" style="font-size:17px">🧰 SAME 4 tools · SAME messages · SAME agent code</text><text x="525.0" y="225" class="sb">only the place where the server runs (and the proof of identity) changes</text></g></svg><div class="cap">The same agent on three homes. Lab 9 runs all three.</div></div>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>What is AWS Lambda?</b><span class="hint">tap to flip</span></div><div class="face back">You upload a function; AWS runs it only when a request comes in. No server to patch, you pay per call (almost nothing for a lab).</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>What is a Function URL?</b><span class="hint">tap to flip</span></div><div class="face back">A built-in HTTPS address for the function. Anyone with the URL can call it unless you lock it. Today the lock is a secret header with your user name. Production uses IAM or OAuth.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>What is a cold start?</b><span class="hint">tap to flip</span></div><div class="face back">After a quiet period Lambda must start your code first, so the first call is slower. Tab 5 measures it.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Why not Lambda for everything?</b><span class="hint">tap to flip</span></div><div class="face back">It cannot reach systems inside your data centre unless you add networking, and long or heavy jobs are a poor fit. Team C's curveball is exactly this.</div></div></button></div>
+  <table><tr><th></th><th>Stdio on a VM</th><th>HTTP on a VM or container</th><th>AWS Lambda</th></tr><tr><td>Who can call it</td><td>Only the program that started it</td><td>Any client that can reach the port</td><td>Anyone with URL + identity</td></tr><tr><td>Good for</td><td>Your laptop, VS Code, desktop tools</td><td>A shared team server</td><td>Cloud-native, spiky usage, no ops</td></tr><tr><td>Weak at</td><td>Sharing</td><td>You patch and monitor it</td><td>Private networks, long jobs, cold starts</td></tr></table>
+  <div class="say"><b>Say this:</b> "We write the tools once. Where they run is a deployment choice, not a rewrite."</div>
+  <div class="row"><button class="btn ghost" onclick="go('q2')">Back</button><button class="btn" onclick="go('q3')">Quick check</button></div>
+</section>
+<section data-id="q3">
+  <div class="kicker">Quick check · Idea 3</div>
+  <h2>Three questions</h2>
+  <div class="q" data-right="b"><div class="qt">1. The first Lambda call took 900 ms, the next ones 30 ms. Why?</div><div class="opts"><button class="opt" data-v="a">The network was slow</button><button class="opt" data-v="b">A cold start: Lambda had to start the code</button><button class="opt" data-v="c">The tools are cached</button></div><div class="why">After idle time Lambda starts a new instance. Pay that wait only after quiet periods.</div></div><div class="q" data-right="b"><div class="qt">2. A Function URL with auth NONE and no key is...</div><div class="opts"><button class="opt" data-v="a">Safe, nobody knows the URL</button><button class="opt" data-v="b">Open to anyone who finds it</button><button class="opt" data-v="c">Encrypted so nobody can read it</button></div><div class="why">HTTPS hides the traffic, not who can call. Always add an identity check.</div></div><div class="q" data-right="b"><div class="qt">3. The ticket system is inside the client's data centre with no internet address. Where should the MCP server run?</div><div class="opts"><button class="opt" data-v="a">Lambda with no networking</button><button class="opt" data-v="b">Somewhere that can reach it: a VM / container in their network, or Lambda in a VPC with a private link</button><button class="opt" data-v="c">In the prompt</button></div><div class="why">Put the server next to the system it protects.</div></div><div class="row"><span class="score" id="score3"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c3')">Back</button><button class="btn" onclick="go('app')">See the app we will use</button></div>
+</section>
+<section data-id="app">
+  <div class="kicker">Before the lab · How the app works</div>
+  <h2>What happens behind the MCP Control Room</h2>
+  <p class="lead">One Streamlit app, one question. Follow the numbers.</p>
+  <div class="dg"><svg viewBox="0 0 1306 470" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="ln"><rect x="2" y="6" width="1300" height="330" rx="20"/><text x="22" y="34" class="lt">① One question, end to end</text><text x="1284" y="34" class="lh" text-anchor="end">numbers = the order things happen</text></g><g class="nd k-ui"><rect x="14" y="100" width="170" height="118" rx="14"/><text x="99.0" y="132" class="ic">💬</text><text x="99.0" y="157" class="tt">Question</text><text x="99.0" y="176" class="sb">“What is the status</text><text x="99.0" y="193" class="sb">of TKT-0004?”</text><text x="99.0" y="209" class="fl">app.py</text></g><g class="nd k-ag"><rect x="226" y="100" width="170" height="118" rx="14"/><text x="311.0" y="132" class="ic">🤖</text><text x="311.0" y="157" class="tt">Agent</text><text x="311.0" y="176" class="sb">LangChain agent</text><text x="311.0" y="193" class="sb">picks a tool</text><text x="311.0" y="209" class="fl">run_agent()</text></g><g class="nd k-tool"><rect x="438" y="100" width="170" height="118" rx="14"/><text x="523.0" y="132" class="ic">🛡️</text><text x="523.0" y="157" class="tt">Controls</text><text x="523.0" y="176" class="sb">role · VIP · redact</text><text x="523.0" y="193" class="sb">timeout · retry · log</text><text x="523.0" y="209" class="fl">guarded_call()</text></g><g class="nd k-mem"><rect x="650" y="100" width="170" height="118" rx="14"/><text x="735.0" y="132" class="ic">🔌</text><text x="735.0" y="157" class="tt">MCP client</text><text x="735.0" y="176" class="sb">discover · list</text><text x="735.0" y="193" class="sb">call (JSON)</text><text x="735.0" y="209" class="fl">mcp_client.py</text></g><g class="nd k-mem"><rect x="862" y="100" width="170" height="118" rx="14"/><text x="947.0" y="132" class="ic">🧰</text><text x="947.0" y="157" class="tt">MCP server</text><text x="947.0" y="176" class="sb">stdio · HTTP</text><text x="947.0" y="193" class="sb">or Lambda</text><text x="947.0" y="209" class="fl">askit_server.py</text></g><g class="nd k-tool"><rect x="1074" y="100" width="170" height="118" rx="14"/><text x="1159.0" y="132" class="ic">🛠️</text><text x="1159.0" y="157" class="tt">4 tools</text><text x="1159.0" y="176" class="sb">same functions</text><text x="1159.0" y="193" class="sb">as Days 5–8</text><text x="1159.0" y="209" class="fl">askit_core/tools.py</text></g><line x1="187" y1="159" x2="221" y2="159" class="ar" marker-end="url(#ah2)"/><line x1="399" y1="159" x2="433" y2="159" class="ar" marker-end="url(#ah2)"/><line x1="611" y1="159" x2="645" y2="159" class="ar" marker-end="url(#ah2)"/><line x1="823" y1="159" x2="857" y2="159" class="ar" marker-end="url(#ah2)"/><line x1="1035" y1="159" x2="1069" y2="159" class="ar" marker-end="url(#ah2)"/><circle cx="22" cy="96" r="13" class="numc"/><text x="22" y="101" class="num">1</text><circle cx="234" cy="96" r="13" class="numc"/><text x="234" y="101" class="num">2</text><circle cx="446" cy="96" r="13" class="numc"/><text x="446" y="101" class="num">3</text><circle cx="658" cy="96" r="13" class="numc"/><text x="658" y="101" class="num">4</text><circle cx="870" cy="96" r="13" class="numc"/><text x="870" y="101" class="num">5</text><circle cx="1082" cy="96" r="13" class="numc"/><text x="1082" y="101" class="num">6</text><path d="M942 224 V292 H94 V226" class="ar d" marker-end="url(#ah2)"/><text x="700" y="286" class="al">answer travels back: tool → server → client → controls (mask) → agent → you</text><g class="ln"><rect x="2" y="350" width="1300" height="112" rx="20"/><text x="22" y="378" class="lt">② Next to it</text></g><g class="nd k-mem"><rect x="250" y="395" width="330" height="58" rx="14"/><text x="415" y="420" class="tt" style="font-size:17px">🔬 Wire log</text><text x="415" y="442" class="sb">every JSON message, both directions</text></g><g class="nd k-mem"><rect x="600" y="395" width="330" height="58" rx="14"/><text x="765" y="420" class="tt" style="font-size:17px">🧠 Model (Bedrock / offline)</text><text x="765" y="442" class="sb">reads the DESCRIPTIONS, never your code</text></g><g class="nd k-mem"><rect x="950" y="395" width="330" height="58" rx="14"/><text x="1115" y="420" class="tt" style="font-size:17px">☁️ AWS Lambda (tab 5)</text><text x="1115" y="442" class="sb">the same server, built by you in the console</text></g></svg><div class="cap">The app you will use. Tab 1 shows steps 4–5, tab 2 steps 1–6, tab 4 step 3, tab 5 moves step 5 to AWS.</div></div>
+  <ol class="flow">
+    <li>You ask a question, for example “What is the status of TKT-0004?”. <span class="tag">app.py</span></li>
+    <li>The <b>agent</b> reads the tool descriptions (from tools/list) and picks a tool and its inputs. <span class="tag">run_agent()</span></li>
+    <li>The <b>controls</b> run in plain code: role and VIP check, timeout and retry, masking, logging. <span class="tag">guarded_call()</span></li>
+    <li>The <b>MCP client</b> sends the JSON message over the chosen home (pipe, HTTP or HTTPS). <span class="tag">mcp_client.py</span></li>
+    <li>The <b>MCP server</b> runs the tool and answers. Tab 1 shows each message in the wire log. <span class="tag">askit_server.py</span></li>
+    <li>The tool is the same function as Days 5–8. <span class="tag">askit_core/tools.py</span></li>
+    <li>The answer goes back up, masked on the way. The model writes the reply.</li>
+  </ol>
+  <h3>The screen, tab by tab</h3>
+  <table><tr><th>Tab</th><th>What you do</th><th>Idea it shows</th></tr><tr><td>1 · Meet the server</td><td>Connect, call by hand, read the wire log, raw JSON</td><td>What MCP really is</td></tr><tr><td>2 · Agent on MCP</td><td>Ask AskIT; same question on every home</td><td>Agent code unchanged, home changes</td></tr><tr><td>3 · Tool descriptions</td><td>Four description sets, 6 test questions</td><td>Descriptions are design</td></tr><tr><td>4 · Controls</td><td>Role, VIP, mask, confirm; 4 scenarios</td><td>Controls around tools</td></tr><tr><td>5 · Move to AWS</td><td>Create your Lambda, test it, cold start</td><td>Same server on AWS</td></tr><tr><td>6 · Incident</td><td>Slow, flaky tool; find settings that survive</td><td>Timeouts and retries</td></tr><tr><td>7 · How it works</td><td>Diagram, code map, N × M, product choices, client Q&A</td><td>Architecture + sales view</td></tr><tr><td>8 · Questions</td><td>Answers saved for GitHub</td><td>Evidence</td></tr><tr><td>9 · Team ADR</td><td>ADR-AskIT-02 with lab numbers</td><td>Architecture decision</td></tr></table>
+  <div class="row"><button class="btn ghost" onclick="go('q3')">Back</button><button class="btn" onclick="go('labA')">Start Lab 9 · Part A</button></div>
+</section>
+<section data-id="labA">
+  <div class="lab">
+    <h2>Lab 9 · Part A · Meet the server (tabs 1, 2, 3)</h2>
+    <p class="now">We are doing Lab 9 · AskIT MCP Control Room now (<code>lab09-askit-mcp-control-room</code>).</p>
+    <p class="now">In VS Code: File &gt; Open Folder &gt; C:\AskIT\dxc-agentic-ai\Day09\Labs\lab09-askit-mcp-control-room</p>
+    <div class="four">
+      <div><b>What we do</b>Connect to the AskIT tool server, call a tool by hand, read the real messages, then let an agent use it and change the tool descriptions.</div>
+      <div><b>Why</b>Clients ask “what exactly is MCP, show me”. This is the demo you can give.</div>
+      <div><b>Outcome</b>You can point at tools/list and tools/call, and show that bad descriptions lose the right tool.</div>
+      <div><b>How</b>One command, then buttons. No code.</div>
+    </div>
+    <ol>
+      <li>In VS Code click <b>Terminal</b> &gt; <b>New Terminal</b>. The prompt must end with <b>lab09-askit-mcp-control-room</b>. Lab 8 app still running? Close its black window first.</li>
+      <li>Type this and press Enter (first time a few minutes):</li>
+    </ol>
+    <div class="cmd"><code>python run.py</code></div>
+    <ol start="3">
+      <li>Sidebar: leave <b>Model</b> on Bedrock (or Offline stand-in if it shows a problem), tools home on <b>1 · This VM · stdio</b>.</li>
+      <li>Tab <b>1</b>: press <b>🔌 Connect</b>. Read the server card. Call <code>get_ticket</code> with <b>📞</b>. Open <b>🔬 What went over the wire</b>. Which message asked for the tools?</li>
+      <li>Press the raw buttons: no MCP library at all, only JSON.</li>
+      <li>Tab <b>2</b>: pick a question, <b>▶ Ask AskIT</b>. Which tool, which inputs? Then <b>🔁 Same question on every home</b>.</li>
+      <li>Tab <b>3</b>: press <b>▶ Test the 6 questions</b> with each description set. Which set scores lowest, and why?</li>
+    </ol>
+    <p class="muted">No folder? Open <code>C:\AskIT\dxc-agentic-ai</code> and double-click <b>SYNC.bat</b>. Time: 35 minutes.</p>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('app')">Back</button><button class="btn" onclick="go('labB')">Lab 9 · Part B</button></div>
+</section>
+<section data-id="labB">
+  <div class="lab">
+    <h2>Lab 9 · Part B · Controls around the tools (tab 4)</h2>
+    <p class="now">We are still in Lab 9 · <code>lab09-askit-mcp-control-room</code>. Go back to the app in your browser.</p>
+    <div class="four">
+      <div><b>What we do</b>Switch controls on and off and run four scenarios, then an agent challenge.</div>
+      <div><b>Why</b>The CISO's questions: who may write, what does the AI see, is everything logged?</div>
+      <div><b>Outcome</b>You see each control block, mask or confirm a call, in a live pipeline picture.</div>
+      <div><b>How</b>Toggles and scenario buttons.</div>
+    </div>
+    <ol>
+      <li>Role <b>read-only</b>, scenario <b>B · Reset password</b>. Which control stopped it?</li>
+      <li>Role back to service-desk, <b>VIP block</b> on, scenario <b>C</b>. What is different from B?</li>
+      <li><b>Redact</b> on, scenario <b>B</b>: what happened to the name? Then <b>strict</b> on, scenario <b>A</b>: what did the id become, and what could the agent lose?</li>
+      <li><b>Server asks me to confirm</b> on, scenario B: answer Yes, then No.</li>
+      <li>Press <b>🧪 Agent challenge</b> and read the pipeline trace.</li>
+    </ol>
+    <p class="muted">Time: 25 minutes.</p>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('labA')">Back</button><button class="btn" onclick="go('c4')">Now AWS</button></div>
+</section>
+<section data-id="c4">
+  <div class="kicker">Before Lab C · AWS in 3 minutes</div>
+  <h2>You are about to build on AWS yourself</h2>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Console</b><span class="hint">tap to flip</span></div><div class="face back">The AWS website. Sign in with your own user (user101 to user116). Region: <b>us-east-1 (N. Virginia)</b>.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>S3 bucket</b><span class="hint">tap to flip</span></div><div class="face back">A folder in the cloud for files. You upload the helpdesk data (KB articles, tickets, users) to <b>your own folder</b> in it. Data belongs here, not inside the code package.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Function</b><span class="hint">tap to flip</span></div><div class="face back">Your code, named <b>userNNN-askit-mcp</b>. You upload a tiny zip with <b>code only</b> from the lab folder.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Role</b><span class="hint">tap to flip</span></div><div class="face back">The permissions the function runs with. The trainer made <b>askit-lambda-role</b> for you: it may write logs and read the S3 bucket, nothing else.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Environment variable</b><span class="hint">tap to flip</span></div><div class="face back">A setting outside the code. <b>ASKIT_KEY</b> = your user name (callers must send it as header x-askit-key). <b>ASKIT_BUCKET</b> and <b>ASKIT_PREFIX</b> tell the function where its data is in S3.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Function URL</b><span class="hint">tap to flip</span></div><div class="face back">The HTTPS address. Auth NONE + the key from above. Fine for class, not for production.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>CloudWatch logs</b><span class="hint">tap to flip</span></div><div class="face back">Every request prints a line. It is the same information as the local wire log.</div></div></button></div>
+  <div class="say"><b>If something fails:</b> the app translates 401, 403, 404 and 502 into plain advice. Tell the trainer the number. At the end <b>delete your function</b>.</div>
+  <div class="row"><button class="btn ghost" onclick="go('labB')">Back</button><button class="btn" onclick="go('labC')">Start Lab 9 · Part C</button></div>
+</section>
+<section data-id="labC">
+  <div class="lab">
+    <h2>Lab 9 · Part C · Your own MCP server on AWS Lambda (tab 5)</h2>
+    <p class="now">We are still in Lab 9 · <code>lab09-askit-mcp-control-room</code>. App tab <b>5 · Move to AWS</b> shows these steps; the AWS console is in another browser tab.</p>
+    <div class="four">
+      <div><b>What we do</b>Upload the data to S3, create a Lambda function, upload the code zip, set the settings, create the URL, connect the app to it.</div>
+      <div><b>Why</b>Showing MCP on AWS is a sales demo, and AWS is where Days 10–12 go.</div>
+      <div><b>Outcome</b>The SAME agent from tab 2 answers using tools that live in YOUR AWS function.</div>
+      <div><b>How</b>9 console steps with your user name, then 3 buttons in the app.</div>
+    </div>
+    <ol>
+      <li>Sign in to the AWS console as your user. Check the region: <b>N. Virginia</b>.</li>
+      <li><b>S3</b>: open bucket <code>devproacademy-askit-data-868859238853</code> &gt; <b>Create folder</b> named <b>your user name</b> &gt; open it &gt; <b>Upload &gt; Add folder</b> &gt; <code>C:\AskIT\dxc-agentic-ai\askit_data</code> &gt; Upload. Check you see <code>askit_data/</code> with <code>tickets.csv</code>, <code>users.csv</code>, <code>kb/</code>.</li>
+      <li><b>Lambda</b> &gt; Create function &gt; <b>Event function</b> &gt; Author from scratch. Name <code>user1NN-askit-mcp</code> (your number). Runtime <b>Python 3.13</b> (change it if it says Node.js).</li>
+      <li>Additional settings &gt; <b>Custom execution role</b> on &gt; <b>askit-lambda-role</b>. Create function.</li>
+      <li>Code &gt; Upload from &gt; <b>.zip file</b> (not the S3 location option): <code>aws\askit-mcp-lambda.zip</code> in the lab folder. Save. It holds code only.</li>
+      <li>Configuration &gt; Environment variables, add three: <b>ASKIT_KEY</b> = your user name, <b>ASKIT_BUCKET</b> = <code>devproacademy-askit-data-868859238853</code>, <b>ASKIT_PREFIX</b> = <code>user1NN/askit_data/</code> (with the slash at the end).</li>
+      <li>Configuration &gt; General configuration &gt; Edit: <b>Timeout 30 sec</b>, Memory 256 MB. Save.</li>
+      <li>Configuration &gt; Function URL &gt; Create, auth <b>NONE</b>. Copy the URL.</li>
+      <li>App tab 5: paste URL and key, <b>💾 Save</b>, <b>✅ Test my Lambda</b>.</li>
+      <li><b>⏱️ Call it 3 times</b>: which call is slowest, and why? Then <b>➡️ Use Lambda as my tool home</b> and repeat tab 2.</li>
+      <li>In AWS: Monitor &gt; View CloudWatch logs. Find your own calls.</li>
+    </ol>
+    <div class="say"><b>⚡ Fast movers:</b> open <code>askit_data\kb\KB-004_vpn_connect.md</code> on your PC, change one line, save. Upload it again to <code>your-user-name/askit_data/kb/</code> in S3 (same name). Wait 10 seconds, ask the VPN question again in tab 2. Your change appears and you never touched the function: <b>data and code are separate</b>.</div>
+    <p class="muted">Time: 45 minutes. 401 = key mismatch. 403 = URL auth must be NONE. 404 = wrong URL. 502 = look at the logs (a <b>timeout</b> line means step 7 was missed). "ASKIT_BUCKET is not set" or no data = step 6 (check the prefix, it ends with a slash).</p>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('c4')">Back</button><button class="btn" onclick="go('inc')">Incident</button></div>
+</section>
+<section data-id="inc">
+  <div class="lab">
+    <h2>Incident · “The ticket tool is slow” (tab 6)</h2>
+    <p class="now">Same app, tab <b>6 · Incident</b>. Pick any home.</p>
+    <div class="four">
+      <div><b>What we do</b>Make the server slow and flaky, then tune the client's timeout and retries.</div>
+      <div><b>Why</b>On Monday mornings real systems are slow. Agents that hang cost money.</div>
+      <div><b>Outcome</b>Settings that finish in 8 seconds even when the first 2 calls fail.</div>
+      <div><b>How</b>Four sliders and one button.</div>
+    </div>
+    <ol>
+      <li>Server slow by 6 s, client waits 3 s, no retries. Press <b>▶ Call get_ticket</b>. Read the attempts.</li>
+      <li>Mission: server fails the first 2 calls. Find timeout and retries that finish in under 8 seconds.</li>
+      <li>For Lambda: change <b>ASKIT_DELAY</b> and the function <b>Timeout</b> in the console.</li>
+    </ol>
+    <p class="muted">Time: 15 minutes.</p>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('labC')">Back</button><button class="btn" onclick="go('prod')">How it runs in production</button></div>
+</section>
+<section data-id="prod">
+  <div class="kicker">Architect + sales view</div>
+  <h2>How MCP runs in production</h2>
+  <div class="dg"><svg viewBox="0 0 1210 395" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="ln"><rect x="5" y="10" width="1200" height="200" rx="20"/><text x="25" y="38" class="lt">① Request path in production</text></g><g class="nd k-ag"><rect x="20" y="62" width="200" height="118" rx="14"/><text x="120.0" y="94" class="ic">🤖</text><text x="120.0" y="119" class="tt">Many agents</text><text x="120.0" y="138" class="sb">support · HR · finance</text><text x="120.0" y="155" class="sb">partner agents</text></g><g class="nd k-tool"><rect x="262" y="62" width="200" height="118" rx="14"/><text x="362.0" y="94" class="ic">🚪</text><text x="362.0" y="119" class="tt">Gateway</text><text x="362.0" y="138" class="sb">AgentCore Gateway</text><text x="362.0" y="155" class="sb">auth · logs · limits</text><text x="362.0" y="171" class="fl">controls live HERE</text></g><g class="nd k-mem"><rect x="504" y="62" width="200" height="118" rx="14"/><text x="604.0" y="94" class="ic">🔌</text><text x="604.0" y="119" class="tt">MCP servers</text><text x="604.0" y="138" class="sb">tickets · users · KB</text><text x="604.0" y="155" class="sb">one team owns each</text></g><g class="nd k-tool"><rect x="746" y="62" width="200" height="118" rx="14"/><text x="846.0" y="94" class="ic">🛠️</text><text x="846.0" y="119" class="tt">Real systems</text><text x="846.0" y="138" class="sb">ServiceNow · AD</text><text x="846.0" y="155" class="sb">via VPN / private link</text></g><g class="nd k-tool"><rect x="988" y="62" width="200" height="118" rx="14"/><text x="1088.0" y="94" class="ic">📈</text><text x="1088.0" y="119" class="tt">Observability</text><text x="1088.0" y="138" class="sb">every call traced</text><text x="1088.0" y="155" class="sb">CloudWatch · Langfuse</text><text x="1088.0" y="171" class="fl">Day 10</text></g><line x1="223" y1="121" x2="257" y2="121" class="ar" marker-end="url(#ah3)"/><line x1="465" y1="121" x2="499" y2="121" class="ar" marker-end="url(#ah3)"/><line x1="707" y1="121" x2="741" y2="121" class="ar" marker-end="url(#ah3)"/><line x1="949" y1="121" x2="983" y2="121" class="ar" marker-end="url(#ah3)"/><g class="ln"><rect x="5" y="236" width="1200" height="150" rx="20"/><text x="25" y="264" class="lt">② What changes from the lab</text></g><g class="nd k-mem"><rect x="30" y="285" width="370" height="60" rx="14"/><text x="215" y="310" class="tt" style="font-size:17px">🔐 Identity</text><text x="215" y="333" class="sb">shared key → IAM / OAuth per caller</text></g><g class="nd k-mem"><rect x="420" y="285" width="370" height="60" rx="14"/><text x="605" y="310" class="tt" style="font-size:17px">🛡️ Controls</text><text x="605" y="333" class="sb">client code → gateway policy</text></g><g class="nd k-mem"><rect x="810" y="285" width="370" height="60" rx="14"/><text x="995" y="310" class="tt" style="font-size:17px">🌍 Reach</text><text x="995" y="333" class="sb">public URL → private network</text></g></svg><div class="cap">Lab piece → production piece. The tool code stays; identity, controls and networking move to managed services.</div></div>
+  <h3>Product choices a client may ask about (concepts only)</h3>
+  <table><tr><th>Option</th><th>Idea</th><th>Good for</th><th>Watch out</th></tr><tr><td>FastMCP / official SDKs (today)</td><td>Write a server in a few lines of Python or TypeScript</td><td>Teams that own their tools</td><td>You run, patch and secure it</td></tr><tr><td>Lambda (today, tab 5)</td><td>Serverless MCP behind a Function URL</td><td>Demos, spiky use, no servers</td><td>Private networks, cold starts, identity</td></tr><tr><td>AWS AgentCore Gateway</td><td>Turns APIs / Lambdas into MCP tools with auth and policy</td><td>Many tools, central control (Day 12)</td><td>AWS-specific; check current pricing</td></tr><tr><td>Docker / ECS / EKS</td><td>The same server in a container</td><td>Steady load, inside a private network</td><td>More ops than Lambda</td></tr><tr><td>A2A</td><td>Agents talk to OTHER agents (MCP = agent to tool)</td><td>Cross-team or partner agents</td><td>Young standard; short demo only</td></tr></table>
+  <h3>Client questions · tap to see a good answer</h3>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“Why not just give the agent our API?”</b><span class="hint">tap to flip</span></div><div class="face back">An API is written for developers. MCP adds descriptions an AI can read, discovery at run time and one standard client, so the next agent costs almost nothing.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“Is it secure?”</b><span class="hint">tap to flip</span></div><div class="face back">MCP is a message format, not security. Security is what you add: identity per caller, role checks, masking, logs, a gateway. Tab 4 shows the controls.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“Where should it run?”</b><span class="hint">tap to flip</span></div><div class="face back">Next to the system it protects. Lambda for cloud-native, a container in your network for private systems. The agent code does not change.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>“What if the tool is slow or down?”</b><span class="hint">tap to flip</span></div><div class="face back">Timeouts, retries, and an honest message to the user. Never let the agent hang. Tab 6 proves the settings.</div></div></button></div>
+  <div class="client"><b>💼 Say this:</b> "We expose each system once as a governed tool server. Any approved agent can use it, and security sees every call."</div>
+  <div class="row"><button class="btn ghost" onclick="go('inc')">Back</button><button class="btn" onclick="go('a2a')">A2A in 2 minutes</button></div>
+</section>
+<section data-id="a2a">
+  <div class="kicker">Awareness · 10-minute trainer demo</div>
+  <h2>MCP connects agents to tools. A2A connects agents to agents.</h2>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Agent card</b><span class="hint">tap to flip</span></div><div class="face back">A public file that says: I am the Network agent, this is what I can do, this is my address. Other agents read it to decide whom to ask.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>When do you need it?</b><span class="hint">tap to flip</span></div><div class="face back">When another team or partner owns the agent and you cannot (or should not) import its code.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>MCP vs A2A</b><span class="hint">tap to flip</span></div><div class="face back">MCP: agent calls a tool, a function with inputs and outputs. A2A: agent delegates a task to another agent, which may think and take time.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Progressive discovery</b><span class="hint">tap to flip</span></div><div class="face back">With 200 tools, listing them all wastes tokens. Load a few first, search for the rest. Tab 7 has a calculator.</div></div></button></div>
+  <div class="say"><b>Today:</b> only know the words. We demo the agent card in tab 7.</div>
+  <div class="row"><button class="btn ghost" onclick="go('prod')">Back</button><button class="btn" onclick="go('adr')">Team ADR</button></div>
+</section>
+<section data-id="adr">
+  <div class="kicker">Team task · Review Board</div>
+  <h2>Your team's design decision: ADR-AskIT-02, “Where do AskIT's tools live?”</h2>
+  <p class="lead">Each team gets a different curveball from Orbit Corp. You defend your design with the numbers from today's lab.</p>
+  <div class="four">
+    <div><b>What we do</b>Choose where tools live, where controls live and how callers prove identity. Handle your curveball.</div>
+    <div><b>Why</b>Architects and pre-sales defend designs on paper before money is spent.</div>
+    <div><b>Outcome</b>A one-page ADR in your team folder, a 2-minute pitch, leaderboard points.</div>
+    <div><b>How</b>Lab 9 app, tab 9. One person per team shares the screen.</div>
+  </div>
+  <table><tr><th>Team</th><th>Curveball</th><th>From</th><th>Topic</th></tr><tr><td><code>team-a</code></td><td>Four more teams want the same ticket tools</td><td>CIO</td><td>Reuse and ownership: why MCP</td></tr><tr><td><code>team-b</code></td><td>Every call logged, data masked, writes by role</td><td>CISO</td><td>Where controls live</td></tr><tr><td><code>team-c</code></td><td>The ticket system is inside our data centre</td><td>Head of Network</td><td>Connectivity and where the server runs</td></tr><tr><td><code>team-d</code></td><td>On Monday mornings the ticket system is slow</td><td>Head of Operations</td><td>Timeouts, retries, fallbacks</td></tr></table>
+  <ol>
+    <li>Breakout room, 15 minutes. Make sure tabs 1, 3, 5 and 6 have been used, so your ADR gets real numbers.</li>
+    <li>Tab <b>9</b>: pick your team, read the curveball, make 3 choices, write Why, rejected alternative, curveball answer, slow-tool table.</li>
+    <li>Press <b>📝 Create our design decision (ADR)</b>. Then run <b>SYNC.bat</b>.</li>
+    <li>Pitch: 2 minutes per team. The board scores 5 criteria, 0 to 5 each.</li>
+  </ol>
+  <table><tr><th>Criterion</th><th>Full marks when</th></tr><tr><td>Decision</td><td>One clear sentence a CIO understands</td></tr><tr><td>Alternatives</td><td>At least one option rejected, with a real reason</td></tr><tr><td>Controls + identity</td><td>Where logging, masking, role checks and identity live, and why there</td></tr><tr><td>Evidence</td><td>Numbers from the lab: latency, description score, incident result</td></tr><tr><td>Curveball</td><td>What changed in the design, and what did NOT change</td></tr></table>
+  <div class="client"><b>💼 Sales skill:</b> the same page answers a client's architect, CISO and CFO.</div>
+  <div class="row"><button class="btn ghost" onclick="go('a2a')">Back</button><button class="btn" onclick="go('sum')">Sum-up</button></div>
+</section>
+<section data-id="sum">
+  <div class="kicker">Sum-up</div>
+  <h2>What we learned today</h2>
+  <div class="grid g2">
+    <div class="card"><div class="big">1</div><h3>MCP = write tools once, share with every agent</h3><p class="muted">discover, list, call. JSON over a pipe or HTTP.</p></div>
+    <div class="card"><div class="big">2</div><h3>Descriptions and controls are design</h3><p class="muted">Log, mask, role, timeout: in plain code, around the tools.</p></div>
+    <div class="card"><div class="big">3</div><h3>Same server, any home</h3><p class="muted">VM stdio, VM HTTP, AWS Lambda. Identity and networking change, tools do not.</p></div>
+  </div>
+  <div class="say" style="margin-top:18px"><b>Tonight:</b> delete your Lambda function, run SYNC.bat, and do the homework. <b>Coming next · Session 10:</b> observability and evaluation: how do we know the agent is working well?</div>
+  <div class="row"><button class="btn ghost" onclick="go('adr')">Back</button><button class="btn" onclick="go('start')">Back to the start</button></div>
+</section>
+</main>
+<footer><div class="inner"><span class="muted" id="pos"></span><span><button class="btn ghost" id="prev">Previous</button> <button class="btn" id="next">Next</button></span></div></footer>
+<script>
+const order = ['start', 'c1', 'q1', 'c2', 'q2', 'c3', 'q3', 'app', 'labA', 'labB', 'c4', 'labC', 'inc', 'prod', 'a2a', 'adr', 'sum'];
+const names = {start:'Start',c1:'1 Why MCP',q1:'Check 1',c2:'2 Controls',q2:'Check 2',c3:'3 Homes',q3:'Check 3',app:'The app',labA:'Lab 9 · A',labB:'Lab 9 · B',c4:'AWS basics',labC:'Lab 9 · C AWS',inc:'Incident',prod:'In production',a2a:'A2A',adr:'Team ADR',sum:'Sum-up'};
+
+function go(id){
+  document.querySelectorAll('main > section').forEach(s => s.classList.toggle('on', s.dataset.id === id));
+  render(id);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function render(id){
+  const i = order.indexOf(id);
+  document.getElementById('steps').innerHTML = order.map((k,n) =>
+    `<button type="button" class="stp ${k===id?'on':''} ${n<i?'done':''} ${k.startsWith('lab')?'islab':''}" data-go="${k}" ${k===id?'aria-current="step"':''}>${names[k]}</button>`).join('');
+  document.querySelectorAll('.stp').forEach(b => b.onclick = () => go(b.dataset.go));
+  const on = document.querySelector('.stp.on'); if (on) on.scrollIntoView({block:'nearest',inline:'center'});
+  document.getElementById('pos').textContent = `${i+1} of ${order.length}`;
+  document.getElementById('progbar').style.width = ((i+1)/order.length*100)+'%';
+  document.getElementById('prev').disabled = i === 0;
+  document.getElementById('next').disabled = i === order.length - 1;
+  try{ history.replaceState(null,'','#'+id); }catch(e){}
+}
+document.getElementById('prev').onclick = () => go(order[order.indexOf(current())-1]);
+document.getElementById('next').onclick = () => go(order[order.indexOf(current())+1]);
+function current(){ return document.querySelector('main > section.on').dataset.id; }
+
+// quick checks: pick an answer, see if it is right, see the reason
+document.querySelectorAll('.q').forEach(q => {
+  q.querySelectorAll('.opt').forEach(btn => btn.onclick = () => {
+    if (q.dataset.answered) return;
+    q.dataset.answered = '1';
+    const right = q.dataset.right;
+    q.querySelectorAll('.opt').forEach(o => {
+      o.disabled = true;
+      if (o.dataset.v === right) o.classList.add('right');
+      else if (o === btn) o.classList.add('wrong');
+    });
+    q.querySelector('.why').classList.add('show');
+    const section = q.closest('section');
+    const total = section.querySelectorAll('.q').length;
+    const got = section.querySelectorAll('.q .opt.right').length;
+    const answered = [...section.querySelectorAll('.q')].filter(x => x.dataset.answered).length;
+    if (answered === total) {
+      const score = section.querySelector('.score');
+      score.textContent = `${got} of ${total} right`;
+    }
+  });
+});
+
+// dark / light toggle (remembers choice)
+const root=document.documentElement, tb=document.getElementById('theme');
+function applyTheme(t){ root.setAttribute('data-theme',t); tb.textContent = t==='dark' ? '☀️ Light' : '🌙 Dark'; }
+let saved=null; try{ saved=localStorage.getItem('s9theme'); }catch(e){}
+applyTheme(saved || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark':'light'));
+tb.onclick=()=>{ const t=root.getAttribute('data-theme')==='dark'?'light':'dark'; applyTheme(t); try{localStorage.setItem('s9theme',t);}catch(e){} };
+
+// keyboard: left/right arrows
+document.addEventListener('keydown',e=>{
+  if(e.target.closest('input,textarea')) return;
+  const i=order.indexOf(current());
+  if(e.key==='ArrowRight' && i<order.length-1) go(order[i+1]);
+  if(e.key==='ArrowLeft' && i>0) go(order[i-1]);
+});
+
+const h=location.hash.slice(1);
+if(order.includes(h)) go(h); else render('start');
+</script>
+</body>
+</html>

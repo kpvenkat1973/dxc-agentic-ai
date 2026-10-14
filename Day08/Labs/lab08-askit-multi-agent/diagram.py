@@ -7,7 +7,7 @@ PAL = {
     "agent": ("#EEE6F7", "#6A3FA0"),   # plum   - agent / LLM
     "mem": ("#E3F1EE", "#0E7068"),     # teal   - memory / state
     "tool": ("#FBEEDB", "#A8570A"),    # amber  - tools / actions
-    "human": ("#FDE7E7", "#B42318"),   # red    - human / approval
+    "human": ("#FCE7F3", "#BE185D"),   # pink   - human / approval (red is kept for crashes only)
     "off": ("#F1F1F1", "#9AA0A8"),
     "done": ("#DCF5E3", "#1B7F3B"),
     "wait": ("#FFF4CC", "#B7791F"),
