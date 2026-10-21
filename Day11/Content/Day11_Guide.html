@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 11 Guide</title>
+<style>
+:root{
+  --bg:#f6f7fb; --card:#fff; --ink:#1b2233; --muted:#5a6479; --line:#dde2ee;
+  --blue:#2457d6; --blue-bg:#e8eefc; --green:#12805c; --green-bg:#e3f5ee;
+  --orange:#b45309; --orange-bg:#fdf0dc; --purple:#6a3fc4; --purple-bg:#efe8fb; --red:#b3261e; --red-bg:#fde8e6;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#10131b; --card:#181c27; --ink:#eef1f8; --muted:#a3adc2; --line:#2b3245;
+  --blue:#7fa2ff; --blue-bg:#1b2745; --green:#4fd1a1; --green-bg:#12302a;
+  --orange:#f2b25c; --orange-bg:#372a14; --purple:#b99bff; --purple-bg:#2a2147; --red:#ff8a80; --red-bg:#3a1c1a;}
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Aptos Narrow","Aptos","Segoe UI",system-ui,sans-serif;font-size:19px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding:24px 20px 70px}
+
+h1{font-size:36px;margin:12px 0 6px;line-height:1.15}
+h2{font-size:28px;margin:46px 0 12px;scroll-margin-top:60px}
+h3{font-size:22px;margin:0 0 6px}
+p{margin:8px 0}
+.sub{color:var(--muted);font-size:21px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:12px 0}
+.hero{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 24px;margin-top:14px}
+.big{font-size:25px;font-weight:700}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:860px){.g2,.g3{grid-template-columns:1fr}}
+.tag{display:inline-block;font-size:15px;font-weight:700;padding:2px 10px;border-radius:999px;margin-bottom:6px}
+.t-blue{background:var(--blue-bg);color:var(--blue)} .t-green{background:var(--green-bg);color:var(--green)}
+.t-orange{background:var(--orange-bg);color:var(--orange)} .t-purple{background:var(--purple-bg);color:var(--purple)} .t-red{background:var(--red-bg);color:var(--red)}
+.top-blue{border-top:5px solid var(--blue)} .top-green{border-top:5px solid var(--green)}
+.top-orange{border-top:5px solid var(--orange)} .top-purple{border-top:5px solid var(--purple)} .top-red{border-top:5px solid var(--red)}
+.say{background:var(--blue-bg);border-left:6px solid var(--blue);border-radius:10px;padding:12px 16px;margin:14px 0;font-weight:600}
+code{background:var(--blue-bg);color:var(--ink);padding:1px 7px;border-radius:6px;font-size:.92em;font-family:Consolas,"Cascadia Mono",monospace}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:18px}
+th,td{padding:10px 13px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th{background:var(--blue-bg)} tr:last-child td{border-bottom:0} td:first-child{font-weight:700;white-space:nowrap}
+.tbl{overflow-x:auto}
+.journey{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+@media(max-width:860px){.journey{grid-template-columns:repeat(2,1fr)}}
+.stage{border:2px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;font-size:16px}
+.stage b{display:block;font-size:18px}
+.stage.now{border-color:var(--orange);background:var(--orange-bg)}
+.stage.done{opacity:.85}
+.stage small{display:block;color:var(--muted);margin-top:2px}
+.rows{display:grid;grid-template-columns:150px 1fr;gap:8px 16px;margin-top:8px}
+.rows .k{font-weight:800;color:var(--muted)}
+@media(max-width:700px){.rows{grid-template-columns:1fr}}
+ul{margin:6px 0 6px 22px;padding:0} li{margin:3px 0}
+.step{display:grid;grid-template-columns:34px 1fr;gap:10px;margin:7px 0}
+.n{width:30px;height:30px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;display:grid;place-items:center;font-size:16px}
+details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0}
+summary{cursor:pointer;font-weight:800;font-size:20px}
+svg{width:100%;height:auto;display:block}
+svg text{font-family:"Aptos Narrow","Aptos","Segoe UI",system-ui,sans-serif;fill:var(--ink)}
+.foot{color:var(--muted);font-size:16px;margin-top:36px}
+
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0}
+.box{border:2px solid var(--line);background:var(--card);border-radius:12px;padding:8px 14px;font-weight:700}
+.box.b{border-color:var(--blue)} .box.g{border-color:var(--green)} .box.o{border-color:var(--orange)} .box.p{border-color:var(--purple)}
+.arrow{font-size:26px;color:var(--muted)}
+.q{display:grid;grid-template-columns:1fr auto;gap:8px 16px;align-items:center}
+.pick{font-weight:800}
+.card.blue{border-top:5px solid var(--blue)} .card.green{border-top:5px solid var(--green)} .card.orange{border-top:5px solid var(--orange)} .card.purple{border-top:5px solid var(--purple)}
+.sub2{color:var(--muted);font-size:20px;margin:-4px 0 12px}
+nav.tabs{position:sticky;top:0;z-index:9;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 0 6px;margin-bottom:6px}
+nav.tabs button{font:inherit;font-weight:800;font-size:16px;margin:3px 6px 3px 0;padding:7px 14px;border-radius:999px;background:var(--card);border:2px solid var(--line);color:var(--ink);cursor:pointer}
+nav.tabs button:hover{border-color:var(--blue)}
+nav.tabs button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.tab{display:none} .tab.on{display:block}
+.pager{display:flex;justify-content:space-between;gap:10px;margin-top:34px}
+.pager button{font:inherit;font-weight:800;font-size:18px;padding:10px 20px;border-radius:12px;border:2px solid var(--blue);background:var(--card);color:var(--blue);cursor:pointer}
+.pager button.go{background:var(--blue);color:#fff}
+.pager button[disabled]{visibility:hidden}
+</style></head>
+<body><div class="wrap">
+<nav class="tabs" id="tabs"><button data-i="0">1 · Big picture</button><button data-i="1">2 · Lab 14 Front Desk</button><button data-i="2">3 · Lab 15 Gateway</button><button data-i="3">4 · MCP and Gateway</button><button data-i="4">5 · Lab 12 Break-it</button><button data-i="5">6 · Tomorrow</button></nav>
+<section class="tab" id="t0"><h1>Day 11 · Ship It</h1><div class="sub2">What we build today, why, and how the labs fit together.</div><div class="hero" id="why">
+  <div class="big">AskIT works. Today we make it something real people can use, and something a company would allow.</div>
+  <p>Over 10 days AskIT learned to find answers (RAG), act (agents and tools), share its tools (MCP) and show its work (traces and costs).
+     It still lives in your terminal. Three gaps stand between it and a real launch:</p>
+  <div class="grid g3">
+    <div class="card top-blue"><span class="tag t-blue">Gap 1</span><h3>Nobody can use it</h3><p>Users do not run Python. They need a screen that shows progress and survives a bad network.</p></div>
+    <div class="card top-orange"><span class="tag t-orange">Gap 2</span><h3>Tools are wired one by one</h3><p>Every agent has its own private copy of every tool. No shared door, sign-in or log.</p></div>
+    <div class="card top-red"><span class="tag t-red">Gap 3</span><h3>Nobody tried to break it</h3><p>An agent that can act can be tricked into acting. A client will ask: "is it safe?"</p></div>
+  </div>
+  <div class="say">One lab for each gap: <b>Lab 14 = a front door for users · Lab 15 = a front door for tools · Lab 12 = attack it, then defend it.</b></div>
+</div>
+
+<h2 id="journey">Where Day 11 fits in the AI journey</h2>
+<div class="journey">
+  <div class="stage done"><b>Days 1 to 4</b>Give the model knowledge<small>LLMs, embeddings, RAG</small></div>
+  <div class="stage done"><b>Days 5 to 8</b>Give it hands<small>Agents, tools, memory, multi-agent</small></div>
+  <div class="stage done"><b>Day 9</b>Share the tools<small>MCP server</small></div>
+  <div class="stage done"><b>Day 10</b>See what it does<small>Traces, cost, evals</small></div>
+  <div class="stage now"><b>Day 11 · today</b>Ship it<small>Users, tool door, security</small></div>
+  <div class="stage"><b>Day 12</b>Go live<small>Runtime, policy, readiness</small></div>
+</div>
+<p>Think of it as building a restaurant: Days 1 to 4 stock the kitchen, Days 5 to 8 hire the cooks, Day 9 standardises the ingredients,
+   Day 10 installs the cameras, <b>Day 11 opens the front door and locks the back door</b>, and Day 12 passes the health inspection.</p>
+
+<div class="card">
+  <b>Why are the labs numbered 14, 15, 12 and not 12, 14, 15?</b>
+  <p>The numbers come from the course syllabus. We run them in story order: users first (14), then tools (15), then safety (12).</p>
+</div>
+
+<h2 id="map">The three labs in one picture</h2>
+<div class="card">
+<svg viewBox="0 0 1000 300" role="img" aria-label="User to front desk page to agent to gateway to Lambda, with a security layer around the agent">
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7b869c"/></marker></defs>
+  <rect x="346" y="22" width="380" height="192" rx="18" fill="none" stroke="#b3261e" stroke-width="2.5" stroke-dasharray="9 7"/>
+  <text x="536" y="52" font-size="19" text-anchor="middle" font-weight="700" style="fill:#b3261e">Lab 12 · defences around the agent</text>
+  <text x="536" y="80" font-size="15" text-anchor="middle">input · output · tool rules · limits</text>
+
+  <rect x="10" y="110" width="140" height="70" rx="12" fill="none" stroke="#2457d6" stroke-width="2.5"/>
+  <text x="80" y="140" font-size="20" text-anchor="middle" font-weight="700">User</text>
+  <text x="80" y="164" font-size="15" text-anchor="middle">in a browser</text>
+
+  <rect x="190" y="110" width="150" height="70" rx="12" fill="none" stroke="#2457d6" stroke-width="2.5"/>
+  <text x="265" y="138" font-size="20" text-anchor="middle" font-weight="700">Lab 14</text>
+  <text x="265" y="162" font-size="15" text-anchor="middle">Front Desk page</text>
+
+  <rect x="360" y="110" width="140" height="70" rx="12" fill="none" stroke="#6a3fc4" stroke-width="2.5"/>
+  <text x="430" y="138" font-size="20" text-anchor="middle" font-weight="700">AskIT agent</text>
+  <text x="430" y="162" font-size="15" text-anchor="middle">model + loop</text>
+
+  <rect x="560" y="110" width="150" height="70" rx="12" fill="none" stroke="#b45309" stroke-width="2.5"/>
+  <text x="635" y="138" font-size="20" text-anchor="middle" font-weight="700">Lab 15</text>
+  <text x="635" y="162" font-size="15" text-anchor="middle">AgentCore Gateway</text>
+
+  <rect x="790" y="110" width="190" height="70" rx="12" fill="none" stroke="#12805c" stroke-width="2.5"/>
+  <text x="885" y="138" font-size="20" text-anchor="middle" font-weight="700">Your tools</text>
+  <text x="885" y="162" font-size="15" text-anchor="middle">Lambda: tickets, users</text>
+
+  <line x1="152" y1="145" x2="188" y2="145" stroke="#7b869c" stroke-width="2.5" marker-end="url(#ar)"/>
+  <line x1="342" y1="145" x2="358" y2="145" stroke="#7b869c" stroke-width="2.5" marker-end="url(#ar)"/>
+  <line x1="502" y1="145" x2="558" y2="145" stroke="#7b869c" stroke-width="2.5" marker-end="url(#ar)"/>
+  <line x1="712" y1="145" x2="788" y2="145" stroke="#7b869c" stroke-width="2.5" marker-end="url(#ar)"/>
+  <text x="80" y="246" font-size="16" text-anchor="middle">Lab 14: see progress,</text>
+  <text x="80" y="268" font-size="16" text-anchor="middle">survive failures</text>
+  <text x="635" y="246" font-size="16" text-anchor="middle">Lab 15: one governed</text>
+  <text x="635" y="268" font-size="16" text-anchor="middle">door to the tools</text>
+</svg>
+</div>
+
+<div class="tbl"><table>
+  <tr><th>Lab</th><th>Problem it solves</th><th>Approach</th><th>You leave able to</th></tr>
+  <tr><td>14 Front Desk</td><td>Users cannot run Python</td><td>A web page that shows each step live, plus a Task screen for long jobs</td><td>Choose Chat or Task, explain timeouts, reconnect and double cost</td></tr>
+  <tr><td>15 Gateway</td><td>Tools wired one by one, no shared control</td><td>Put the Lambda behind an AgentCore Gateway so agents discover and call it over MCP</td><td>Create a Gateway and explain why it beats direct calls</td></tr>
+  <tr><td>12 Break-it Range</td><td>"Is it safe?" has no tested answer</td><td>6 attacks, 5 defences, find the smallest set that works</td><td>Name the 6 risks, show why layers are needed, show a pass/fail test</td></tr>
+</table></div>
+
+<div class="pager"><button class="prev">← Back</button><button class="next go">Next →</button></div></section><section class="tab" id="t1"><h2 id="l14">Lab 14 · AskIT Front Desk</h2>
+<div class="card top-blue">
+  <span class="tag t-blue">Gap 1 · Nobody can use it</span>
+  <div class="rows">
+    <div class="k">The problem</div><div>A script that prints text in a terminal is not a product. Real users need to see that something is happening, get the answer as it is written, and trust the screen when the network or a tool fails.</div>
+    <div class="k">The approach</div><div>The agent loop you know (ask the model, run a tool, repeat) <b>announces every step as a small event</b>. A web page listens and draws them live: model started, word by word text, tool running, tool finished, final answer.</div>
+    <div class="k">Two ways to show it</div><div><b>Chat</b>: events are pushed to the page the moment they happen (streaming). <b>Task</b>: the job runs in the background and the page asks "how far along?" every second or so (polling). You can close the tab and come back.</div>
+    <div class="k">What you do</div><div>Press buttons. Watch the stream. Then switch on <b>slow tool</b>, <b>tool error</b> and <b>dropped connection</b> and see what the page does.</div>
+    <div class="k">The outcome</div><div>You can pick Chat or Task for a use case, and explain timeouts, resume vs restart, and why a restart can cost money twice.</div>
+  </div>
+</div>
+<details open><summary>Code tour in plain words (you do not edit these files)</summary>
+  <div class="step"><div class="n">1</div><div><code>ui/index.html</code> is the page. It sends the question, then listens for events and draws cards. In Chat it keeps a live connection open. In Task it asks for progress on a timer.</div></div>
+  <div class="step"><div class="n">2</div><div><code>server.py</code> is a very small web server. It has three jobs: <b>start a run</b>, <b>stream a run's events</b>, and <b>report a run's progress</b>. Each run gets an id, so the page can reconnect to the same run.</div></div>
+  <div class="step"><div class="n">3</div><div><code>fd_agent.py</code> is the same AskIT loop as Days 5 to 10, with one addition: after every step it calls <code>emit</code> to announce what just happened. The break-it switches (slow tool, tool error) are applied here, in front of the ticket tool.</div></div>
+  <div class="step"><div class="n">4</div><div><code>model_factory.py</code> picks the model: the <b>Offline stand-in</b> (always works) or <b>AWS Bedrock</b> (Amazon Nova).</div></div>
+  <p><b>Key idea:</b> the agent code is written once. The Chat and Task screens are just two different ways of reading the same list of events.</p>
+</details>
+<div class="say">Remember: <b>Users do not run Python. Give them a screen that shows progress, survives bad networks and never hides a failure.</b></div>
+
+<div class="pager"><button class="prev">← Back</button><button class="next go">Next →</button></div></section><section class="tab" id="t2"><h2 id="l15">Lab 15 · AskIT Gateway</h2>
+<div class="card top-orange">
+  <span class="tag t-orange">Gap 2 · Tools are wired one by one</span>
+  <div class="rows">
+    <div class="k">The problem</div><div>Companies have many agents and many tools. If every agent is wired to every tool, there is no one place for sign-in, logging or rules, and every change touches every agent.</div>
+    <div class="k">The approach</div><div>Put the ticket tools (a small Lambda from Day 9) <b>behind an AgentCore Gateway</b>. The Gateway shows them as MCP tools at one address. The agent asks "what tools do you have?" and then "run this one".</div>
+    <div class="k">What you do</div><div><b>Part A, console:</b> create your Gateway, add the Lambda as a target, copy the <code>/mcp</code> address. <b>Part B, app:</b> connect, discover the 3 tools, call one, then run the same agent through two doors.</div>
+    <div class="k">The outcome</div><div>You can create a Gateway, see tool discovery and a tool call, and explain why a Gateway beats direct calls.</div>
+    <div class="k">Safety net</div><div>If the console fights you, choose <b>Practice gateway</b> in the app. It answers like the real one and the lesson is identical.</div>
+  </div>
+</div>
+<details open><summary>Code tour in plain words (you do not edit these files)</summary>
+  <div class="step"><div class="n">1</div><div><code>tools_core.py</code> holds the three ticket tools. The same code runs inside the Lambda and inside the offline Practice gateway, so both answer the same way.</div></div>
+  <div class="step"><div class="n">2</div><div><code>tool_schema.json</code> is the menu you pasted into the console: tool names, descriptions and inputs. It is how the Gateway knows what the Lambda can do.</div></div>
+  <div class="step"><div class="n">3</div><div><code>gw_client.py</code> talks to the Gateway. MCP over the web is just two messages: <b>list the tools</b> and <b>call a tool</b>. Every request is signed with your AWS keys, because the Gateway uses IAM to decide who may call it. It also tries MCP versions until the Gateway accepts one.</div></div>
+  <div class="step"><div class="n">4</div><div><code>gw_agent.py</code> is the same agent loop again. Only the source of tools changes: Door 1 gets them from inside the program, Door 2 gets them from the Gateway.</div></div>
+  <div class="step"><div class="n">5</div><div><code>app.py</code> is the Streamlit app with the tabs: Connect, Discover, Call a tool, Two doors, How it works.</div></div>
+  <p><b>Key idea:</b> the agent and the model do not change. The tool moved to a shared door that a platform team can control.</p>
+</details>
+<div class="say">Remember: <b>One governed front door for your tools. Agents discover them over MCP. The platform team controls who may use them.</b>
+  New to the names? See the next tab, <b>MCP and Gateway: what is what</b>.</div>
+
+<div class="pager"><button class="prev">← Back</button><button class="next go">Next →</button></div></section><section class="tab" id="t3"><h2>MCP and Gateway: what is what?</h2><div class="sub2">Four names that sound alike. Here is the difference in 5 minutes. It supports Lab 15.</div><div class="hero">
+  <div class="big">MCP is like a USB-C port for AI tools.</div>
+  <p>Any agent that "speaks MCP" can plug into any tool that "speaks MCP". No custom wiring for each pair.
+     MCP only knows two questions: <code>tools/list</code> = "what can you do?" and <code>tools/call</code> = "please do this".</p>
+</div>
+
+<h2>The four names</h2>
+<div class="grid g2">
+  <div class="card blue">
+    <span class="tag t-blue">The standard</span>
+    <h3>MCP</h3>
+    <p>A common language between an agent and its tools. It is a <b>rulebook</b>, not a product.</p>
+    <p><i>Like:</i> the USB-C shape and signal rules.</p>
+  </div>
+  <div class="card green">
+    <span class="tag t-green">Anything that speaks MCP</span>
+    <h3>MCP server</h3>
+    <p>A program that offers tools through MCP. You built one on Day 9. It runs <b>somewhere</b>, and somebody has to host it.</p>
+    <p><i>Like:</i> a USB-C device, for example a drive or a printer.</p>
+  </div>
+  <div class="card orange">
+    <span class="tag t-orange">Lab 15 · for YOUR tools</span>
+    <h3>AgentCore Gateway</h3>
+    <p>An AWS service that sits in front of <b>your own tools</b> (a Lambda, an API, even other MCP servers) and shows them as <b>one MCP server</b> with sign-in and logs included.</p>
+    <p><i>Like:</i> a hub with a security guard. Many devices plug in behind it, and one cable goes out.</p>
+  </div>
+  <div class="card purple">
+    <span class="tag t-purple">Made by AWS · for AWS</span>
+    <h3>AWS MCP Server</h3>
+    <p>A ready-made server run by AWS so your agent can work <b>with AWS itself</b>: search the docs, call AWS APIs.</p>
+    <p><i>Like:</i> a device AWS ships to you. You only plug it in.</p>
+  </div>
+</div>
+
+<h2>The one question that separates them: whose tools?</h2>
+<div class="card">
+<svg viewBox="0 0 1000 330" role="img" aria-label="Two paths: agents to Gateway to your Lambda, and your coding agent to AWS MCP Server to AWS services">
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7b869c"/></marker></defs>
+
+  <text x="10" y="26" font-size="20" font-weight="700">Path A · "Let my agents use MY company's tools"  (Lab 15)</text>
+  <rect x="10" y="48" width="170" height="64" rx="12" fill="none" stroke="#2457d6" stroke-width="2.5"/>
+  <text x="95" y="86" font-size="20" text-anchor="middle" font-weight="700">AskIT agent</text>
+  <rect x="270" y="48" width="230" height="64" rx="12" fill="none" stroke="#b45309" stroke-width="2.5"/>
+  <text x="385" y="76" font-size="20" text-anchor="middle" font-weight="700">AgentCore Gateway</text>
+  <text x="385" y="98" font-size="16" text-anchor="middle">one /mcp address</text>
+  <rect x="590" y="48" width="200" height="64" rx="12" fill="none" stroke="#12805c" stroke-width="2.5"/>
+  <text x="690" y="76" font-size="20" text-anchor="middle" font-weight="700">Lambda</text>
+  <text x="690" y="98" font-size="16" text-anchor="middle">askit-get-ticket</text>
+  <line x1="182" y1="80" x2="268" y2="80" stroke="#7b869c" stroke-width="2.5" marker-end="url(#ar)"/>
+  <text x="225" y="70" font-size="15" text-anchor="middle">MCP</text>
+  <line x1="502" y1="80" x2="588" y2="80" stroke="#7b869c" stroke-width="2.5" marker-end="url(#ar)"/>
+  <text x="545" y="70" font-size="15" text-anchor="middle">invoke</text>
+  <text x="810" y="76" font-size="17">The Lambda knows</text>
+  <text x="810" y="98" font-size="17" font-weight="700">nothing about MCP.</text>
+
+  <line x1="10" y1="160" x2="990" y2="160" stroke="#9aa3b8" stroke-dasharray="6 6"/>
+
+  <text x="10" y="196" font-size="20" font-weight="700">Path B · "Let my agent work WITH AWS"  (optional, not a lab)</text>
+  <rect x="10" y="218" width="170" height="64" rx="12" fill="none" stroke="#2457d6" stroke-width="2.5"/>
+  <text x="95" y="248" font-size="20" text-anchor="middle" font-weight="700">Your coding</text>
+  <text x="95" y="270" font-size="20" text-anchor="middle" font-weight="700">agent / IDE</text>
+  <rect x="270" y="218" width="230" height="64" rx="12" fill="none" stroke="#6a3fc4" stroke-width="2.5"/>
+  <text x="385" y="246" font-size="20" text-anchor="middle" font-weight="700">AWS MCP Server</text>
+  <text x="385" y="268" font-size="16" text-anchor="middle">hosted by AWS</text>
+  <rect x="590" y="218" width="200" height="64" rx="12" fill="none" stroke="#12805c" stroke-width="2.5"/>
+  <text x="690" y="246" font-size="20" text-anchor="middle" font-weight="700">AWS itself</text>
+  <text x="690" y="268" font-size="16" text-anchor="middle">docs · APIs · services</text>
+  <line x1="182" y1="250" x2="268" y2="250" stroke="#7b869c" stroke-width="2.5" marker-end="url(#ar)"/>
+  <line x1="502" y1="250" x2="588" y2="250" stroke="#7b869c" stroke-width="2.5" marker-end="url(#ar)"/>
+  <text x="810" y="246" font-size="17">Tools are AWS's,</text>
+  <text x="810" y="268" font-size="17" font-weight="700">not yours.</text>
+</svg>
+</div>
+<div class="say">Say it in one line: <b>AWS ships MCP servers for AWS. The Gateway is how you publish your own tools.</b></div>
+
+<h2>Side by side</h2>
+<div class="tbl">
+<table>
+  <tr><th></th><th>Your own MCP server (Day 9)</th><th>AgentCore Gateway</th><th>AWS MCP Server</th></tr>
+  <tr><td>Whose tools?</td><td>Yours</td><td>Yours (Lambda, API, other MCP servers)</td><td>AWS's (docs, AWS APIs)</td></tr>
+  <tr><td>Who runs it?</td><td>You (code + hosting)</td><td>AWS (you only configure it)</td><td>AWS</td></tr>
+  <tr><td>Do you write MCP code?</td><td>Yes</td><td>No. You give a tool schema</td><td>No</td></tr>
+  <tr><td>Sign-in and logs</td><td>You build them</td><td>Built in (IAM)</td><td>Built in (IAM, CloudTrail)</td></tr>
+  <tr><td>Find it in the console?</td><td>No</td><td><b>Yes</b>: Bedrock AgentCore → Gateways</td><td><b>No.</b> It is an address your agent connects to</td></tr>
+  <tr><td>Used in this course</td><td>Day 9</td><td>Lab 15 and Day 12</td><td>Only as a demo</td></tr>
+</table>
+</div>
+
+<h2>What you clicked in Lab 15, in plain words</h2>
+<div class="card">
+  <div class="flow">
+    <span class="box o">Gateway <code>askit-gw-user1xx</code></span><span class="arrow">→</span>
+    <span class="box o">Target <code>askit-lambda</code></span><span class="arrow">→</span>
+    <span class="box g">Lambda <code>askit-get-ticket</code></span>
+  </div>
+  <ul>
+    <li><b>Gateway</b> = the front door. It gave you one address that ends in <code>/mcp</code>.</li>
+    <li><b>Target</b> = "which tool is behind the door". You chose <b>Lambda ARN</b> and pasted a schema (the list of tools and their inputs).</li>
+    <li><b>Inbound auth = IAM</b> = who may knock. Every request is signed with your AWS keys.</li>
+    <li><b>Service role <code>askit-gateway-role</code></b> = the permission the Gateway uses to call the Lambda for you.</li>
+    <li><b>Why does a tool look like <code>askit-lambda___get_ticket</code>?</b> The Gateway writes <code>target name</code> + <code>___</code> + <code>tool name</code>, so two targets can never clash.</li>
+  </ul>
+</div>
+
+<h2>Which one do I use?</h2>
+<div class="card">
+  <div class="q">
+    <div>"I have a Lambda or an API and want many agents to use it safely."</div><div class="pick">Gateway</div>
+    <div>"I want my coding agent to search AWS docs or run AWS actions."</div><div class="pick">AWS MCP Server</div>
+    <div>"I want to learn how MCP works, or I need custom logic."</div><div class="pick">Your own MCP server</div>
+    <div>"I already have an MCP server and want sign-in and one address for it."</div><div class="pick">Gateway, with an MCP server target</div>
+  </div>
+</div>
+
+<h2>Common questions</h2>
+<details><summary>Is the Gateway an MCP server?</summary>
+<p>For the agent, yes: it sees one MCP endpoint. For the tool, no: the Lambda behind it has no MCP code. The Gateway translates MCP requests into Lambda calls.</p></details>
+<details><summary>Why not call the Lambda directly?</summary>
+<p>You can. For one agent and one tool that is fine (Door 1 in Lab 15). With many agents and many tools you get many separate connections with no shared sign-in, logs or rules. The Gateway gives one place for all of that. Tomorrow we put a rule on it.</p></details>
+<details><summary>Where is the AWS MCP Server in the console?</summary>
+<p>Nowhere. There is no console page. It is a hosted address (<code>https://aws-mcp.us-east-1.api.aws/mcp</code>) that your agent connects to. The fastest setup is the AWS CLI command <code>aws configure agent-toolkit</code>. It is available in N. Virginia and Frankfurt.</p></details>
+<details><summary>Do I need to run or host anything for the Gateway?</summary>
+<p>No. AWS hosts the Gateway. You only create it, add a target and copy the <code>/mcp</code> address.</p></details>
+<details><summary>What is a "target"?</summary>
+<p>One tool source behind the Gateway. A Gateway can have many targets, for example a Lambda, an API and another MCP server, all shown to the agent as one list of tools.</p></details>
+<details><summary>What is MCP "protocol version" and why did I see an error?</summary>
+<p>Client and server must agree on which edition of the MCP rulebook to use. A Gateway accepts only the editions it is set up for. Our app tries several until the Gateway accepts one, so you do not have to care.</p></details>
+<details><summary>Is it safe to let an agent use my tools?</summary>
+<p>The Gateway checks <b>who</b> may call. It does not decide <b>what</b> a caller may do with each tool. That is a rule (a policy) on top, and it is tomorrow's lab.</p></details>
+
+<div class="pager"><button class="prev">← Back</button><button class="next go">Next →</button></div></section><section class="tab" id="t4"><h2 id="l12">Lab 12 · AskIT Break-it Range</h2>
+<div class="card top-red">
+  <span class="tag t-red">Gap 3 · Nobody tried to break it</span>
+  <div class="rows">
+    <div class="k">The problem</div><div>An agent that can act can be tricked into acting: leaking a secret, obeying an order hidden in a ticket, resetting a VIP's password, or running up the bill. A client will ask "is it safe?" and "yes" is not an answer.</div>
+    <div class="k">The approach</div><div>Attack our own agent on a practice range. <b>6 attacks</b>, <b>5 defences</b> you switch on and off, and <b>3 normal requests</b> that must still work. The honest answer to "is it safe?" is layers, tested.</div>
+    <div class="k">What you do</div><div>Run each attack with no defences (all 6 win). Defend one attack at a time. Then build a set of defences and aim for <b>6 stopped, 3 normal requests fine, with the fewest layers</b>.</div>
+    <div class="k">The outcome</div><div>You can name the 6 risks, explain why no single defence is enough, and show a pass/fail test.</div>
+    <div class="k">Why a "gullible" model?</div><div>A real model may refuse some attacks on its own and not others. The stand-in always falls for them, so every group sees the same result. With a real model your results may differ from your neighbour's. That is a finding, not a bug.</div>
+  </div>
+</div>
+<div class="tbl"><table>
+  <tr><th>Attack</th><th>What the attacker does</th><th>Risk (OWASP name)</th></tr>
+  <tr><td>A1</td><td>Asks the agent to print its instructions</td><td>Direct prompt injection</td></tr>
+  <tr><td>A2</td><td>Hides an order inside a ticket</td><td>Indirect prompt injection</td></tr>
+  <tr><td>A3</td><td>Asks politely for someone's email</td><td>Sensitive information disclosure</td></tr>
+  <tr><td>A4</td><td>Pretends to be an executive assistant</td><td>Excessive agency</td></tr>
+  <tr><td>A5</td><td>Asks for many password resets at once</td><td>Excessive agency</td></tr>
+  <tr><td>A6</td><td>A ticket makes the agent call a tool forever</td><td>Unbounded consumption</td></tr>
+</table></div>
+<details open><summary>Code tour in plain words (you do not edit these files)</summary>
+  <div class="step"><div class="n">1</div><div><code>naive_model.py</code> is the gullible stand-in: a few rules that do whatever the last thing it read says. It is not a real AI.</div></div>
+  <div class="step"><div class="n">2</div><div><code>range_engine.py</code> runs one request. It lists the 6 attacks and 3 normal requests, applies the defences you ticked at their places, records every step, and decides: did the attack win, or did a normal request get blocked by mistake?</div></div>
+  <div class="step"><div class="n">3</div><div>The five defences sit in <b>five different places</b>: the user's text going in (D1, D5), the tool call before it runs (D3), the number of model calls (D4), and the answer coming out (D2, D5).</div></div>
+  <div class="step"><div class="n">4</div><div><code>guardrail.py</code> is defence D5. If the trainer gives a guardrail id it calls the managed service. Otherwise simple rules act like one, and the sidebar says which.</div></div>
+  <div class="step"><div class="n">5</div><div><code>app.py</code> is the Streamlit app with the tabs: Meet the attacks, Defend one attack, Full test, How it works.</div></div>
+  <p><b>Key idea:</b> every defence has a blind spot. Layers cover each other, and you prove it with a test, not an opinion.</p>
+</details>
+<div class="say">Remember: <b>No single defence stops everything. Test the layers against attacks and against normal requests.</b></div>
+
+
+<h2>The 5 defences in one minute</h2>
+<p>Each defence sits at a different place. None sees everything.</p>
+<div class="tbl"><table>
+<tr><th></th><th>Defence</th><th>What it does</th><th>Try it in Tab 2 of the app</th><th>What you should see</th><th>The learning</th></tr>
+<tr><td>D1</td><td>Input filter</td><td>Blocks a message that contains a phrase from a short bad-phrase list</td><td>Attack A1</td><td>Blocked before the model runs</td><td>Easy to build, but a polite attack passes, and a normal request can be blocked by mistake. Check Normal L1.</td></tr>
+<tr><td>D2</td><td>Output filter</td><td>Hides the secret code and e-mail addresses in the answer</td><td>Attacks A1 and A3</td><td>The secret or e-mail is hidden in the answer</td><td>It cleans the answer but does not stop the action. Too late if a password was already reset.</td></tr>
+<tr><td>D3</td><td>Tool guard (code)</td><td>A rule in code in front of the tool: no VIP resets, one change per request</td><td>Attacks A2, A4 and A5</td><td>The tool call is refused. The VIP is safe and bulk stops at one change</td><td>The strongest fix for risky actions: a rule in code, not a request to the model.</td></tr>
+<tr><td>D4</td><td>Limits</td><td>Stops the request after 3 model calls</td><td>Attack A6</td><td>The request stops at 3 calls</td><td>The only one that protects your bill. It does nothing for secrets or VIPs.</td></tr>
+<tr><td>D5</td><td>Managed guardrail</td><td>A managed service checks the user's text and the answer (prompt attacks, personal data)</td><td>Attacks A1 and A3</td><td>Blocked or hidden, like D1 and D2 but smarter</td><td>It catches many ways of saying "ignore your rules". It does not see inside tool results or judge whether an action is allowed.</td></tr>
+</table></div>
+<p><b>What to remember:</b> (1) No single defence stops all 6 attacks. (2) An attack hidden inside a ticket (A2) never passes through the user's text, so input filters cannot see it. (3) Fewer layers mean less cost and fewer false alarms, so always run the 3 normal requests too.</p>
+<p><b>Team game:</b> find the smallest set of defences that stops all 6 attacks and still lets the 3 normal requests through. Hint: one defence annoys real users.</p>
+<div class="pager"><button class="prev">← Back</button><button class="next go">Next →</button></div></section><section class="tab" id="t5"><h2 id="tomorrow">How today connects to tomorrow</h2>
+<div class="card">
+  <ul>
+    <li>In Lab 15 Door 2, the VIP password reset still goes through. <b>Nothing yet says "never for a VIP".</b></li>
+    <li>Tomorrow (Day 12) you put a <b>rule on the Gateway itself</b> (a Cedar policy), deploy the agent on <b>AgentCore Runtime</b>, and run a <b>Production Readiness review</b>.</li>
+    <li>Keep your Gateway. Day 12 uses it again.</li>
+  </ul>
+</div>
+
+<div class="pager"><button class="prev">← Back</button><button class="next go">Next →</button></div></section>
+<div class="foot">AskIT · Orbit Corp IT Helpdesk · Day 11 of 12</div>
+</div>
+<script>
+(function(){
+  var tabs=[].slice.call(document.querySelectorAll('.tab')), btns=[].slice.call(document.querySelectorAll('#tabs button'));
+  function show(i,push){
+    i=Math.max(0,Math.min(tabs.length-1,i));
+    tabs.forEach(function(t,k){t.classList.toggle('on',k===i)});
+    btns.forEach(function(b,k){b.classList.toggle('on',k===i)});
+    tabs.forEach(function(t,k){var p=t.querySelector('.prev'),n=t.querySelector('.next'); if(p)p.disabled=(k===0); if(n)n.disabled=(k===tabs.length-1);});
+    window.scrollTo(0,0);
+    try{ if(push!==false) history.replaceState(null,'','#t'+i);}catch(e){}
+  }
+  btns.forEach(function(b,k){b.addEventListener('click',function(){show(k)})});
+  tabs.forEach(function(t,k){
+    var p=t.querySelector('.prev'),n=t.querySelector('.next');
+    if(p)p.addEventListener('click',function(){show(k-1)});
+    if(n)n.addEventListener('click',function(){show(k+1)});
+  });
+  document.addEventListener('keydown',function(e){
+    var cur=tabs.findIndex(function(t){return t.classList.contains('on')});
+    if(e.key==='ArrowRight')show(cur+1); if(e.key==='ArrowLeft')show(cur-1);
+  });
+  var m=/^#t(\d)$/.exec(location.hash||''); show(m?parseInt(m[1],10):0,false);
+})();
+</script></body></html>

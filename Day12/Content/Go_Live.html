@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12 · Go Live</title>
+<style>
+:root{
+  --bg:#f6f7fb; --surface:#ffffff; --surface2:#eef1f7; --ink:#141a2a; --muted:#5a6478; --line:#dde2ec;
+  --accent:#0f7c8c; --accent-soft:#d8f0f3; --warn:#b45309; --warn-soft:#fdecd3;
+  --ok:#157f3b; --ok-soft:#dcf3e4; --bad:#b42318; --bad-soft:#fbe0dd;
+  --shadow:0 2px 10px rgba(20,26,42,.07);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17; --shadow:none;}}
+:root[data-theme="dark"]{
+  --bg:#0f1320; --surface:#171c2c; --surface2:#20263a; --ink:#e8ecf5; --muted:#9aa4ba; --line:#2c3450;
+  --accent:#3cc3d4; --accent-soft:#12343b; --warn:#f0a44b; --warn-soft:#3a2a14;
+  --ok:#4ccf7c; --ok-soft:#133523; --bad:#ff7a6b; --bad-soft:#3d1a17; --shadow:none;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Aptos Narrow","Aptos","Segoe UI",system-ui,-apple-system,sans-serif;font-size:18px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer}
+header{position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+.bar{max-width:1100px;margin:0 auto;padding:12px 16px 8px;display:flex;align-items:center;gap:12px}
+.brand{font-weight:700;font-size:20px;flex:1;min-width:0}
+.brand small{display:block;font-weight:400;color:var(--muted);font-size:14px}
+.tbtn{border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:7px 14px;font-size:15px;font-weight:600;white-space:nowrap}
+.tbtn:hover{border-color:var(--accent)}
+.navwrap{max-width:1100px;margin:0 auto;padding:0 16px 12px}
+.steps{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding:2px 0 6px}
+.stp{flex:0 0 auto;border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:999px;padding:6px 14px;font-size:15px;font-weight:600;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s}
+.stp:hover{border-color:var(--accent);transform:translateY(-1px)}
+.stp.done{color:var(--muted)}
+.stp.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.stp.islab{border-style:dashed;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.stp.islab.on{background:var(--accent);color:#fff;border-style:solid}
+.stp:focus-visible,.tbtn:focus-visible,.btn:focus-visible,.flip:focus-visible,.opt:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.prog{height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 90px}
+section{display:none}
+section.on{display:block}
+h1{font-size:40px;line-height:1.15;margin:.2em 0 .3em}
+h2{font-size:30px;margin:.2em 0 .4em}
+h3{font-size:22px;margin:1.2em 0 .4em}
+.kicker{color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:14px}
+.lead{font-size:21px;color:var(--muted);max-width:820px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+.big{font-size:44px;line-height:1}
+/* flip cards */
+.flip{perspective:1000px;min-height:150px;border:0;background:none;padding:0;text-align:left;width:100%}
+.flip .in{position:relative;width:100%;height:100%;min-height:150px;transition:transform .5s;transform-style:preserve-3d}
+.flip.flipped .in{transform:rotateY(180deg)}
+.flip .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;padding:16px;border:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}
+.flip .front{background:var(--surface);box-shadow:var(--shadow)}
+.flip .front b{font-size:21px}
+.flip .front .hint{font-size:13px;color:var(--muted);margin-top:8px}
+.flip .back{background:var(--accent-soft);transform:rotateY(180deg);font-size:17px}
+/* quiz */
+.q{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:12px 0}
+.q .qt{font-weight:700;margin-bottom:10px}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--surface2);border-radius:10px;padding:9px 14px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:var(--ok-soft);border-color:var(--ok)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.why{display:none;margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--surface2);font-size:16px}
+.why.show{display:block}
+/* concept box */
+.say{border-left:5px solid var(--accent);background:var(--surface);border-radius:10px;padding:12px 16px;margin:12px 0;box-shadow:var(--shadow)}
+.say b{color:var(--accent)}
+/* table */
+table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:16px}
+th{background:var(--surface2)}
+/* lab pointer */
+.lab{border:2px dashed var(--accent);background:var(--accent-soft);border-radius:16px;padding:22px}
+.lab h2{margin-top:0}
+.lab .now{font-weight:700;font-size:19px}
+.lab ol{margin:.5em 0 0;padding-left:1.3em}
+.lab li{margin:6px 0}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:9px 18px;font-weight:700}
+.btn.ghost{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.score{font-size:24px;font-weight:700;color:var(--warn)}
+footer{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px}
+footer .inner{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;gap:10px}
+@media (max-width:600px){h1{font-size:30px} h2{font-size:24px} body{font-size:17px}}
+:root[data-theme="dark"] .btn:not(.ghost),:root[data-theme="dark"] .stp.on{color:#06222a}
+footer .inner{padding:0 16px}
+
+:root{--blue:#1F5AA6;--blue-soft:#E2EBF7;--plum:#6A3FA0;--plum-soft:#EEE6F7;--teal:#0E7068;--teal-soft:#E3F1EE;
+--amber:#A8570A;--amber-soft:#FBEEDB;--red:#B42318;--red-soft:#FDE7E7;--grey:#8A93A3;--grey-soft:#F1F2F4;--lane:#FAFAF7}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--blue:#86B4F0;--blue-soft:#17253d;--plum:#C4A6EE;--plum-soft:#2a2040;
+--teal:#5FD0C4;--teal-soft:#123532;--amber:#F2B266;--amber-soft:#3a2a14;--red:#FF8A7E;--red-soft:#3d1a17;--grey:#7d8698;--grey-soft:#20263a;--lane:#141a29}}
+:root[data-theme="dark"]{--blue:#86B4F0;--blue-soft:#17253d;--plum:#C4A6EE;--plum-soft:#2a2040;--teal:#5FD0C4;--teal-soft:#123532;
+--amber:#F2B266;--amber-soft:#3a2a14;--red:#FF8A7E;--red-soft:#3d1a17;--grey:#7d8698;--grey-soft:#20263a;--lane:#141a29}
+.dg{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px;margin:14px 0;box-shadow:var(--shadow);overflow-x:auto}
+.dg svg{width:100%;min-width:760px;height:auto;display:block}
+.g2 .dg svg{min-width:0}
+.dg .cap{font-size:15px;color:var(--muted);padding:4px 8px 2px}
+.nd rect{fill:var(--ks);stroke:var(--k);stroke-width:2.2}
+.nd .tt{fill:var(--k);font-weight:700;font-size:19px;text-anchor:middle}
+.nd .ic{font-size:26px;text-anchor:middle}
+.nd .sb{fill:var(--ink);font-size:15px;text-anchor:middle}
+.nd .fl{fill:var(--muted);font-size:13px;text-anchor:middle;font-family:Consolas,monospace}
+.k-ui{--k:var(--blue);--ks:var(--blue-soft)} .k-ag{--k:var(--plum);--ks:var(--plum-soft)} .k-mem{--k:var(--teal);--ks:var(--teal-soft)}
+.k-tool{--k:var(--amber);--ks:var(--amber-soft)} .k-hu{--k:var(--red);--ks:var(--red-soft)} .k-off{--k:var(--grey);--ks:var(--grey-soft)}
+.ln rect{fill:var(--lane);stroke:var(--line);stroke-width:1.4} .ln .lt{fill:var(--ink);font-weight:700;font-size:18px} .ln .lh{fill:var(--muted);font-size:13px}
+.ar{stroke:var(--muted);stroke-width:2;fill:none} .ar.d{stroke-dasharray:6 5} .ahd{fill:var(--muted)}
+.al{fill:var(--muted);font-size:14px;text-anchor:middle;paint-order:stroke;stroke:var(--surface);stroke-width:5px}
+.num{fill:var(--accent);font-weight:700;font-size:14px;text-anchor:middle} .numc{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.flow{counter-reset:f;list-style:none;padding:0;margin:10px 0}
+.flow li{counter-increment:f;position:relative;padding:8px 12px 8px 50px;margin:6px 0;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.flow li::before{content:counter(f);position:absolute;left:12px;top:8px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;text-align:center;line-height:26px;font-size:15px}
+.four{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0}
+.four div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.four b{display:block;color:var(--accent);margin-bottom:4px}
+.cmd{display:flex;gap:8px;align-items:center;margin:6px 0}
+.cmd code{flex:1;background:#0f1320;color:#e8ecf5;padding:10px 14px;border-radius:8px;font-size:17px}
+.tag{display:inline-block;font-size:13px;font-weight:700;padding:2px 10px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);margin-right:6px}
+.client{border-left:5px solid var(--teal);background:var(--surface);border-radius:10px;padding:12px 16px;margin:12px 0;box-shadow:var(--shadow)}
+.client b{color:var(--teal)}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">S12 · Go Live<small>Day 12 of 12 · Host, guard, sign off</small></div>
+    <button class="tbtn" id="theme" type="button" aria-label="Toggle dark mode">🌙 Dark</button>
+  </div>
+  <div class="navwrap">
+    <nav class="steps" id="steps" aria-label="Sections"></nav>
+    <div class="prog"><i id="progbar"></i></div>
+  </div>
+</header>
+<main>
+<section data-id="start" class="on">
+  <div class="kicker">Today's flow · Session 12</div>
+  <h1>Go live: host it, guard it, sign it off.</h1>
+  <p class="lead">AskIT works, we can measure it, and it has a front door. Today it moves to AWS, gets a rule it cannot break, and your team decides: <b>is it ready to ship?</b></p>
+  <div class="grid g2" style="margin-top:18px">
+    <div class="card"><div class="big">1</div><h3>Host · Lab 16A</h3><p class="muted">The agent runs on AgentCore Runtime. Sessions, cold starts, traces, cost.</p></div>
+    <div class="card"><div class="big">2</div><h3>Guard · Lab 16B</h3><p class="muted">A Cedar rule at the Gateway: the agent never resets a VIP's password.</p></div>
+    <div class="card"><div class="big">3</div><h3>Sign off · PRR</h3><p class="muted">Your team fills a one-page Production Readiness Review and defends a Go / No-Go.</p></div>
+  </div>
+  <div class="say"><b>Today's plan:</b> 4:00 Day 11 quiz · 4:08 Gateway check · 4:15 picture and Runtime · 4:35 Lab 16A · break · 5:25 Policy · 5:40 Lab 16B · break · 6:40 Readiness · 6:50 team PRR · 7:15 Go / No-Go · 7:30 wrap-up.</div>
+  <div class="row"><button class="btn" onclick="go('check')">Start</button></div>
+</section>
+<section data-id="check">
+  <div class="lab">
+    <h2>Gateway check (5 minutes)</h2>
+    <p class="now">Lab 16B puts a rule on the Gateway you made yesterday, and Lab 16A's agent calls it. Check it is still there.</p>
+    <div class="four">
+      <div><b>What we do</b>Look at your Gateway in the console. Is it <b>Ready</b>, with one target <code>askit-lambda</code>?</div>
+      <div><b>Why</b>Today's two labs build on it. Five minutes now saves twenty later.</div>
+      <div><b>Outcome</b>You know whether to use <b>My Gateway</b> or the <b>Practice gateway</b> today.</div>
+      <div><b>How</b>Console clicks. No app needed.</div>
+    </div>
+    <ol>
+      <li>AWS console, region <b>N. Virginia</b>. Search <b>Bedrock AgentCore</b> &gt; <b>Gateways</b>.</li>
+      <li>Open <code>askit-gw-user1xx</code>. Status <b>Ready</b>? Target <code>askit-lambda</code> there?</li>
+      <li>Copy the <b>Gateway ARN</b> into a note. You need it in Lab 16B.</li>
+      <li>Gateway gone or broken? Tell us now. Use the <b>Practice gateway</b> and carry on.</li>
+    </ol>
+    <p class="muted">Keys never go in GitHub, wikis or chat. Run <code>SYNC.bat</code> now if the Day12 folder is missing.</p>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('start')">Back</button><button class="btn" onclick="go('c1')">The big picture</button></div>
+</section>
+<section data-id="c1">
+  <div class="kicker">Content 1 · Host it</div>
+  <h2>Everything you built, and where it runs on AWS</h2>
+  <p class="lead">For eleven days the agent ran on your VM. A <b>Runtime</b> runs the same agent code for you on AWS: a private sandbox for each conversation, started when someone asks, stopped when they leave.</p>
+  <div class="dg"><svg viewBox="0 0 1100 230" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="nd k-ui"><rect x="10" y="30" width="190" height="66" rx="14"/><text x="105.0" y="58" class="tt" style="font-size:17px">🖥️ Front Desk</text><text x="105.0" y="80" class="sb">Lab 14 screen</text></g><g class="nd k-ag"><rect x="235" y="30" width="210" height="66" rx="14"/><text x="340.0" y="58" class="tt" style="font-size:17px">🏠 AgentCore Runtime</text><text x="340.0" y="80" class="sb">your agent code</text></g><g class="nd k-mem"><rect x="480" y="30" width="190" height="66" rx="14"/><text x="575.0" y="58" class="tt" style="font-size:17px">🚪 Gateway</text><text x="575.0" y="80" class="sb">one door</text></g><g class="nd k-hu"><rect x="705" y="30" width="190" height="66" rx="14"/><text x="800.0" y="58" class="tt" style="font-size:17px">🛡️ Policy (Cedar)</text><text x="800.0" y="80" class="sb">rules at the door</text></g><g class="nd k-tool"><rect x="930" y="30" width="160" height="66" rx="14"/><text x="1010.0" y="58" class="tt" style="font-size:17px">⚙️ Lambda tools</text><text x="1010.0" y="80" class="sb">get · reset</text></g><line x1="203" y1="63" x2="232" y2="63" class="ar" marker-end="url(#ah1)"/><line x1="448" y1="63" x2="477" y2="63" class="ar" marker-end="url(#ah1)"/><line x1="673" y1="63" x2="702" y2="63" class="ar" marker-end="url(#ah1)"/><line x1="898" y1="63" x2="927" y2="63" class="ar" marker-end="url(#ah1)"/><g class="nd k-off"><rect x="235" y="150" width="210" height="60" rx="14" stroke-dasharray="7 5"/><text x="340.0" y="178" class="tt" style="font-size:17px">👁️ Observability</text><text x="340.0" y="200" class="sb">traces · logs</text></g><g class="nd k-off"><rect x="480" y="150" width="190" height="60" rx="14" stroke-dasharray="7 5"/><text x="575.0" y="178" class="tt" style="font-size:17px">🪪 Identity</text><text x="575.0" y="200" class="sb">who is calling</text></g><g class="nd k-off"><rect x="705" y="150" width="190" height="60" rx="14" stroke-dasharray="7 5"/><text x="800.0" y="178" class="tt" style="font-size:17px">🧠 Memory</text><text x="800.0" y="200" class="sb">remember (Day 7)</text></g><g class="nd k-off"><rect x="930" y="150" width="160" height="60" rx="14" stroke-dasharray="7 5"/><text x="1010.0" y="178" class="tt" style="font-size:17px">✅ Evaluations</text><text x="1010.0" y="200" class="sb">the exam</text></g><text x="10" y="135" class="sb" style="text-anchor:start">Solid = what we use today.  Dashed = exists on AgentCore, we only name it.</text></svg><div class="cap">The whole path for one question: screen → Runtime (agent) → Gateway → Policy → tools. Watching and remembering sit beside it.</div></div>
+  <table><tr><th>Day</th><th>You built</th><th>Its home on AWS</th></tr><tr><td>5 and 6</td><td>The agent loop and its tools</td><td><b>AgentCore Runtime</b> (today)</td></tr><tr><td>7</td><td>Memory and context</td><td>AgentCore Memory (we only name it)</td></tr><tr><td>9</td><td>MCP tools as one server</td><td><b>Gateway</b> + Lambda (yesterday)</td></tr><tr><td>10</td><td>Traces, cost, evals</td><td>AgentCore Observability and Evaluations, CloudWatch</td></tr><tr><td>11</td><td>Guardrails and red-team</td><td>Bedrock Guardrails, and <b>Policy</b> (today)</td></tr></table>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Runtime</b><span class="hint">tap to flip</span></div><div class="face back">A place that runs your agent code, hosted by AWS. Any framework. You send a prompt and a session id, it runs the agent and returns the answer.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Session</b><span class="hint">tap to flip</span></div><div class="face back">One conversation = one private sandbox. Same session id, same sandbox and memory. A new id, a fresh sandbox.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Cold start</b><span class="hint">tap to flip</span></div><div class="face back">The first call of a session has to start the sandbox, so it is slower. Later calls are fast. Plan for it on the screen.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Pay for work</b><span class="hint">tap to flip</span></div><div class="face back">You pay for the CPU and memory the agent really uses, not for a server waiting. Most of an agent's time is waiting for the model.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Identity</b><span class="hint">tap to flip</span></div><div class="face back">The Runtime has its own AWS role. It signs its calls to the Gateway, so the agent never holds your keys.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>When NOT to use it</b><span class="hint">tap to flip</span></div><div class="face back">One tiny script, a steady 24-hour load on a platform you already run, or a cloud that is not AWS. Containers or Lambda can be the better answer.</div></div></button></div>
+  <div class="client"><b>💼 Say this:</b> "Same agent, new home. AWS starts a private sandbox per conversation, we see every step, and you pay for the work done."</div>
+  <div class="say"><b>Trainer shows (5 minutes):</b> the agent file, one deploy command, and the <b>Runtime ARN</b> that comes out. You copy the ARN for Lab 16A.</div>
+  <div class="row"><button class="btn ghost" onclick="go('check')">Back</button><button class="btn" onclick="go('q1')">Quick check</button></div>
+</section>
+<section data-id="q1">
+  <div class="kicker">Quick check</div>
+  <h2>Three questions</h2>
+  <div class="q" data-right="b"><div class="qt">1. What is a session on AgentCore Runtime?</div><div class="opts"><button class="opt" data-v="a">A login page</button><button class="opt" data-v="b">One conversation with its own private sandbox</button><button class="opt" data-v="c">A kind of model</button></div><div class="why">Same session id, same sandbox. New id, new sandbox.</div></div><div class="q" data-right="a"><div class="qt">2. The first answer in a new session is slower than the next. Most likely cause?</div><div class="opts"><button class="opt" data-v="a">A cold start: the sandbox is starting</button><button class="opt" data-v="b">A weaker model</button><button class="opt" data-v="c">A full disk</button></div><div class="why">A fresh session has no sandbox yet. AWS starts one.</div></div><div class="q" data-right="b"><div class="qt">3. Two users share one session id. What is the risk?</div><div class="opts"><button class="opt" data-v="a">None</button><button class="opt" data-v="b">They share one sandbox and its memory</button><button class="opt" data-v="c">The bill is higher</button></div><div class="why">Give every user their own session id.</div></div><div class="row"><span class="score" id="score1"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c1')">Back</button><button class="btn" onclick="go('labA')">Lab 16A</button></div>
+</section>
+<section data-id="labA">
+  <div class="lab">
+    <h2>Lab 16A · AskIT Runtime Room (40 minutes)</h2>
+    <p class="now">We are doing Lab 16A · AskIT Runtime Room now (<code>lab16a-askit-runtime</code>).</p>
+    <p class="now">In VS Code: File &gt; Open Folder &gt; C:\AskIT\dxc-agentic-ai\Day12\Labs\lab16a-askit-runtime</p>
+    <div class="four">
+      <div><b>What we do</b>Talk to the AskIT agent running on AWS. Watch sessions and cold starts. Find your run in the console. Work out the cost.</div>
+      <div><b>Why</b>Hosting is what turns a demo into a service many people can use safely.</div>
+      <div><b>Outcome</b>You can explain a session and a cold start, find a trace, and give a client a first cost estimate.</div>
+      <div><b>How</b>One command, buttons, a few console clicks. No code.</div>
+    </div>
+    <ol>
+      <li>Terminal in the folder above. Stop any older lab app with Ctrl+C. Type:</li>
+    </ol>
+    <div class="cmd"><code>python run.py</code></div>
+    <ol start="2">
+      <li><b>Connect</b> tab: choose <b>Practice runtime</b> or the <b>trainer's Runtime</b> (paste the ARN). Press <b>Say hello</b>.</li>
+      <li><b>Talk to it</b> tab: ask a question. Read the session boxes. Then ask the two <b>knowledge questions</b>: the agent searches the help articles (RAG) through the Gateway.</li>
+      <li><b>Sessions</b> tab: press buttons 1, 2, 3. Compare the boot ids and the times.</li>
+      <li><b>See it in AWS</b> tab: follow the console steps and find your session.</li>
+      <li><b>How it works and cost</b> tab: change the numbers. Which line is biggest?</li>
+      <li>Answer the two thinking questions at the bottom of tabs 2 to 5. The last tab collects the lessons.</li>
+    </ol>
+    <p class="muted">AWS stuck? Use the Practice runtime. Port busy: Ctrl+C the older app first.</p>
+  </div>
+  <div class="say"><b>Say this:</b> "A session is a private computer that lives for a while. The first call pays to start it."</div>
+  <div class="row"><button class="btn ghost" onclick="go('q1')">Back</button><button class="btn" onclick="go('c2')">Break · then Policy</button></div>
+</section>
+<section data-id="c2">
+  <div class="kicker">Content 2 · Guard it</div>
+  <h2>A rule the agent cannot argue with</h2>
+  <p class="lead">Yesterday a VIP's password reset went straight through the Gateway. A rule in the prompt is a request. A <b>policy</b> at the Gateway is a lock: it is checked <i>before</i> the tool runs, and the model never sees it.</p>
+  <div class="dg"><svg viewBox="0 0 1010 240" xmlns="http://www.w3.org/2000/svg" role="img"><defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker></defs><g class="nd k-ui"><rect x="10" y="40" width="190" height="66" rx="14"/><text x="105.0" y="68" class="tt" style="font-size:17px">📨 A tool call</text><text x="105.0" y="90" class="sb">who · which tool · inputs</text></g><g class="nd k-hu"><rect x="250" y="40" width="220" height="66" rx="14"/><text x="360.0" y="68" class="tt" style="font-size:17px">❓ Any FORBID match?</text><text x="360.0" y="90" class="sb"></text></g><g class="nd k-hu"><rect x="540" y="40" width="190" height="66" rx="14"/><text x="635.0" y="68" class="tt" style="font-size:17px">⛔ DENY</text><text x="635.0" y="90" class="sb">forbid always wins</text></g><g class="nd k-mem"><rect x="250" y="150" width="220" height="66" rx="14"/><text x="360.0" y="178" class="tt" style="font-size:17px">❓ Any PERMIT match?</text><text x="360.0" y="200" class="sb"></text></g><g class="nd k-mem"><rect x="540" y="150" width="190" height="66" rx="14"/><text x="635.0" y="178" class="tt" style="font-size:17px">✅ ALLOW</text><text x="635.0" y="200" class="sb">tool runs</text></g><g class="nd k-hu"><rect x="800" y="150" width="190" height="66" rx="14"/><text x="895.0" y="178" class="tt" style="font-size:17px">⛔ DENY</text><text x="895.0" y="200" class="sb">nothing allowed it</text></g><line x1="203" y1="73" x2="247" y2="73" class="ar" marker-end="url(#ah2)"/><line x1="473" y1="73" x2="537" y2="73" class="ar" marker-end="url(#ah2)"/><text x="505" y="62" class="al">yes</text><line x1="360" y1="108" x2="360" y2="147" class="ar" marker-end="url(#ah2)"/><text x="378" y="130" class="al">no</text><line x1="473" y1="183" x2="537" y2="183" class="ar" marker-end="url(#ah2)"/><text x="505" y="172" class="al">yes</text><line x1="733" y1="183" x2="797" y2="183" class="ar" marker-end="url(#ah2)"/><text x="765" y="172" class="al">no</text></svg><div class="cap">How the Gateway decides. The default answer is DENY. Only a permit rule opens a door, and a forbid rule can always shut it again.</div></div>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Default deny</b><span class="hint">tap to flip</span></div><div class="face back">No rule, no access. An engine in Enforce mode with no permit rules blocks every tool. That is the point.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Forbid wins</b><span class="hint">tap to flip</span></div><div class="face back">If a permit and a forbid both match, the forbid wins. That makes forbid the home of the 'never' rules.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Four parts of a rule</b><span class="hint">tap to flip</span></div><div class="face back">permit or forbid · who (principal) · which tool (action) · which Gateway (resource). A <code>when</code> part can look at the tool's inputs.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Log only first</b><span class="hint">tap to flip</span></div><div class="face back">Log only records what the engine would do and blocks nothing. Roll out in two steps: log, read, then enforce.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>What a rule cannot see</b><span class="hint">tap to flip</span></div><div class="face back">Only who, which tool and the inputs. It cannot ask 'is this person a VIP?'. A list in the rule goes stale, so also check inside the tool.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Text must match</b><span class="hint">tap to flip</span></div><div class="face back">A rule compares exact text. <code>emp-1001</code> is not <code>EMP-1001</code>. If the tool tidies text and the rule does not, a door opens.</div></div></button></div>
+  <table><tr><th>Where a rule lives</th><th>Strength</th><th>Weakness</th></tr><tr><td>In the prompt</td><td>Free, quick</td><td>The model can be talked out of it</td></tr><tr><td>Policy at the Gateway</td><td>One place for every agent, logged, model cannot bypass</td><td>Does not know your data; exact text only</td></tr><tr><td>Check inside the tool</td><td>Knows the truth in the database</td><td>Hidden from the platform team; each tool repeats it</td></tr><tr><td>Bedrock Guardrails</td><td>Filters the words going in and out of the model</td><td>Not about which tool may run</td></tr></table>
+  <div class="client"><b>💼 Say this:</b> "The model can be fooled, so the 'never' rules do not live in the model. They live in a policy in front of the tool, logged on every decision, and backed by a check inside the tool."</div>
+  <div class="row"><button class="btn ghost" onclick="go('labA')">Back</button><button class="btn" onclick="go('q2')">Quick check</button></div>
+</section>
+<section data-id="q2">
+  <div class="kicker">Quick check</div>
+  <h2>Three questions</h2>
+  <div class="q" data-right="b"><div class="qt">1. A policy engine in Enforce mode has no rules. What happens to tool calls?</div><div class="opts"><button class="opt" data-v="a">All allowed</button><button class="opt" data-v="b">All denied</button><button class="opt" data-v="c">Only reads allowed</button></div><div class="why">Default deny: only a permit rule opens a door.</div></div><div class="q" data-right="b"><div class="qt">2. A permit rule and a forbid rule both match. Result?</div><div class="opts"><button class="opt" data-v="a">Allowed</button><button class="opt" data-v="b">Denied</button><button class="opt" data-v="c">A human is asked</button></div><div class="why">A matching forbid always wins.</div></div><div class="q" data-right="a"><div class="qt">3. 'emp-1001' got past a rule listing 'EMP-1001'. Best fix?</div><div class="opts"><button class="opt" data-v="a">Also check the id inside the tool, and accept only the exact form</button><button class="opt" data-v="b">Use a bigger model</button><button class="opt" data-v="c">Remove the rule</button></div><div class="why">Two locks. The policy at the door and a strict check in the tool.</div></div><div class="row"><span class="score" id="score2"></span></div>
+  <div class="row"><button class="btn ghost" onclick="go('c2')">Back</button><button class="btn" onclick="go('labB')">Lab 16B</button></div>
+</section>
+<section data-id="labB">
+  <div class="lab">
+    <h2>Lab 16B · AskIT Policy Lab (50 minutes)</h2>
+    <p class="now">We are doing Lab 16B · AskIT Policy Lab now (<code>lab16b-askit-policy</code>).</p>
+    <p class="now">In VS Code: File &gt; Open Folder &gt; C:\AskIT\dxc-agentic-ai\Day12\Labs\lab16b-askit-policy</p>
+    <div class="four">
+      <div><b>What we do</b>Put a Cedar policy engine in front of your Gateway. Teach it: never reset a VIP's password. Test it, then try to get round it.</div>
+      <div><b>Why</b>Clients ask for rules the AI cannot break. This is how you give them one, and how you prove it.</div>
+      <div><b>Outcome</b>You can write and test a rule, explain default deny and forbid-wins, and show why one lock is not enough.</div>
+      <div><b>How</b>The app tests rules with the real Cedar engine (15 min). Then console clicks (20 min). Then the app on your real Gateway (15 min).</div>
+    </div>
+    <ol>
+      <li>Terminal in the folder above (Ctrl+C any older app). Type:</li>
+    </ol>
+    <div class="cmd"><code>python run.py</code></div>
+    <ol start="2">
+      <li><b>Connect</b> tab: start with the <b>Practice gateway</b>. Tabs 2, 3, 4: follow the buttons. In tab 4 <b>predict before you run</b>.</li>
+      <li>Open the README in the folder: <b>Part A</b>. Create your policy engine, attach it (Log only, then Enforce), add the four rules.</li>
+      <li>Back in the app choose <b>My Gateway on AWS</b>, paste the Gateway URL and ARN, and run tabs 2 to 4 again.</li>
+      <li>Tab 5: try to get round your own rule. Answer the thinking questions; the last tab collects the lessons.</li>
+    </ol>
+    <table><tr><th>Problem</th><th>Fix</th></tr><tr><td>Everything denied after attaching</td><td>Expected: Enforce with no rules. Add the permit rules</td></tr><tr><td>Rule will not save</td><td>Read the message: ARN still has the placeholder, missing semicolon, or the action name needs three underscores</td></tr><tr><td>Console blocked</td><td>Use the Practice gateway; the lesson is the same</td></tr></table>
+    <p class="muted">Never put AWS keys in GitHub, wikis or chat.</p>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('q2')">Back</button><button class="btn" onclick="go('c3')">Break · then Readiness</button></div>
+</section>
+<section data-id="c3">
+  <div class="kicker">Content 3 · Sign it off</div>
+  <h2>Can we ship it? The Production Readiness Review</h2>
+  <p class="lead">Before anything goes live, a team shows <b>evidence</b>, not opinions. One page, 19 checks, six areas. You already have most of the evidence from your own labs.</p>
+  <table><tr><th>Area</th><th>The question</th><th>Your evidence</th></tr><tr><td>Quality</td><td>Did the exam pass on this version?</td><td>Day 10 · Lab 10 · evals</td></tr><tr><td>Safety</td><td>Can it be tricked, and are the 'never' rules locks?</td><td>Day 11 · Lab 12, Day 12 · Lab 16B</td></tr><tr><td>Reliability</td><td>What happens when a tool is slow or down?</td><td>Day 11 · Lab 14, Day 12 · Lab 16A</td></tr><tr><td>Observability</td><td>Can we see what it did for one ticket?</td><td>Day 10 traces, Lab 16A</td></tr><tr><td>Cost</td><td>What does a ticket cost? A month?</td><td>Day 10 · cost, Lab 16A · tab 5</td></tr><tr><td>Operations and data</td><td>Can we roll back, switch it off, and where does personal data go?</td><td>Your team's answers</td></tr></table>
+  <div class="grid g2"><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>GO</b><span class="hint">tap to flip</span></div><div class="face back">All checks are ✅ or small 🟡 gaps with owners. Rare on the first release.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>GO WITH CONDITIONS</b><span class="hint">tap to flip</span></div><div class="face back">Ship, but each gap has a named owner and a date. The most common honest answer.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>NO-GO</b><span class="hint">tap to flip</span></div><div class="face back">A ❌ in Safety or Operations. Fix it, come back next board. It is not a failure, it is the review working.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>The golden rule</b><span class="hint">tap to flip</span></div><div class="face back">A visible gap with an owner beats a hidden one. Reviewers trust a team that shows its weak spots.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Kill switch</b><span class="hint">tap to flip</span></div><div class="face back">Always know how to turn the agent off and let humans take over. With a policy engine, switching to Enforce with no permit rules turns every tool off.</div></div></button><button class="flip" onclick="this.classList.toggle('flipped')"><div class="in"><div class="face front"><b>Rollback</b><span class="hint">tap to flip</span></div><div class="face back">Practise going back to the last version once before you need it. 'Never tried' is a ❌.</div></div></button></div>
+  <div class="client"><b>💼 Say this:</b> "We do not say it is safe. We show the exam, the red-team result, the cost per ticket, the rollback and the kill switch, and we name what is still open."</div>
+  <div class="row"><button class="btn ghost" onclick="go('labB')">Back</button><button class="btn" onclick="go('prr')">Team PRR</button></div>
+</section>
+<section data-id="prr">
+  <div class="lab">
+    <h2>Team exercise · Fill the PRR (25 minutes)</h2>
+    <p class="now">We are filling the Production Readiness Review for AskIT, in your team folder.</p>
+    <p class="now">In VS Code: File &gt; Open File &gt; C:\AskIT\dxc-agentic-ai\teams\team-x\PRR.md (x = your team: a, b, c or d)</p>
+    <div class="four">
+      <div><b>What we do</b>Fill one page: what we ship, 19 checks with evidence, our numbers, top 3 risks, and a decision.</div>
+      <div><b>Why</b>This is the last step before go-live in a real company. It is also a strong interview story.</div>
+      <div><b>Outcome</b>A signed-off page you can defend in 3 minutes, with honest gaps and owners.</div>
+      <div><b>How</b>Read the worked example (5 min). Split the areas. Fill from your labs, not from memory.</div>
+    </div>
+    <ol>
+      <li>Open <code>governance\PRR-EXAMPLE_askit.md</code> and read it once (5 minutes). The numbers in it are invented.</li>
+      <li>Open your team's <code>PRR.md</code>. Split the areas: <b>Tech Lead</b> quality and safety · <b>SRE</b> reliability, observability, operations · <b>FinOps</b> cost · <b>Client Liaison</b> data and the decision · <b>Presenter</b> the 3-minute story.</li>
+      <li>Fill <b>Evidence</b> by reopening the lab tab you name. Copy real numbers into section 3.</li>
+      <li>Rank your top 3 risks. Choose GO, GO WITH CONDITIONS or NO-GO and write why.</li>
+      <li>Run <code>SYNC.bat</code> to save your page.</li>
+    </ol>
+    <p class="muted">Rule: any ❌ in Safety or Operations means it cannot be a plain GO. Unsure about a check? Mark 🟡 and write who will find out.</p>
+  </div>
+  <div class="row"><button class="btn ghost" onclick="go('c3')">Back</button><button class="btn" onclick="go('board')">Go / No-Go board</button></div>
+</section>
+<section data-id="board">
+  <div class="kicker">Review board</div>
+  <h2>Go / No-Go: 4 minutes per team</h2>
+  <p class="lead">Each team: <b>3 minutes</b> to present, <b>1 minute</b> of questions. The board is the trainer (chair) and two reviewers from other teams. Verdict after each team.</p>
+  <div class="grid g2">
+    <div class="card"><div class="big">3</div><h3>Say</h3><p class="muted">What we ship · our strongest evidence · our top 3 risks · our decision and why.</p></div>
+    <div class="card"><div class="big">1</div><h3>Questions</h3><p class="muted">Reviewers ask one thing each. "Show me", not "do you think".</p></div>
+  </div>
+  <table><tr><th>The board scores (0 to 5 each, 25 points)</th><th>Looks like</th></tr><tr><td>Evidence is real and visible</td><td>A number and a lab tab, not 'we tested it'</td></tr><tr><td>Gaps are stated honestly</td><td>A ❌ or 🟡 you chose to show</td></tr><tr><td>Risks are ranked sensibly</td><td>Worst first, with a reason</td></tr><tr><td>The decision fits the evidence</td><td>No plain GO with a ❌ in Safety or Operations</td></tr><tr><td>Conditions are specific</td><td>Who, what, by when</td></tr></table>
+  <div class="say"><b>Reviewers:</b> ask for proof once. "Show me the rollback." "Which attack still wins?" "Where does that number come from?"</div>
+  <div class="row"><button class="btn ghost" onclick="go('prr')">Back</button><button class="btn" onclick="go('sum')">Wrap-up</button></div>
+</section>
+<section data-id="sum">
+  <div class="kicker">Sum-up</div>
+  <h2>What we learned today, and this week</h2>
+  <div class="grid g2">
+    <div class="card"><div class="big">1</div><h3>Host</h3><p class="muted">A Runtime gives each conversation a private sandbox. Mind the cold start, give every user their own session id, and watch the traces.</p></div>
+    <div class="card"><div class="big">2</div><h3>Guard</h3><p class="muted">Default deny, forbid wins. A policy is a lock. Text must match, so also check inside the tool.</p></div>
+    <div class="card"><div class="big">3</div><h3>Sign off</h3><p class="muted">Evidence, not opinions. Show the gaps, name the owners, keep a kill switch and a rollback.</p></div>
+  </div>
+  <div class="say" style="margin-top:18px"><b>Before you leave:</b> run <code>SYNC.bat</code>. Delete your <b>Gateway</b> (targets first) and your <b>policy engine</b> (rules first). <b>Your AWS keys are switched off tonight.</b> Every lab has a practice mode that keeps working without AWS.</div>
+  <div class="client"><b>💼 Take this away:</b> start as a workflow, add one AI step, give it tools through a Gateway, put locks in front of dangerous tools, measure it, and only then ship. Show your page to anyone who asks "is it safe?"</div>
+  <div class="row"><button class="btn ghost" onclick="go('board')">Back</button><button class="btn" onclick="go('start')">Back to the start</button></div>
+</section>
+</main>
+<footer><div class="inner"><span class="muted" id="pos"></span><span><button class="btn ghost" id="prev">Previous</button> <button class="btn" id="next">Next</button></span></div></footer>
+<script>
+const order = ['start', 'check', 'c1', 'q1', 'labA', 'c2', 'q2', 'labB', 'c3', 'prr', 'board', 'sum'];
+const names = {start:'Start',check:'Gateway check',c1:'Host it',q1:'Check 1',labA:'Lab 16A',c2:'Guard it',q2:'Check 2',labB:'Lab 16B',c3:'Readiness',prr:'Team PRR',board:'Go / No-Go',sum:'Sum-up'};
+
+function go(id){
+  document.querySelectorAll('main > section').forEach(s => s.classList.toggle('on', s.dataset.id === id));
+  render(id);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function render(id){
+  const i = order.indexOf(id);
+  document.getElementById('steps').innerHTML = order.map((k,n) =>
+    `<button type="button" class="stp ${k===id?'on':''} ${n<i?'done':''} ${k.startsWith('lab')?'islab':''}" data-go="${k}" ${k===id?'aria-current="step"':''}>${names[k]}</button>`).join('');
+  document.querySelectorAll('.stp').forEach(b => b.onclick = () => go(b.dataset.go));
+  const on = document.querySelector('.stp.on'); if (on) on.scrollIntoView({block:'nearest',inline:'center'});
+  document.getElementById('pos').textContent = `${i+1} of ${order.length}`;
+  document.getElementById('progbar').style.width = ((i+1)/order.length*100)+'%';
+  document.getElementById('prev').disabled = i === 0;
+  document.getElementById('next').disabled = i === order.length - 1;
+  try{ history.replaceState(null,'','#'+id); }catch(e){}
+}
+document.getElementById('prev').onclick = () => go(order[order.indexOf(current())-1]);
+document.getElementById('next').onclick = () => go(order[order.indexOf(current())+1]);
+function current(){ return document.querySelector('main > section.on').dataset.id; }
+
+// quick checks: pick an answer, see if it is right, see the reason
+document.querySelectorAll('.q').forEach(q => {
+  q.querySelectorAll('.opt').forEach(btn => btn.onclick = () => {
+    if (q.dataset.answered) return;
+    q.dataset.answered = '1';
+    const right = q.dataset.right;
+    q.querySelectorAll('.opt').forEach(o => {
+      o.disabled = true;
+      if (o.dataset.v === right) o.classList.add('right');
+      else if (o === btn) o.classList.add('wrong');
+    });
+    q.querySelector('.why').classList.add('show');
+    const section = q.closest('section');
+    const total = section.querySelectorAll('.q').length;
+    const got = section.querySelectorAll('.q .opt.right').length;
+    const answered = [...section.querySelectorAll('.q')].filter(x => x.dataset.answered).length;
+    if (answered === total) {
+      const score = section.querySelector('.score');
+      score.textContent = `${got} of ${total} right`;
+    }
+  });
+});
+
+// dark / light toggle (remembers choice)
+const root=document.documentElement, tb=document.getElementById('theme');
+function applyTheme(t){ root.setAttribute('data-theme',t); tb.textContent = t==='dark' ? '☀️ Light' : '🌙 Dark'; }
+let saved=null; try{ saved=localStorage.getItem('s12theme'); }catch(e){}
+applyTheme(saved || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark':'light'));
+tb.onclick=()=>{ const t=root.getAttribute('data-theme')==='dark'?'light':'dark'; applyTheme(t); try{localStorage.setItem('s12theme',t);}catch(e){} };
+
+// keyboard: left/right arrows
+document.addEventListener('keydown',e=>{
+  if(e.target.closest('input,textarea')) return;
+  const i=order.indexOf(current());
+  if(e.key==='ArrowRight' && i<order.length-1) go(order[i+1]);
+  if(e.key==='ArrowLeft' && i>0) go(order[i-1]);
+});
+
+const h=location.hash.slice(1);
+if(order.includes(h)) go(h); else render('start');
+</script>
+</body>
+</html>

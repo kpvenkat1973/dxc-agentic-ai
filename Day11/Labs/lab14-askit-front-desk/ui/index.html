@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab 14 · AskIT Front Desk</title>
+<style>
+:root{--bg:#f6f7f9;--surface:#fff;--surface2:#eef0f4;--ink:#161a23;--muted:#586072;--line:#d6dae3;--accent:#1F5AA6;--accent-soft:#E2EBF7;
+--plum:#6A3FA0;--plum-soft:#EEE6F7;--teal:#0E7068;--teal-soft:#E3F1EE;--amber:#A8570A;--amber-soft:#FBEEDB;--red:#B42318;--red-soft:#FDE7E7;--green:#1a7f37}
+@media (prefers-color-scheme:dark){:root{--bg:#10131c;--surface:#181d2a;--surface2:#212839;--ink:#e8ecf5;--muted:#a3adc2;--line:#2f3850;--accent:#86B4F0;--accent-soft:#17253d;
+--plum:#C4A6EE;--plum-soft:#2a2040;--teal:#5FD0C4;--teal-soft:#123532;--amber:#F2B266;--amber-soft:#3a2a14;--red:#FF8A7E;--red-soft:#3d1a17;--green:#56d364}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.5 "Aptos Narrow","Segoe UI",system-ui,sans-serif}
+header{background:var(--surface);border-bottom:1px solid var(--line);padding:10px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+header h1{font-size:22px;margin:0}
+header .grow{flex:1}
+select,input[type=text],input[type=number]{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+input[type=text]{width:100%}
+main{max-width:1200px;margin:0 auto;padding:14px 20px 60px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.tab{border:1px solid var(--line);background:var(--surface2);color:var(--ink);padding:9px 16px;border-radius:10px 10px 0 0;font:inherit;cursor:pointer}
+.tab.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
+.tab.last{background:var(--amber-soft);border-color:#E08A00;font-weight:700}
+.tab.last.on{background:#E08A00;color:#fff}
+.panel{display:none;background:var(--surface);border:1px solid var(--line);border-radius:0 14px 14px 14px;padding:18px}
+.panel.on{display:block}
+.cols{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+@media (max-width:900px){.cols{grid-template-columns:1fr}}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px;margin:8px 0}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:9px 18px;font:inherit;font-weight:700;cursor:pointer}
+.btn.ghost{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.btn.red{background:var(--red);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.muted{color:var(--muted)}
+.bubble{background:var(--accent-soft);border-radius:14px;padding:12px 16px;min-height:60px;white-space:pre-wrap}
+.me{background:var(--surface2);border-radius:14px;padding:8px 14px;margin:6px 0;font-weight:700}
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.pill{border-radius:999px;padding:3px 12px;font-size:15px;border:1px solid var(--line);background:var(--amber-soft);color:var(--amber)}
+.pill.ok{background:var(--teal-soft);color:var(--teal)} .pill.bad{background:var(--red-soft);color:var(--red)}
+.badge{display:inline-block;border-radius:999px;padding:3px 14px;font-weight:700;font-size:15px;background:var(--surface2)}
+.b-stream{background:var(--teal-soft);color:var(--teal)} .b-drop{background:var(--red-soft);color:var(--red)} .b-wait{background:var(--amber-soft);color:var(--amber)} .b-done{background:var(--accent-soft);color:var(--accent)}
+pre.raw{background:#0f1320;color:#cfe3ff;border-radius:10px;padding:10px 12px;height:330px;overflow:auto;font:13.5px/1.4 Consolas,monospace;white-space:pre-wrap;margin:6px 0}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:8px 0}
+.metrics div{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:15px}
+.metrics b{display:block;font-size:20px;color:var(--accent)}
+.lesson{background:linear-gradient(135deg,rgba(245,166,35,.28),rgba(245,166,35,.10));border:3px solid #E08A00;padding:14px 18px;border-radius:14px;margin:14px 0}
+.lock{border:2px dashed var(--line);padding:12px 16px;border-radius:12px;margin:12px 0;color:var(--muted)}
+.think{border-top:2px solid var(--line);margin-top:18px;padding-top:10px}
+.q{margin:10px 0}
+.opt{display:block;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:5px 0;cursor:pointer}
+.opt.right{background:var(--teal-soft);border-color:var(--teal)} .opt.wrong{background:var(--red-soft);border-color:var(--red)}
+.why{display:none;margin:4px 0 0 4px;color:var(--muted)} .why.show{display:block}
+.try{border-left:6px solid var(--plum);background:var(--plum-soft);border-radius:10px;padding:10px 14px;margin:10px 0}
+.try b.h{color:var(--plum)}
+.steps li{list-style:none;margin:4px 0}
+.steps{padding-left:4px}
+table{width:100%;border-collapse:collapse;margin:8px 0}
+th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;font-size:16px}
+th{background:var(--surface2)}
+h4{margin:14px 0 6px;font-size:1.05em}
+.say{border-left:5px solid var(--teal);background:var(--teal-soft);border-radius:10px;padding:10px 14px;margin:10px 0}
+label.sw{display:flex;gap:8px;align-items:center;margin:6px 0}
+svg text{font-family:inherit}
+</style>
+</head>
+<body>
+<header>
+  <h1>🛎️ AskIT Front Desk</h1>
+  <span class="muted">Lab 14 · two web pages in front of one agent</span>
+  <span class="grow"></span>
+  <label>AI model <select id="prov"></select></label>
+  <span class="badge" id="modelbadge">loading…</span>
+</header>
+<main>
+<div class="tabs" id="tabs">
+  <button class="tab on" data-t="start">🏁 Start here</button>
+  <button class="tab" data-t="chat">💬 1 · Chat (words appear)</button>
+  <button class="tab" data-t="task">📋 2 · Task (progress)</button>
+  <button class="tab" data-t="break">💥 3 · Break it</button>
+  <button class="tab" data-t="how">🧩 4 · How it works</button>
+  <button class="tab last" data-t="lessons">🎓 Lessons learnt</button>
+</div>
+
+<!-- ============================================================ START HERE -->
+<section class="panel on" id="p-start">
+  <h3>🏁 Your mission (about 50 minutes, no code to write)</h3>
+  <div class="cols" style="grid-template-columns:repeat(3,1fr)">
+    <div class="card"><b>The problem</b><br>A script that prints text in a terminal is not a product. Real users need to see that something is happening, get the answer as it is written, and trust the screen when the network or a tool fails.</div>
+    <div class="card"><b>What we do</b><br>This page is the front door for the AskIT agent from Days 5 to 10. The agent announces every step as a small <b>event</b>. The page listens and draws them live. Then you break things on purpose.</div>
+    <div class="card"><b>You leave able to</b><br>Choose <b>Chat</b> or <b>Task</b> for a use case. Explain <b>timeouts</b>, <b>resume vs restart</b>, and why a restart can cost money twice.</div>
+  </div>
+
+  <h3>Do these in order</h3>
+  <table>
+    <tr><th>Step</th><th>What you do</th><th>What you will see</th><th>What you learn</th></tr>
+    <tr><td><b>0</b></td><td>Top right, choose <b>AI model</b>: <b>Offline stand-in</b> (always works) or <b>AWS Bedrock</b>.</td><td>The badge shows which model is active.</td><td>The page works the same with either model.</td></tr>
+    <tr><td><b>1 · Chat</b></td><td>Pick a question, press <b>▶ Send</b>.</td><td>Words appear one by one. Tool pills show the steps. On the right, raw events, each with an <code>id</code>.</td><td>Streaming does not make the AI faster. It makes the wait <i>feel</i> shorter. The id is how a page continues after a drop.</td></tr>
+    <tr><td><b>2 · Task</b></td><td>Pick a question, press <b>📨 Submit job</b>. Then try <b>🔌 Close this view</b> and <b>↩ Resume my job</b>.</td><td>A job number, a list of steps ticking off, and a counter of how often the page asked "how is it going?".</td><td>Long work: submit, get a job number, show progress, let the user leave. Polling is simple but costs requests.</td></tr>
+    <tr><td><b>3 · Break it</b></td><td>Press <b>▶ Run this</b> on each of the five tries, one at a time. Read the <b>Look for</b> line under each.</td><td>A dropped connection, a page that waits, a tool error, a job that survives you leaving. The counters show <b>Runs started</b> and <b>Cost</b>.</td><td>Plan for failure in the page, not only in the model. Resume instead of restart. Show real errors.</td></tr>
+    <tr><td><b>4 · How it works</b></td><td>Read the diagram and the "Chat or task?" table.</td><td>The pieces: page, server, agent, events.</td><td>Both screens read the same run. The agent is written once.</td></tr>
+    <tr><td><b>🎓 Lessons</b></td><td>At the bottom of tabs 1, 2 and 3, answer the two thinking questions.</td><td>A lesson unlocks for each tab. You can download them as a file.</td><td>Your own summary of the session.</td></tr>
+  </table>
+
+  <h3>Words you will meet</h3>
+  <table>
+    <tr><td><b>Event</b></td><td>A small message the agent sends each time something happens: model started, word, tool started, tool finished, final answer.</td></tr>
+    <tr><td><b>Stream</b></td><td>The server pushes events to the page the moment they happen (Chat).</td></tr>
+    <tr><td><b>Poll</b></td><td>The page asks "how is it going?" on a timer (Task).</td></tr>
+    <tr><td><b>Timeout</b></td><td>How long the page waits in silence before it tells you what is happening.</td></tr>
+    <tr><td><b>Resume / restart</b></td><td>After a drop: continue after the last event id you saw, or send the question again (the AI works, and you pay, twice).</td></tr>
+  </table>
+
+  <div class="say"><b>Remember:</b> users do not run Python. Give them a screen that shows progress, survives bad networks and never hides a failure.</div>
+
+  <h3>If something goes wrong</h3>
+  <table>
+    <tr><th>Problem</th><th>Fix</th></tr>
+    <tr><td>Bedrock error</td><td>Choose <b>Offline stand-in</b> at the top right. The lesson is the same.</td></tr>
+    <tr><td>Page is blank or stuck</td><td>Press <b>Ctrl+F5</b>.</td></tr>
+    <tr><td>Port busy</td><td>Close other lab terminals (Ctrl+C). The app tries ports 8014 to 8029 by itself.</td></tr>
+  </table>
+  <div class="say"><b>Never put AWS keys in files, GitHub, wikis or chat.</b> They live only in the course <code>.env</code> file.</div>
+  <div class="row"><button class="btn" id="start-go">▶ Start with tab 1 · Chat</button></div>
+</section>
+
+<!-- ============================================================ TAB 1 CHAT -->
+<section class="panel" id="p-chat">
+  <p><b>What this is:</b> a chat page. The answer appears <b>word by word</b> while the AI is still writing it. On the right you see the raw messages the browser receives.</p>
+  <div class="row">
+    <select id="chat-q" style="max-width:520px"></select>
+    <button class="btn" id="chat-go">▶ Send</button>
+    <button class="btn ghost" id="chat-stop" disabled>■ Stop</button>
+  </div>
+  <div class="cols">
+    <div>
+      <div class="row"><span>Connection:</span><span class="badge" id="chat-badge">not started</span><span class="muted" id="chat-info"></span></div>
+      <div class="me" id="chat-me" style="display:none"></div>
+      <div class="pills" id="chat-pills"></div>
+      <div class="bubble" id="chat-bubble">Press <b>▶ Send</b>.</div>
+      <div class="metrics" id="chat-metrics"></div>
+      <div class="muted" id="chat-note"></div>
+    </div>
+    <div>
+      <b>What the browser receives</b> <span class="muted">(each block = one event; the <code>id:</code> number says how many events you have got)</span>
+      <pre class="raw" id="chat-raw">(nothing yet)</pre>
+    </div>
+  </div>
+  <div class="think" id="think-chat"></div>
+</section>
+
+<!-- ============================================================ TAB 2 TASK -->
+<section class="panel" id="p-task">
+  <p><b>What this is:</b> a task page for work that takes a while. You <b>submit a job</b>, get a <b>job number</b>, and the page <b>asks for progress</b> every few seconds. You can even close the view and come back to the same job.</p>
+  <div class="row">
+    <select id="task-q" style="max-width:520px"></select>
+    <button class="btn" id="task-go">📨 Submit job</button>
+  </div>
+  <div class="cols">
+    <div class="card">
+      <div class="row"><b>Job:</b> <code id="task-id">none yet</code> <span class="badge" id="task-badge">–</span> <span class="muted" id="task-elapsed"></span></div>
+      <ul class="steps" id="task-steps"><li class="muted">Submit a job to see its steps.</li></ul>
+      <div class="bubble" id="task-result" style="display:none"></div>
+      <div class="metrics" id="task-metrics"></div>
+      <div class="row">
+        <button class="btn ghost" id="task-away" disabled>🔌 Close this view</button>
+        <button class="btn ghost" id="task-resume" disabled>↩ Resume my job</button>
+      </div>
+      <div class="muted" id="task-note"></div>
+    </div>
+    <div>
+      <b>Every time the page asks "how is it going?"</b>
+      <div class="muted">polls so far: <b id="task-polls">0</b> · asking every <b id="task-poll-s">2</b> s (change in tab 3)</div>
+      <pre class="raw" id="task-raw">(nothing yet)</pre>
+    </div>
+  </div>
+  <div class="think" id="think-task"></div>
+</section>
+
+<!-- ============================================================ TAB 3 BREAK IT -->
+<section class="panel" id="p-break">
+  <p><b>What this is:</b> a control panel to make things go wrong on purpose. Tick a switch, then run a chat or a task, and watch what the page does.</p>
+  <div class="cols">
+    <div>
+      <h3>Switches that break the server side</h3>
+      <label class="sw"><input type="checkbox" id="sw-drop"> 🔌 Cut the connection in the middle of a chat answer (once)</label>
+      <label class="sw"><input type="checkbox" id="sw-err"> 💥 The ticket tool fails (database is down)</label>
+      <label class="sw"><input type="checkbox" id="sw-long"> 🐢 Long job: a 2-second pause between steps</label>
+      <label class="sw">🐌 Ticket tool waits <input type="number" id="sw-slow" value="0" min="0" max="60" style="width:80px"> seconds</label>
+      <h3>How the web page behaves</h3>
+      <label class="sw">⏱ Give up waiting after <input type="number" id="cl-timeout" value="8" min="2" max="60" style="width:80px"> seconds of silence</label>
+      <label class="sw">🔁 If the connection drops:
+        <select id="cl-recon"><option value="resume">resume where it stopped (good)</option><option value="restart">start the question again (bad)</option><option value="none">do nothing, I will click</option></select></label>
+      <label class="sw">📡 Task page asks for progress every
+        <select id="cl-poll"><option value="1">1 second</option><option value="2" selected>2 seconds</option><option value="5">5 seconds</option></select></label>
+    </div>
+    <div>
+      <h3>What has the server done?</h3>
+      <div class="metrics" id="stats"></div>
+      <div class="row"><button class="btn ghost" id="stats-reset">Reset the counters</button></div>
+      <div class="muted">"Runs started" counts how many times the AI agent was started. Each one costs money.</div>
+    </div>
+  </div>
+  <h3>Try these five, one at a time</h3>
+  <div id="tries"></div>
+  <div class="think" id="think-break"></div>
+</section>
+
+<!-- ============================================================ TAB 4 HOW IT WORKS -->
+<section class="panel" id="p-how">
+  <h3>The pieces</h3>
+  <svg viewBox="0 0 1100 330" width="100%" role="img" aria-label="How the Front Desk works">
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>
+    <g stroke-width="2.2">
+      <rect x="10" y="40" width="210" height="130" rx="14" fill="var(--accent-soft)" stroke="var(--accent)"/>
+      <rect x="290" y="40" width="210" height="130" rx="14" fill="var(--teal-soft)" stroke="var(--teal)"/>
+      <rect x="570" y="40" width="210" height="130" rx="14" fill="var(--plum-soft)" stroke="var(--plum)"/>
+      <rect x="850" y="40" width="240" height="130" rx="14" fill="var(--amber-soft)" stroke="var(--amber)"/>
+      <rect x="250" y="230" width="290" height="80" rx="14" fill="var(--surface2)" stroke="var(--muted)"/>
+    </g>
+    <g text-anchor="middle" fill="var(--ink)" font-size="17">
+      <text x="115" y="75" font-weight="700" font-size="20">🌐 Web page</text><text x="115" y="102">chat view + task view</text><text x="115" y="124">plain HTML + JavaScript</text><text x="115" y="154" font-size="14" fill="var(--muted)">ui/index.html</text>
+      <text x="395" y="75" font-weight="700" font-size="20">🖥️ Server</text><text x="395" y="102">starts the run, keeps</text><text x="395" y="124">the list of events</text><text x="395" y="154" font-size="14" fill="var(--muted)">server.py</text>
+      <text x="675" y="75" font-weight="700" font-size="20">🤖 AskIT agent</text><text x="675" y="102">model → tool → model</text><text x="675" y="124">announces every step</text><text x="675" y="154" font-size="14" fill="var(--muted)">fd_agent.py</text>
+      <text x="970" y="75" font-weight="700" font-size="20">🧠 Model + 🛠️ tools</text><text x="970" y="102">Bedrock Nova / Offline</text><text x="970" y="124">4 AskIT tools (Day 5)</text><text x="970" y="154" font-size="14" fill="var(--muted)">model_factory.py · tools.py</text>
+      <text x="395" y="262" font-weight="700" font-size="17">📒 The run's event list</text><text x="395" y="288" font-size="15">0 start · 1 tool · 2 word · 3 word …</text>
+    </g>
+    <g stroke="var(--muted)" stroke-width="2.2" fill="none" marker-end="url(#ar)">
+      <line x1="222" y1="90" x2="286" y2="90"/><line x1="502" y1="90" x2="566" y2="90"/><line x1="782" y1="90" x2="846" y2="90"/>
+      <line x1="615" y1="172" x2="520" y2="238" stroke-dasharray="6 5"/><line x1="395" y1="232" x2="395" y2="176" stroke-dasharray="6 5"/>
+    </g>
+    <g text-anchor="middle" fill="var(--muted)" font-size="14"><text x="254" y="125">① POST</text><text x="534" y="125">② thread</text><text x="640" y="215">③ events</text>
+      <text x="10" y="205" text-anchor="start">④ CHAT: GET …/stream  (events pushed to you)</text><text x="10" y="229" text-anchor="start">④ TASK: GET …/&lt;id&gt; every few s (you ask)</text></g>
+  </svg>
+  <p class="muted">The agent runs in the background. It writes events into a list. The <b>chat view</b> keeps one connection open and receives each event as it is added. The <b>task view</b> never keeps a connection: it asks "what is the list now?" every few seconds.</p>
+  <h3>⚡ How the streaming works (the most important idea on this page)</h3>
+  <div class="card">
+    <b>The idea in one line:</b> the AI does not write its answer all at once. It writes it a few letters at a time, and we show each piece the moment it exists, instead of waiting for the whole answer.
+    <div class="muted" style="margin-top:6px">Think of a chef sending dishes to your table one by one as they are ready, instead of making you wait until the whole meal is cooked.</div>
+  </div>
+  <h4>The journey of one word, in 6 steps</h4>
+  <table>
+    <tr><th style="width:44px">#</th><th style="width:210px">Who</th><th>What happens (plain words)</th></tr>
+    <tr><td><b>1</b></td><td>🧠 The AI model</td><td>It makes its answer in small pieces (a word or part of a word) and hands over each piece the moment it is ready. We ask it to work this way. That is "streaming mode".</td></tr>
+    <tr><td><b>2</b></td><td>🤖 The AskIT agent</td><td>For every piece it receives, the agent writes a note: <i>"new word: …"</i>. It also writes notes for the other moments: model started, tool called, tool finished, final answer.</td></tr>
+    <tr><td><b>3</b></td><td>📒 The event list</td><td>Every note goes at the end of a numbered list: 0, 1, 2, 3 … The numbers never change and nothing is removed. This list is the "tape recording" of the whole run.</td></tr>
+    <tr><td><b>4</b></td><td>🖥️ The server</td><td>It keeps one connection to your browser open. About 20 times a second it checks the list: <i>"any new note since the last one I sent?"</i> If yes, it sends it down the open connection. If not, it waits a moment.</td></tr>
+    <tr><td><b>5</b></td><td>🌐 Your browser</td><td>The page reads the connection bit by bit as data arrives, instead of waiting for it to finish. Each note that arrives is added to the screen straight away. That is why you see the answer grow.</td></tr>
+    <tr><td><b>6</b></td><td>✅ The end</td><td>When the "final answer" note arrives, the server closes the connection and the page stops the typing effect.</td></tr>
+  </table>
+  <div class="cols" style="grid-template-columns:repeat(2,1fr)">
+    <div class="card"><b>🔢 Why every note has a number</b><br>If the network drops after note 14 and the page is set to <b>resume where it stopped</b>, it reconnects and says: <i>"my last note was 14, please continue from 15."</i> The server looks in the list and carries on. Nothing is lost, nothing is repeated. This is the "Break it" drop test (the chaos switch cuts the line after 6 notes on purpose).</div>
+    <div class="card"><b>📦 Why the answer is saved in a list</b><br>The agent and the browser work at different speeds and do not talk to each other. The list is the meeting point: the agent writes to it, the server reads from it. Because the list is kept, the Task view can read the very same run later.</div>
+  </div>
+  <h4>What the browser actually receives</h4>
+  <p>The server sends plain text, in small blocks separated by an empty line. Each block has three parts: a <b>number</b> (<i>id</i>), a <b>kind</b> (<i>event</i>: token, tool_start, tool_end, final …) and the <b>content</b> (<i>data</i>). You can see exactly this in the "What the browser receives" box on the Chat tab. This method is called <b>Server-Sent Events (SSE)</b>: one normal web request that stays open, and the server keeps adding to it.</p>
+  <h4>Streaming vs Task view: the one difference</h4>
+  <table>
+    <tr><th></th><th>Chat view</th><th>Task view</th></tr>
+    <tr><td><b>Who starts the update?</b></td><td>The <b>server pushes</b> each piece as it happens</td><td>The <b>page asks</b> every second or two: "anything new?"</td></tr>
+    <tr><td><b>Connection</b></td><td>One long open connection</td><td>Many short requests, each one finishes quickly</td></tr>
+    <tr><td><b>Both read</b></td><td colspan="2">the same event list. The agent is written once.</td></tr>
+  </table>
+  <h4>Things you will notice (and what they mean)</h4>
+  <table>
+    <tr><th>You see</th><th>Why</th></tr>
+    <tr><td>Words appear one by one</td><td>Step 1 to 5 above are working. This is what streaming feels like.</td></tr>
+    <tr><td>Offline mode types at a steady speed</td><td>No real AI is attached, so the stand-in plays the answer word by word to imitate streaming.</td></tr>
+    <tr><td>A long pause before the first word</td><td>The model is still thinking or starting up (a cold start). Streaming starts only after the first piece exists. Streaming makes the wait feel shorter; it does not make the AI faster.</td></tr>
+    <tr><td>Odd text like <i>&lt;thinking&gt;…&lt;/thinking&gt;</i> in the answer</td><td>Some models write their private reasoning in the answer. The page shows what the model sends. A production app would filter it out before showing it.</td></tr>
+    <tr><td>Stream cut, then it continues</td><td>With "resume where it stopped" the page asks to continue from its last number. With "start the question again" the AI runs twice and you pay twice.</td></tr>
+  </table>
+  <div class="say"><b>💼 Say this to a client:</b> "Streaming does not make the AI faster. It makes the wait feel shorter, because the user sees progress from the first second. We number every piece so a dropped connection can resume without losing or repeating anything."</div>
+  <h3>Chat or task? (the question a client asks)</h3>
+  <table>
+    <tr><th></th><th>Chat view (stream)</th><th>Task view (submit + poll)</th></tr>
+    <tr><td><b>Good for</b></td><td>A person waiting, answer in under ~1 minute</td><td>Work that takes minutes: reports, batch jobs, anything with approval steps</td></tr>
+    <tr><td><b>User feels</b></td><td>"It is answering me now"</td><td>"My job is safe; I can leave"</td></tr>
+    <tr><td><b>Needs</b></td><td>An open connection the whole time</td><td>A job number, a place to keep the status</td></tr>
+    <tr><td><b>Breaks when</b></td><td>The network drops, a proxy cuts long connections</td><td>You poll too fast (many requests) or too slow (stale screen)</td></tr>
+    <tr><td><b>Fix</b></td><td>Event ids, resume, timeout message</td><td>Sensible interval, job id, callback or push instead of polling</td></tr>
+  </table>
+  <h3>Options a client may ask about</h3>
+  <table>
+    <tr><th>Option</th><th>What it is</th><th>Use when</th><th>Watch out</th></tr>
+    <tr><td>Server-Sent Events (what we built)</td><td>Server pushes text events down one normal web request</td><td>One-way updates: streaming answers, progress</td><td>No built-in resume with plain fetch: you add event ids</td></tr>
+    <tr><td>WebSocket</td><td>Two-way live connection</td><td>True two-way: live co-editing, voice, game-like apps</td><td>More to run (load balancers, reconnects)</td></tr>
+    <tr><td>Polling</td><td>Ask again and again</td><td>Simple, works through any firewall</td><td>Wasted requests</td></tr>
+    <tr><td>Webhook / callback</td><td>Server calls you when done</td><td>System-to-system jobs</td><td>Needs a public address to call</td></tr>
+    <tr><td>Ready-made UI kits</td><td>Vercel AI SDK, CopilotKit, AG-UI protocol, LangGraph SDK streaming, Streamlit/Chainlit/Gradio</td><td>Speed to a demo or an internal tool</td><td>Check how they handle auth, resume and your design system</td></tr>
+    <tr><td>AgentCore Runtime (Day 12)</td><td>Managed place to run the agent, with async jobs</td><td>You do not want to run servers</td><td>Your UI still needs the chat/task patterns above</td></tr>
+  </table>
+  <div class="say"><b>💼 Say this to a client:</b> "Short answers stream. Long work becomes a job with a number. Either way we plan for the connection to drop."</div>
+</section>
+
+<!-- ============================================================ TAB 5 LESSONS -->
+<section class="panel" id="p-lessons">
+  <h3>🎓 Lessons learnt</h3>
+  <div class="muted">Each lesson unlocks when you answer the two thinking questions at the bottom of tab 1, 2 or 3.</div>
+  <div id="lesson-prog" class="muted" style="margin:8px 0"></div>
+  <div id="lesson-list"></div>
+  <div class="row"><button class="btn ghost" id="lesson-dl">⬇ Download my lessons (.md)</button></div>
+</section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const QUESTIONS = ["My VPN shows error 809 - what should I try?", "Summarise ticket TKT-0004 and tell me the next step.",
+  "What is the first response time for a High priority ticket?", "Please reset the password for EMP-1002. They are locked out."];
+const S = {provider: "", chat: null, task: null, lessons: {}, think: {}};
+
+// ---------------------------------------------------------------- tabs
+$$("#tabs .tab").forEach(b => b.onclick = () => showTab(b.dataset.t));
+function showTab(t) {
+  $$("#tabs .tab").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+  $$(".panel").forEach(p => p.classList.toggle("on", p.id === "p-" + t));
+  if (t === "lessons") renderLessons();
+  if (t === "break") refreshStats();
+}
+$("#start-go").onclick = () => showTab("chat");
+QUESTIONS.forEach(q => { for (const id of ["chat-q", "task-q"]) { const o = document.createElement("option"); o.textContent = q; $("#" + id).appendChild(o); } });
+
+// ---------------------------------------------------------------- settings
+function chaos() {
+  return {drop: $("#sw-drop").checked, tool_error: $("#sw-err").checked, long_job: $("#sw-long").checked, slow_tool: +$("#sw-slow").value || 0};
+}
+const cl = () => ({timeout: +$("#cl-timeout").value || 8, recon: $("#cl-recon").value, poll: +$("#cl-poll").value || 2});
+$("#cl-poll").onchange = () => $("#task-poll-s").textContent = cl().poll;
+
+async function api(path, body) {
+  const r = await fetch(path, body ? {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)} : undefined);
+  return r.json();
+}
+async function startRun(q, noDrop) {
+  const r = await api("/api/runs", {question: q, provider: S.provider, chaos: {...chaos(), ...(noDrop ? {drop: false} : {})}});
+  $("#modelbadge").textContent = r.model;
+  return r.run_id;
+}
+const fmt = ms => (ms / 1000).toFixed(1) + " s";
+function metrics(el, items) { el.innerHTML = items.map(([k, v]) => `<div>${k}<b>${v}</b></div>`).join(""); }
+function badge(el, text, cls) { el.textContent = text; el.className = "badge " + (cls || ""); }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ---------------------------------------------------------------- CHAT: read a Server-Sent Events stream with fetch
+function chatReset(q) {
+  $("#chat-me").style.display = "block"; $("#chat-me").textContent = "🧑 " + q;
+  $("#chat-pills").innerHTML = ""; $("#chat-bubble").textContent = "…"; $("#chat-metrics").innerHTML = ""; $("#chat-note").textContent = "";
+  $("#chat-raw").textContent = "";
+}
+async function chatGo() {
+  if (S.chat && S.chat.ctrl) S.chat.ctrl.abort("new");
+  const q = $("#chat-q").value;
+  chatReset(q);
+  S.chat = {q, sent: Date.now(), firstTok: null, steps: {}, lastId: 0, done: false, ctrl: null, runId: null, restarts: 0, stopped: false, attempt: 0};
+  $("#chat-go").disabled = true; $("#chat-stop").disabled = false;
+  badge($("#chat-badge"), "starting…", "b-wait");
+  S.chat.runId = await startRun(q);
+  await chatRead(0);
+}
+async function chatRead(from) {
+  const c = S.chat, mine = ++c.attempt;
+  const ctrl = new AbortController(); c.ctrl = ctrl;
+  let quiet = Date.now(), timedOut = false;
+  const watch = setInterval(() => {
+    if (Date.now() - quiet > cl().timeout * 1000) { timedOut = true; ctrl.abort("timeout"); }
+  }, 500);
+  badge($("#chat-badge"), from ? "reconnecting…" : "connecting…", "b-wait");
+  $("#chat-info").textContent = from ? `asking the server to continue after event ${from}` : "";
+  try {
+    const res = await fetch(`/api/runs/${c.runId}/stream?from=${from}`, {signal: ctrl.signal});
+    const reader = res.body.getReader(), dec = new TextDecoder();
+    let buf = "";
+    badge($("#chat-badge"), "streaming", "b-stream");
+    while (true) {
+      const {value, done} = await reader.read();
+      if (done) break;
+      quiet = Date.now();
+      buf += dec.decode(value, {stream: true});
+      let i;
+      while ((i = buf.indexOf("\n\n")) >= 0) {
+        const block = buf.slice(0, i); buf = buf.slice(i + 2);
+        chatEvent(block);
+      }
+    }
+  } catch (e) { /* abort or network error: handled below */ }
+  clearInterval(watch);
+  if (mine !== c.attempt || c.done || c.stopped) return;
+  if (timedOut) return chatTimeout();
+  chatDropped();
+}
+function chatEvent(block) {
+  const c = S.chat, raw = $("#chat-raw");
+  raw.textContent += block + "\n\n"; raw.scrollTop = raw.scrollHeight;
+  const idm = block.match(/^id: (\d+)/m), dm = block.match(/^data: (.*)$/m);
+  if (!dm) return;
+  if (idm) c.lastId = +idm[1];
+  const e = JSON.parse(dm[1]);
+  if (e.type === "token") {
+    if (c.firstTok === null) c.firstTok = Date.now() - c.sent;
+    c.steps[e.step] = (c.steps[e.step] || "") + e.text;
+    $("#chat-bubble").textContent = c.steps[e.step];
+  } else if (e.type === "model_start") {
+    $("#chat-bubble").textContent = "…";
+  } else if (e.type === "tool_start") {
+    $("#chat-pills").insertAdjacentHTML("beforeend", `<span class="pill" id="pill-${e.id}">🛠 ${e.name}(${Object.values(e.args).join(", ").slice(0, 30)}) …</span>`);
+    $("#chat-bubble").textContent = "…";
+  } else if (e.type === "tool_end") {
+    const last = $$("#chat-pills .pill").pop();
+    if (last) { last.className = "pill " + (e.ok ? "ok" : "bad"); last.textContent = last.textContent.replace("…", e.ok ? `✔ ${e.ms} ms` : "✖ failed: " + e.preview.slice(0, 50)); }
+  } else if (e.type === "final") {
+    c.done = true;
+    $("#chat-bubble").textContent = e.answer;
+    badge($("#chat-badge"), "done", "b-done"); $("#chat-info").textContent = "";
+    const total = Date.now() - c.sent;
+    metrics($("#chat-metrics"), [["First word after", c.firstTok !== null ? fmt(c.firstTok) : "–"], ["Whole answer after", fmt(total)], ["Tokens in / out", e.tokens_in + " / " + e.tokens_out],
+      ["Cost", "$" + e.cost_usd.toFixed(6)], ["Events received", c.lastId]]);
+    if (!c.restarts) $("#chat-note").textContent = c.firstTok !== null ? "Streaming did not make the AI faster. It made the first word appear much earlier than the whole answer." : "";
+    $("#chat-go").disabled = false; $("#chat-stop").disabled = true;
+  } else if (e.type === "error") {
+    c.done = true;
+    $("#chat-bubble").textContent = "⚠ " + e.message;
+    badge($("#chat-badge"), "error", "b-drop");
+    $("#chat-go").disabled = false; $("#chat-stop").disabled = true;
+  }
+}
+async function chatDropped() {
+  const c = S.chat, mode = cl().recon;
+  badge($("#chat-badge"), "connection lost", "b-drop");
+  $("#chat-info").textContent = `the connection closed after event ${c.lastId} and the answer was not finished`;
+  if (mode === "resume") {
+    await sleep(1200); if (S.chat !== c || c.stopped) return;
+    chatRead(c.lastId);                                         // ask for events AFTER the last one we saw
+  } else if (mode === "restart") {
+    await sleep(1200); if (S.chat !== c || c.stopped) return;
+    c.restarts++; c.steps = {}; $("#chat-pills").innerHTML = ""; $("#chat-bubble").textContent = "…";
+    $("#chat-note").textContent = `Restarted ${c.restarts} time(s): the question was sent AGAIN. Look at tab 3: the AI was started twice and you pay for both.`;
+    c.runId = await startRun(c.q, true); c.lastId = 0; chatRead(0);
+  } else {
+    $("#chat-bubble").insertAdjacentHTML("beforeend", `<div class="row"><button class="btn" id="re-btn">🔁 Reconnect</button></div>`);
+    $("#re-btn").onclick = () => { $("#re-btn").remove(); chatRead(c.lastId); };
+  }
+}
+function chatTimeout() {
+  const c = S.chat;
+  badge($("#chat-badge"), "no news for " + cl().timeout + " s", "b-wait");
+  $("#chat-info").textContent = "";
+  $("#chat-bubble").innerHTML = "⏳ Still working on it… this is taking longer than usual.<div class='row'><button class='btn' id='kw'>Keep waiting</button><button class='btn ghost' id='cx'>Cancel</button></div>";
+  $("#kw").onclick = () => { $("#chat-bubble").textContent = "…"; chatRead(c.lastId); };
+  $("#cx").onclick = () => chatStop();
+}
+async function chatStop() {
+  const c = S.chat; if (!c) return;
+  c.stopped = true; if (c.ctrl) c.ctrl.abort("stop");
+  try { await api(`/api/runs/${c.runId}/cancel`, {}); } catch (e) {}
+  badge($("#chat-badge"), "stopped", "b-done"); $("#chat-go").disabled = false; $("#chat-stop").disabled = true;
+}
+$("#chat-go").onclick = chatGo; $("#chat-stop").onclick = chatStop;
+
+// ---------------------------------------------------------------- TASK: submit a job, then ask for progress
+async function taskGo() {
+  const q = $("#task-q").value;
+  const runId = await startRun(q);
+  S.task = {runId, polls: 0, timer: null, away: false};
+  try { localStorage.setItem("askit_job", runId); } catch (e) {}
+  $("#task-polls").textContent = 0; $("#task-raw").textContent = ""; $("#task-id").textContent = runId; $("#task-note").textContent = "";
+  $("#task-result").style.display = "none"; $("#task-metrics").innerHTML = ""; $("#task-poll-s").textContent = cl().poll;
+  $("#task-away").disabled = false; $("#task-resume").disabled = true;
+  taskPoll();
+}
+async function taskPoll() {
+  const t = S.task; if (!t || t.away) return;
+  const r = await fetch(`/api/runs/${t.runId}`); const txt = await r.text(); const d = JSON.parse(txt);
+  t.polls++; $("#task-polls").textContent = t.polls;
+  const pr = $("#task-raw"); pr.textContent += `${new Date().toLocaleTimeString()}  GET /api/runs/${t.runId}  →  ${d.status}, ${d.steps.length} steps, ${txt.length} bytes\n`; pr.scrollTop = pr.scrollHeight;
+  const cls = {running: "b-wait", done: "b-done", error: "b-drop"}[d.status];
+  badge($("#task-badge"), d.status, cls); $("#task-elapsed").textContent = d.elapsed + " s";
+  $("#task-steps").innerHTML = d.steps.length ? d.steps.map(s => `<li>${{running: "⏳", done: "✅", failed: "❌"}[s.state]} ${s.label} ${s.ms !== undefined ? `<span class="muted">${s.ms} ms</span>` : ""}</li>`).join("") : "<li class='muted'>⏳ waiting in the queue…</li>";
+  if (d.status === "running") { t.timer = setTimeout(taskPoll, cl().poll * 1000); return; }
+  $("#task-away").disabled = true;
+  const box = $("#task-result"); box.style.display = "block";
+  if (d.final) {
+    box.textContent = d.final.answer;
+    metrics($("#task-metrics"), [["Job time", fmt(d.final.ms)], ["Progress requests", t.polls], ["Tokens in / out", d.final.tokens_in + " / " + d.final.tokens_out], ["Cost", "$" + d.final.cost_usd.toFixed(6)]]);
+    $("#task-note").textContent = `The page asked ${t.polls} times to learn one thing: "done yet?". Change the interval in tab 3 and compare.`;
+  } else box.textContent = "⚠ " + (d.error ? d.error.message : "The job failed.");
+}
+function taskAway() {
+  const t = S.task; if (!t) return;
+  t.away = true; clearTimeout(t.timer);
+  $("#task-steps").innerHTML = "<li class='muted'>(view closed - nobody is asking for progress now)</li>";
+  $("#task-away").disabled = true; $("#task-resume").disabled = false;
+  $("#task-note").textContent = "The job keeps running on the server. Your job number is saved in this browser. Wait a few seconds, then press Resume.";
+}
+function taskResume() {
+  let id = null; try { id = localStorage.getItem("askit_job"); } catch (e) {}
+  id = id || (S.task && S.task.runId); if (!id) return;
+  S.task = {runId: id, polls: 0, timer: null, away: false};
+  $("#task-id").textContent = id; $("#task-resume").disabled = true; $("#task-away").disabled = false; $("#task-raw").textContent = "";
+  taskPoll();
+}
+$("#task-go").onclick = taskGo; $("#task-away").onclick = taskAway; $("#task-resume").onclick = taskResume;
+
+// ---------------------------------------------------------------- BREAK IT
+const TRIES = [
+  ["1 · The connection drops, the page resumes", "Cuts the connection mid-answer. The page reconnects and asks for the events after the last id it saw.",
+   () => { $("#sw-drop").checked = true; $("#sw-err").checked = false; $("#sw-slow").value = 0; $("#cl-recon").value = "resume"; $("#chat-q").selectedIndex = 0; showTab("chat"); chatGo(); },
+   "Watch the badge: streaming → connection lost → reconnecting → done. The answer is complete. Check the right side: no event id appears twice."],
+  ["2 · The connection drops, the page starts again (bad)", "Same cut, but the page sends the question again.",
+   () => { $("#sw-drop").checked = true; $("#sw-err").checked = false; $("#sw-slow").value = 0; $("#cl-recon").value = "restart"; $("#chat-q").selectedIndex = 0; showTab("chat"); chatGo(); },
+   "You get an answer, but come back to this tab and look at 'Runs started' and 'Cost': the AI worked twice. In a bank this could also send an email twice."],
+  ["3 · A tool is slower than the page is patient", "The ticket tool waits 12 seconds, the page gives up after 8 seconds of silence.",
+   () => { $("#sw-drop").checked = false; $("#sw-err").checked = false; $("#sw-slow").value = 12; $("#cl-timeout").value = 8; $("#chat-q").selectedIndex = 1; showTab("chat"); chatGo(); },
+   "After 8 seconds the page says it is still working and offers Keep waiting or Cancel. A blank screen would feel like a crash."],
+  ["4 · A tool fails", "The ticket database is 'down'.",
+   () => { $("#sw-drop").checked = false; $("#sw-err").checked = true; $("#sw-slow").value = 0; $("#chat-q").selectedIndex = 1; showTab("chat"); chatGo(); },
+   "The red pill shows the failure. Read what the AI tells the user. Did it explain, or invent a ticket status?"],
+  ["5 · Close the view in the middle of a long job", "A slow job. You close the view and come back.",
+   () => { $("#sw-drop").checked = false; $("#sw-err").checked = false; $("#sw-slow").value = 0; $("#sw-long").checked = true; $("#task-q").selectedIndex = 1; showTab("task"); taskGo(); },
+   "Press 🔌 Close this view after the first step, count to 10, then ↩ Resume my job. The job carried on without you. Untick the long-job switch afterwards."]];
+$("#tries").innerHTML = TRIES.map((t, i) => `<div class="try"><b class="h">${t[0]}</b><br>${t[1]}<div class="row"><button class="btn" data-try="${i}">▶ Run this</button></div><div class="muted"><b>Look for:</b> ${t[3]}</div></div>`).join("");
+$$("[data-try]").forEach(b => b.onclick = () => TRIES[+b.dataset.try][2]());
+async function refreshStats() {
+  const s = await api("/api/stats");
+  metrics($("#stats"), [["Runs started", s.runs_started], ["Cost so far", "$" + s.cost_usd.toFixed(6)], ["Chat connections", s.stream_opens], ["Progress requests", s.polls]]);
+}
+$("#stats-reset").onclick = async () => { await api("/api/reset", {}); refreshStats(); };
+setInterval(() => { if ($("#p-break").classList.contains("on")) refreshStats(); }, 3000);
+
+// ---------------------------------------------------------------- thinking questions + lessons
+const THINK = {
+  chat: {title: "Chat", items: [
+    ["Your whole answer took 5 seconds. The first word appeared after 1 second. What did streaming change?",
+     [["a", "The AI finished faster."], ["b", "The wait FEELS shorter, because words appear early."], ["c", "The answer costs less."]], "b",
+     "Total time and cost are the same. The person just stops staring at a blank screen."],
+    ["On the right, every event has an id number. What is that number for?",
+     [["a", "It is the price of the event."], ["b", "So the page can say where it stopped if the connection drops."], ["c", "It sorts the answer in colour."]], "b",
+     "Without an id the page cannot say 'continue after event 7'. It would have to start again."]],
+   lesson: "<b>Streaming does not make the AI faster. It makes the wait feel shorter.</b> Show the work (tool pills) so people trust a slow answer, and give every event an id so a dropped connection can continue instead of restart."},
+  task: {title: "Task", items: [
+    ["A monthly report takes 3 minutes to build. Which pattern fits best?",
+     [["a", "Keep a chat stream open for 3 minutes."], ["b", "Submit a job, show progress, let the user come back."], ["c", "Ask the user to press refresh now and then."]], "b",
+     "Long work needs a job number. The user can leave, and the system can retry."],
+    ["100 users, each job lasts 60 s, the page asks every 1 s. How many 'done yet?' requests is that?",
+     [["a", "About 6,000, almost all of them useless."], ["b", "None."], ["c", "100."]], "a",
+     "100 × 60 = 6,000. Asking every 5 s gives 1,200. A callback or push removes the waste."]],
+   lesson: "<b>Long work = submit, get a job number, show progress, allow the user to leave.</b> Polling is simple and works everywhere, but the interval is a trade: faster screen updates against more requests."},
+  break: {title: "Break it", items: [
+    ["The connection dropped and the page sent the question again. What went wrong?",
+     [["a", "Nothing, this is normal."], ["b", "The work and the cost were paid twice because the page did not resume from the last event id."], ["c", "The model forgot the question."]], "b",
+     "Resume with the id you saw. In production give each job an id so a repeat request is recognised, not run twice."],
+    ["A tool takes 12 seconds and your page gives up after 8. What is the best user experience?",
+     [["a", "A blank screen until it finishes."], ["b", "Say it is still working and offer Keep waiting or Cancel."], ["c", "Quietly retry ten times."]], "b",
+     "People forgive slow if they know what is happening. Silent retries multiply cost and can repeat actions."]],
+   lesson: "<b>Plan for failure in the page, not only in the model.</b> Resume instead of restart, say what is happening when something is slow, and show tool errors in plain words. The AI part is the easy part of a production screen."}
+};
+function lsGet() { try { return JSON.parse(localStorage.getItem("askit_l14") || "{}"); } catch (e) { return {}; } }
+function lsSet() { try { localStorage.setItem("askit_l14", JSON.stringify({think: S.think, lessons: S.lessons})); } catch (e) {} }
+{ const o = lsGet(); S.think = o.think || {}; S.lessons = o.lessons || {}; }
+function thinking(key) {
+  const T = THINK[key], box = $("#think-" + key);
+  let h = `<h3>🧠 Two thinking questions</h3>`;
+  T.items.forEach((it, i) => {
+    const id = key + "_" + i, ans = S.think[id];
+    h += `<div class="q"><b>${i + 1}. ${it[0]}</b>` + it[1].map(o => {
+      const cls = ans ? (o[0] === it[2] ? "right" : (o[0] === ans ? "wrong" : "")) : "";
+      return `<button class="opt ${cls}" data-k="${id}" data-v="${o[0]}" ${ans ? "disabled" : ""}>${o[1]}</button>`;
+    }).join("") + `<div class="why ${ans ? "show" : ""}">${ans ? (ans === it[2] ? "✅ " : "The right answer is " + it[2].toUpperCase() + ". ") + it[3] : ""}</div></div>`;
+  });
+  const all = T.items.every((_, i) => S.think[key + "_" + i]);
+  if (all) { S.lessons[key] = T.lesson; h += `<div class="lesson"><b>🎓 Lesson learnt</b><br>${T.lesson}</div>`; }
+  else h += `<div class="lock">🔒 Answer both questions to unlock the lesson for this tab.</div>`;
+  box.innerHTML = h;
+  box.querySelectorAll(".opt").forEach(b => b.onclick = () => { S.think[b.dataset.k] = b.dataset.v; lsSet(); thinking(key); });
+}
+function renderLessons() {
+  const keys = Object.keys(THINK), got = keys.filter(k => S.lessons[k]);
+  $("#lesson-prog").textContent = `Lessons unlocked: ${got.length} of ${keys.length}`;
+  $("#lesson-list").innerHTML = keys.map(k => S.lessons[k] ? `<div class="lesson"><b>🎓 Tab: ${THINK[k].title}</b><br>${S.lessons[k]}</div>` : `<div class="lock">🔒 ${THINK[k].title}: not unlocked yet</div>`).join("");
+}
+$("#lesson-dl").onclick = () => {
+  const txt = "# My lessons from Lab 14\n\n" + Object.keys(THINK).filter(k => S.lessons[k]).map(k => `## ${THINK[k].title}\n` + S.lessons[k].replace(/<[^>]+>/g, "")).join("\n\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], {type: "text/markdown"})); a.download = "lab14_lessons.md"; a.click();
+};
+Object.keys(THINK).forEach(thinking);
+
+// ---------------------------------------------------------------- start
+(async function init() {
+  const d = await api("/api/providers");
+  const sel = $("#prov");
+  sel.innerHTML = `<option value="">Auto (${d.providers[d.auto].label})</option>` + Object.entries(d.providers).map(([k, v]) => `<option value="${k}" ${v.ready ? "" : "disabled"}>${v.label}${v.ready ? "" : " (not ready)"}</option>`).join("");
+  sel.onchange = () => { S.provider = sel.value; const k = sel.value || d.auto; $("#modelbadge").textContent = d.providers[k].label + " · " + d.providers[k].note; };
+  $("#modelbadge").textContent = d.providers[d.auto].label + " · " + d.providers[d.auto].note;
+})();
+</script>
+</body>
+</html>

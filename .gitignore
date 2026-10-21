@@ -5,6 +5,11 @@
 *.pem
 *.key
 *credentials*.csv
+*accessKeys*
+*access_keys*
+*accesskey*
+rootkey.csv
+*secret*key*
 participant_creds/
 .github_token
 
@@ -26,3 +31,8 @@ Day*/Labs/*/vector_store/
 # Day 9 MCP lab (local wire logs and each person's own Lambda address)
 Day*/Labs/*/.wire/
 Day*/Labs/*/aws/my_lambda.json
+
+# keys and per-person gateway URLs never go to GitHub
+creds/
+Day*/Labs/*/my_gateway.json
+Day*/Labs/*/my_runtime.json

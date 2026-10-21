@@ -21,6 +21,15 @@ git rebase --abort >nul 2>&1
 
 echo [1/3] Saving your work on this VM...
 git add -A >nul 2>&1
+git diff --cached -U0 | findstr /R /C:"AKIA[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]" /C:"ASIA[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]" >nul 2>&1
+if not errorlevel 1 (
+  git reset -q >nul 2>&1
+  echo.
+  echo [STOP] An AWS access key (AKIA... or ASIA...) was found in your files. NOT saved to GitHub.
+  echo         Remove it from the file, then run SYNC.bat again. Keys never go in GitHub, wikis or chat.
+  pause
+  exit /b 1
+)
 git commit -q -m "sync %DATE% %TIME%" >nul 2>&1
 
 echo [2/3] Getting the trainer's new content...
@@ -31,7 +40,9 @@ if errorlevel 1 (
   git merge --abort >nul 2>&1
   echo     Clash found - copying the trainer's files one by one...
   for /f "delims=" %%f in ('git diff --name-only --diff-filter=A HEAD upstream/main') do git checkout upstream/main -- "%%f" >nul 2>&1
-  for /f "delims=" %%f in ('git diff --name-only --diff-filter=M HEAD upstream/main ^| findstr /v /i "/Labs/"') do git checkout upstream/main -- "%%f" >nul 2>&1
+  set MB=
+  for /f %%b in ('git merge-base HEAD upstream/main') do set MB=%%b
+  for /f "delims=" %%f in ('git diff --name-only --diff-filter=M HEAD upstream/main') do call :take "%%f"
   git add -A >nul 2>&1
   git commit -q -m "sync trainer files" >nul 2>&1
 )
@@ -46,3 +57,10 @@ if errorlevel 1 (
 )
 if errorlevel 1 (echo [!!] Push failed - take a screenshot of this window and call the trainer) else (echo [OK] Sync complete)
 pause
+exit /b
+
+:take
+REM Take the trainer's version of a changed file ONLY if you have not edited it yourself.
+if not defined MB goto :eof
+git diff --quiet %MB% HEAD -- %1 && git checkout upstream/main -- %1 >nul 2>&1
+goto :eof

@@ -1,0 +1,70 @@
+[
+  {
+    "name": "get_ticket",
+    "description": "Look up one helpdesk ticket by its id, e.g. TKT-0004. Returns subject, priority, status and the employee id.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ticket_id": {
+          "type": "string",
+          "description": "Ticket id like TKT-0004"
+        }
+      },
+      "required": [
+        "ticket_id"
+      ]
+    }
+  },
+  {
+    "name": "get_user",
+    "description": "Look up one employee by id, e.g. EMP-1001. Returns name, department, location and whether the person is a VIP.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": "string",
+          "description": "Employee id like EMP-1001"
+        }
+      },
+      "required": [
+        "user_id"
+      ]
+    }
+  },
+  {
+    "name": "reset_password",
+    "description": "Reset an employee's password. This CHANGES data. (Mock: nothing is really reset.)",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": "string",
+          "description": "Employee id like EMP-1001"
+        }
+      },
+      "required": [
+        "user_id"
+      ]
+    }
+  },
+  {
+    "name": "search_kb",
+    "description": "Search the helpdesk knowledge base (how-to articles: password, VPN, laptop, MFA, SLA ...). Returns the best matching articles with their ids.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "The question or keywords to search for"
+        },
+        "top_k": {
+          "type": "integer",
+          "description": "How many articles to return (1 to 5, default 3)"
+        }
+      },
+      "required": [
+        "query"
+      ]
+    }
+  }
+]
