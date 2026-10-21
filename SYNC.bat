@@ -25,8 +25,9 @@ git diff --cached -U0 | findstr /R /C:"AKIA[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0
 if not errorlevel 1 (
   git reset -q >nul 2>&1
   echo.
-  echo [STOP] An AWS access key (AKIA... or ASIA...) was found in your files. NOT saved to GitHub.
-  echo         Remove it from the file, then run SYNC.bat again. Keys never go in GitHub, wikis or chat.
+  echo [STOP] An AWS access key, starting with AKIA or ASIA, was found in your files. NOT saved to GitHub.
+  echo         Find the file: run  git grep --untracked -nE "(AKIA^|ASIA)[A-Z0-9]{8}"
+  echo         Remove the key from that file, then run SYNC.bat again. Keys never go in GitHub, wikis or chat.
   pause
   exit /b 1
 )
