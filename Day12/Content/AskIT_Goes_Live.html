@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 12 · AskIT Goes Live</title>
+<style>
+:root{
+  --bg:#f6f7fb;--card:#ffffff;--ink:#141824;--mute:#5b6475;--line:#e3e6ee;
+  --blue:#1F5AA6;--teal:#0E7068;--purple:#6A3FA0;--amber:#E08A00;--red:#B42318;
+  --blue-s:rgba(31,90,166,.10);--teal-s:rgba(14,112,104,.11);--purple-s:rgba(106,63,160,.10);--amber-s:rgba(224,138,0,.12);--red-s:rgba(180,35,24,.10);
+  --hero1:#0b1f3a;--hero2:#1F5AA6;--hero3:#0E7068;--shadow:0 6px 24px rgba(20,24,36,.08);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1218;--card:#171b24;--ink:#e8ebf2;--mute:#9aa3b5;--line:#2a3040;
+  --blue:#6ea3ec;--teal:#4cc2b5;--purple:#b391e6;--amber:#f2b04a;--red:#f07a6d;
+  --blue-s:rgba(110,163,236,.13);--teal-s:rgba(76,194,181,.13);--purple-s:rgba(179,145,230,.13);--amber-s:rgba(242,176,74,.13);--red-s:rgba(240,122,109,.13);
+  --shadow:0 6px 24px rgba(0,0,0,.35)}}
+:root[data-theme="dark"]{
+  --bg:#0f1218;--card:#171b24;--ink:#e8ebf2;--mute:#9aa3b5;--line:#2a3040;
+  --blue:#6ea3ec;--teal:#4cc2b5;--purple:#b391e6;--amber:#f2b04a;--red:#f07a6d;
+  --blue-s:rgba(110,163,236,.13);--teal-s:rgba(76,194,181,.13);--purple-s:rgba(179,145,230,.13);--amber-s:rgba(242,176,74,.13);--red-s:rgba(240,122,109,.13);
+  --shadow:0 6px 24px rgba(0,0,0,.35)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Segoe UI",system-ui,-apple-system,Arial,sans-serif}
+a{color:var(--blue)}
+code{background:var(--blue-s);padding:1px 6px;border-radius:6px;font-size:.92em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px 80px}
+header.hero{background:linear-gradient(120deg,var(--hero1),var(--hero2) 55%,var(--hero3));color:#fff;padding:34px 0 30px}
+.hero .wrap{padding-bottom:0}
+.kicker{letter-spacing:.14em;text-transform:uppercase;font-size:13px;opacity:.85;font-weight:700}
+.hero h1{font-size:clamp(30px,5vw,48px);margin:6px 0 8px;line-height:1.1}
+.hero p.lead{font-size:clamp(17px,2.2vw,21px);max-width:820px;margin:0 0 18px;opacity:.95}
+.quote{background:rgba(255,255,255,.12);border-left:5px solid #ffd27a;padding:12px 16px;border-radius:10px;max-width:820px;font-style:italic}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);padding:6px 12px;border-radius:999px;font-size:14px;font-weight:600}
+nav.top{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+nav.top .wrap{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px}
+nav.top a{text-decoration:none;color:var(--ink);padding:5px 11px;border-radius:999px;font-weight:600;font-size:14px;border:1px solid var(--line);white-space:nowrap}
+nav.top a:hover{background:var(--blue-s)}
+#themeBtn{margin-left:auto;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer;font-weight:600}
+section{margin-top:44px;scroll-margin-top:70px}
+h2{font-size:clamp(24px,3.4vw,32px);margin:0 0 6px}
+h3{margin:0 0 6px}
+.sub{color:var(--mute);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+/* scoreboard */
+.board{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+.gapc{cursor:pointer;user-select:none;border:2px solid var(--red);transition:.2s;padding:16px}.gapc h3{color:var(--red);font-size:17px;white-space:nowrap}
+.gapc.closed{border-color:var(--teal);background:var(--teal-s)}.gapc.closed h3{color:var(--teal)}
+/* flip cards */
+.flip{perspective:1000px;cursor:pointer;height:100%}
+.flip .in{display:grid;height:100%;transition:transform .55s;transform-style:preserve-3d}
+.flip.on .in{transform:rotateY(180deg)}
+.flip .f,.flip .b{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:16px;padding:18px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);font-size:16px}
+.flip .b{transform:rotateY(180deg);background:var(--card);border-color:var(--purple)}
+.flip p{margin:6px 0 4px}
+.g5{grid-template-columns:repeat(5,1fr)}
+@media (max-width:900px){.g5{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:480px){.g5{grid-template-columns:1fr}}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media (max-width:1000px){.g4{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:480px){.g4{grid-template-columns:1fr}}
+.flip .f .ico{font-size:34px}
+.flip .f h3{margin-top:6px}
+.flip small{color:var(--mute)}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--blue-s);color:var(--blue);margin-right:6px}
+.tag.hands{background:var(--amber-s);color:var(--amber)}
+.tag.demo{background:var(--purple-s);color:var(--purple)}
+/* timeline */
+.steps{display:grid;gap:16px}
+.step{display:grid;grid-template-columns:64px 1fr;gap:14px}
+.num{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;font-size:24px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--blue),var(--teal))}
+.bridge{background:var(--blue-s);border-left:5px solid var(--blue);padding:10px 14px;border-radius:10px;margin:10px 0}
+.who{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+@media (max-width:640px){.who{grid-template-columns:1fr}.step{grid-template-columns:1fr}.num{width:46px;height:46px;font-size:20px}}
+.who div{border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.who b{display:block;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.predict{background:var(--amber-s);border:2px dashed var(--amber);border-radius:12px;padding:10px 14px;margin:10px 0}
+.predict button{margin-top:6px}
+.reveal{display:none;margin-top:8px;font-weight:600}
+.predict.open .reveal{display:block}
+.lesson{background:var(--purple-s);border-left:5px solid var(--purple);padding:10px 14px;border-radius:10px;margin:10px 0}
+.client{background:var(--teal-s);border-left:5px solid var(--teal);padding:10px 14px;border-radius:10px;margin:10px 0}
+.closes{font-weight:700;color:var(--teal)}
+button.btn{background:var(--blue);color:#fff;border:0;border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer;font-size:15px}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+/* lab card */
+.lab{border:3px solid var(--amber);border-radius:18px;padding:20px;background:var(--card);box-shadow:var(--shadow)}
+.doing{background:var(--amber-s);border-radius:12px;padding:12px 16px;font-weight:800;font-size:18px}
+.box4{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:14px 0}
+.box4 div{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.box4 h4{margin:0 0 4px}
+pre.cmd{background:#0f1420;color:#e6edf7;padding:12px 16px;border-radius:10px;overflow-x:auto;font-size:16px;margin:6px 0;position:relative}
+.copy{position:absolute;right:8px;top:8px;background:#2a3550;color:#fff;border:0;border-radius:8px;padding:3px 10px;cursor:pointer;font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:16px}
+th,td{border-bottom:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
+th{background:var(--blue-s)}
+.tbl{overflow-x:auto}
+svg text{font-family:"Segoe UI",Arial,sans-serif}
+.diagram{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px;overflow-x:auto}
+.fig-ink{fill:var(--ink)}.fig-mute{fill:var(--mute)}
+.final{background:linear-gradient(120deg,var(--hero1),var(--hero2) 55%,var(--hero3));color:#fff;border-radius:18px;padding:26px;text-align:center;font-size:clamp(19px,2.6vw,25px);font-weight:700}
+details{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--card);margin:8px 0}
+summary{cursor:pointer;font-weight:700}
+.badge-done{display:none;color:var(--teal);font-weight:800}
+.allclosed .badge-done{display:inline}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">Day 12 · Final session · AWS Bedrock AgentCore</div>
+    <h1>AskIT Goes Live 🚀</h1>
+    <p class="lead">For 11 days you <b>built</b> an agent. Today you <b>run it the way an enterprise does</b>: you deploy it to AWS yourself, plug it into company tools, break it, find the fault, and lock it down.</p>
+    <div class="quote">“Great demo. Can 50,000 employees use it on Monday, securely, and will you know when it breaks?” <br>— the client's CIO</div>
+    <div class="chips"><span class="chip">1 lab · 6 steps</span><span class="chip">1 command</span><span class="chip">Your own Runtime on AWS</span><span class="chip">5 production gaps to close</span></div>
+  </div>
+</header>
+<nav class="top"><div class="wrap">
+  <a href="#gaps">🎯 Gaps</a><a href="#map">🗺️ Map</a><a href="#flow">🧭 Flow</a><a href="#lab">🧪 Lab 16</a>
+  <a href="#arch">🏗️ Architecture</a><a href="#compare">⚖️ vs DIY</a><a href="#clinic">🩺 Clinic</a><a href="#card">📇 Card</a><a href="#wrap">🏁 Wrap-up</a>
+  <button id="themeBtn" onclick="toggleTheme()">🌓</button>
+</div></nav>
+
+<div class="wrap">
+
+<!-- ================================================================ SCOREBOARD -->
+<section id="gaps">
+  <h2>🎯 The Production Gap Scoreboard</h2>
+  <p class="sub">Your AskIT works on your VM. Five things stop it from serving 50,000 people. Each step today closes one. Click a card when its gap is closed. <span class="badge-done" id="doneBadge">🏆 All 5 closed. You can tell the CIO “yes”.</span></p>
+  <div class="grid g5">
+    <div class="card gapc" data-k="host"><h3><span class="st">⛔</span> Hosting</h3>Runs on <i>my</i> VM. Close VS Code and AskIT is gone.</div>
+    <div class="card gapc" data-k="scale"><h3><span class="st">⛔</span> Scale & isolation</h3>500 users at once share one process and one memory.</div>
+    <div class="card gapc" data-k="tools"><h3><span class="st">⛔</span> Enterprise tools</h3>Tools are Python functions copied into every agent.</div>
+    <div class="card gapc" data-k="ops"><h3><span class="st">⛔</span> Troubleshooting</h3>It breaks at 3 am. Where is the evidence?</div>
+    <div class="card gapc" data-k="gov"><h3><span class="st">⛔</span> Governance</h3>Nothing stops a reset of the CEO's password.</div>
+  </div>
+</section>
+
+<!-- ================================================================ MAP -->
+<section id="map">
+  <h2>🗺️ AgentCore in one picture: what you already know</h2>
+  <p class="sub">AgentCore does not replace what you built. It <b>runs</b> it. Tap each card: the back shows which day you already met the idea.</p>
+  <div class="grid g4">
+    <div class="flip" onclick="this.classList.toggle('on')"><div class="in">
+      <div class="f"><div class="ico">🏠</div><h3>Runtime</h3><span class="tag hands">hands-on</span><p>Hosts your agent code. One private sandbox per session. Pay per use.</p><small>tap ↻</small></div>
+      <div class="b"><b>You met it on:</b> Day 5 (the agent loop you wrote) + Day 9 (hosting code in the console).<br><br><b>Today:</b> you deploy AskIT into it yourself.</div></div></div>
+    <div class="flip" onclick="this.classList.toggle('on')"><div class="in">
+      <div class="f"><div class="ico">🚪</div><h3>Gateway</h3><span class="tag hands">hands-on</span><p>Turns APIs and Lambdas into MCP tools that any agent can use, with IAM on every call.</p><small>tap ↻</small></div>
+      <div class="b"><b>You met it on:</b> Day 9 (MCP server on Lambda) + Day 11 (Lab 15, the Gateway).<br><br><b>Today:</b> your deployed agent plugs into it (version 2).</div></div></div>
+    <div class="flip" onclick="this.classList.toggle('on')"><div class="in">
+      <div class="f"><div class="ico">🔎</div><h3>Observability</h3><span class="tag demo">shown</span><p>Every run as a trace in CloudWatch: model calls, tool calls, time, tokens.</p><small>tap ↻</small></div>
+      <div class="b"><b>You met it on:</b> Day 10 (Langfuse traces; CloudWatch sees the model, Langfuse the agent).<br><br><b>Today:</b> you see the trace of a broken run; the trainer shows it in CloudWatch.</div></div></div>
+    <div class="flip" onclick="this.classList.toggle('on')"><div class="in">
+      <div class="f"><div class="ico">🛡️</div><h3>Policy</h3><span class="tag demo">explained</span><p>Rules (Cedar) in the Gateway decide which tool call is allowed. Default deny; forbid wins.</p><small>tap ↻</small></div>
+      <div class="b"><b>You met it on:</b> Day 11 (guardrails and red-teaming inside the app).<br><br><b>Today:</b> the rule moves out of the code, into the Gateway.</div></div></div>
+    <div class="flip" onclick="this.classList.toggle('on')"><div class="in">
+      <div class="f"><div class="ico">🪪</div><h3>Identity</h3><span class="tag">explained</span><p>Who the user is, and the agent's own access to other systems (OAuth, API keys) without keys in code.</p><small>tap ↻</small></div>
+      <div class="b"><b>You met it on:</b> every day you pasted keys into <code>.env</code>. Identity is how production avoids that.<br><br><b>Today:</b> IAM signs your calls; Identity is the next step.</div></div></div>
+    <div class="flip" onclick="this.classList.toggle('on')"><div class="in">
+      <div class="f"><div class="ico">🧠</div><h3>Memory</h3><span class="tag">explained</span><p>Managed short-term (this chat) and long-term (facts across chats) memory.</p><small>tap ↻</small></div>
+      <div class="b"><b>You met it on:</b> Day 7 (memory and context).<br><br><b>Today:</b> you see session memory inside the Runtime sandbox (step 3).</div></div></div>
+    <div class="flip" onclick="this.classList.toggle('on')"><div class="in">
+      <div class="f"><div class="ico">🧰</div><h3>Built-in tools</h3><span class="tag">explained</span><p>Browser (agent uses websites) and Code Interpreter (agent runs code in a sandbox).</p><small>tap ↻</small></div>
+      <div class="b"><b>You met it on:</b> Day 6 (tools for LangChain agents).<br><br><b>Today:</b> mentioned only. Ready-made tools you don't host yourself.</div></div></div>
+    <div class="flip" onclick="this.classList.toggle('on')"><div class="in">
+      <div class="f"><div class="ico">📏</div><h3>Evaluations</h3><span class="tag">explained</span><p>Scores agent runs (correct, helpful, safe) on live traffic.</p><small>tap ↻</small></div>
+      <div class="b"><b>You met it on:</b> Day 10 (evals, RAGAS / DeepEval, LangSmith).<br><br><b>Today:</b> mentioned only. The managed version of your eval harness.</div></div></div>
+  </div>
+  <p style="margin-top:12px">📇 The <a href="#card">client-call card</a> at the end of this page: one section for every client conversation.</p>
+</section>
+
+<!-- ================================================================ FLOW -->
+<section id="flow">
+  <h2>🧭 Today's flow: one story, six steps</h2>
+  <p class="sub">Every step: a link back to an earlier day, what the trainer shows, what <b>you</b> do on AWS, a prediction, and the line you can say to a client.</p>
+  <div class="steps">
+
+    <div class="step"><div class="num">1</div><div class="card">
+      <h3>🖥️ AskIT on my VM <small style="color:var(--mute)">· 20 min</small></h3>
+      <div class="bridge">🔗 <b>Day 5</b> agent loop + <b>Days 3–4</b> knowledge-base search. This is that agent.</div>
+      <div class="who"><div><b>Trainer</b>Runs AskIT locally, then closes VS Code: the agent is gone.</div><div><b>You</b>Ask a ticket question and a VPN question on your VM. Tick the 5 gaps.</div></div>
+      <div class="predict"><b>🤔 Predict:</b> 500 users ask at once. What breaks first?<br><button class="btn ghost" onclick="this.parentElement.classList.add('open')">Reveal</button>
+        <div class="reveal">All five gaps at once: one process, one memory, no logs, no rules, and your laptop is the server.</div></div>
+      <div class="client">💼 “Your prototype logic is fine. What we add now is how it runs: hosting, shared tools, monitoring and policy.”</div>
+    </div></div>
+
+    <div class="step"><div class="num">2</div><div class="card">
+      <h3>☁️ Deploy YOUR agent to AgentCore Runtime <small style="color:var(--mute)">· 30 min</small></h3>
+      <div class="bridge">🔗 <b>Day 9</b>: you created a Lambda in the console. Same idea, but now the whole agent is hosted.</div>
+      <div class="who"><div><b>Trainer</b>Deploys with the <b>CLI</b> (developer way, ~3 commands) on screen.</div><div><b>You</b>Deploy <b>your own Runtime</b> in the <b>console</b> (ops way): Create runtime → S3 Source → <i>Choose from an existing S3 bucket</i> → <code>main.py</code> → role. Then ping it.</div></div>
+      <div class="predict"><b>🤔 Predict:</b> how many servers will you manage?<br><button class="btn ghost" onclick="this.parentElement.classList.add('open')">Reveal</button>
+        <div class="reveal">Zero. AWS starts a sandbox when a request arrives and stops it when idle.</div></div>
+      <p class="closes">✅ Closes: 🏠 Hosting</p>
+      <div class="client">💼 “We host your existing agent on a managed runtime. No servers to patch, it scales with use, and you pay per use.”</div>
+    </div></div>
+
+    <div class="step"><div class="num">3</div><div class="card">
+      <h3>👥 Sessions: one sandbox per user <small style="color:var(--mute)">· 15 min</small></h3>
+      <div class="bridge">🔗 <b>Day 7</b> memory and context. Here every session id gets its own sandbox and its own memory.</div>
+      <div class="who"><div><b>Trainer</b>Explains cold start vs warm, and session isolation.</div><div><b>You</b>Two employees chat at once: 👩 Priya asks 3 questions, 👨 Rahul asks 1. See who gets which private computer, who is fast, and who remembers what.</div></div>
+      <div class="predict"><b>🤔 Predict:</b> Priya asks 3 questions, Rahul asks 1. How many private computers (sandboxes) will AWS start?<br><button class="btn ghost" onclick="this.parentElement.classList.add('open')">Reveal</button>
+        <div class="reveal">Two. And look closely: version 1 cannot find the ticket. Its Python tools stayed on your VM.</div></div>
+      <p class="closes">✅ Closes: 👥 Scale & isolation</p>
+      <div class="client">💼 “Each conversation runs in its own isolated sandbox, so one user's data never reaches another's.”</div>
+    </div></div>
+
+    <div class="step"><div class="num">4</div><div class="card">
+      <h3>🧰 Version 2: enterprise tools through the Gateway <small style="color:var(--mute)">· 30 min</small></h3>
+      <div class="bridge">🔗 <b>Day 9</b> MCP server on Lambda → <b>Day 11</b> Gateway in front of it. Your deployed agent now plugs in.</div>
+      <div class="who"><div><b>Trainer</b>Gateway = a managed Day 9 MCP server. Shows the 4 tools and versions.</div><div><b>You</b>In the console: copy the class Gateway's URL, add it to <b>your</b> Runtime as <code>GATEWAY_URL</code>. AWS makes version 2. Ask a ticket and a VPN question.</div></div>
+      <div class="predict"><b>🤔 Predict:</b> one setting changed. How many tools does the agent see now?<br><button class="btn ghost" onclick="this.parentElement.classList.add('open')">Reveal</button>
+        <div class="reveal">Four: get_ticket, get_user, reset_password, search_kb (RAG with Titan embeddings). The code did not change.</div></div>
+      <p class="closes">✅ Closes: 🧰 Enterprise tools</p>
+      <div class="client">💼 “Your systems are exposed once, securely, and every agent reuses them. No copy-pasted integrations.”</div>
+    </div></div>
+
+    <div class="step"><div class="num">5</div><div class="card">
+      <h3>🛡️ Run it safely: when it breaks, and when it must say no <small style="color:var(--mute)">· 25 min</small></h3>
+      <div class="bridge">🔗 <b>Day 10</b> traces + <b>Day 11</b> guardrails, now built into the platform.</div>
+      <div class="who"><div><b>Trainer</b>Breaks production (“AskIT is down”) and shows the trace in the AWS console on screen. Then explains Policy: the security team's rule lives in the Gateway.</div><div><b>You</b>One click: the app shows the trace of the run, and the failed step is red. Then read the VIP rule in plain English and in Cedar, and predict what the Gateway does.</div></div>
+      <div class="predict"><b>🤔 Predict:</b> we did not touch the agent. Will the VIP reset be blocked?<br><button class="btn ghost" onclick="this.parentElement.classList.add('open')">Reveal</button>
+        <div class="reveal">Yes. The Gateway asks the policy engine before every tool call. The agent cannot go around it.</div></div>
+      <p class="closes">✅ Closes: 🔎 Troubleshooting + 🛡️ Governance</p>
+      <div class="client">💼 “Every run is traced, so we see what broke in minutes. And your security team writes the rules once, at the gateway, for every agent.”</div>
+    </div></div>
+
+    <div class="step"><div class="num">6</div><div class="card">
+      <h3>🏗️ Architect it: design AgentCore for a client <small style="color:var(--mute)">· 25 min</small></h3>
+      <div class="bridge">🔗 All 11 days, as a client solution: the conversation you will have in a sales or architecture call.</div>
+      <div class="who"><div><b>Trainer</b>Runs one case live with the class (AskBank), then compares answers.</div><div><b>You</b>Pick a client (bank, retailer, hospital), choose the AgentCore pieces, and decide go / pilot / no-go. The app draws your architecture and compares it with the reference.</div></div>
+      <div class="client">💼 “We start from your users and your risks, then pick only the AgentCore pieces that close them.”</div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ================================================================ LAB CARD -->
+<section id="lab">
+  <h2>🧪 Lab 16 · AskIT goes to production</h2>
+  <p class="sub">One lab for the whole session. One app with six tabs, in the order above.</p>
+  <div class="lab">
+    <div class="doing">We are doing Lab 16 · AskIT goes to production now (lab16-askit-enterprise).<br>In VS Code: File &gt; Open Folder &gt; C:\AskIT\dxc-agentic-ai\Day12\Labs\lab16-askit-enterprise</div>
+    <div class="box4">
+      <div><h4>🛠️ What we do</h4>Run AskIT on the VM, deploy it to AWS yourself, add the company tools, see it fail and see a risky action blocked, then design AgentCore for a client.</div>
+      <div><h4>❓ Why</h4>A working agent is not a production agent. Clients ask about hosting, tools, monitoring and security, not about prompts.</div>
+      <div><h4>🎓 Outcome</h4>Your own agent hosted on AWS, version 2 with Gateway tools, a client architecture you designed, and a client line for each AgentCore feature.</div>
+      <div><h4>👣 How</h4>One command starts the app. Two short console forms (deploy, then add one setting). Everything else is buttons.</div>
+    </div>
+    <p><b>1.</b> In VS Code open a terminal: <b>Terminal &gt; New Terminal</b>. Type this and press Enter:</p>
+    <pre class="cmd"><button class="copy" onclick="cp(this)">Copy</button>python run.py</pre>
+    <p><b>2.</b> The app opens in your browser. Do tabs 1 to 6 in order. Each tab tells you exactly what to click in the AWS console.</p>
+    <p><b>3.</b> AWS console: sign in as <b>your own user</b> (user101 … user116), region <b>N. Virginia (us-east-1)</b>.</p>
+    <details><summary>Stuck? Click here</summary>
+      <ul>
+        <li><b>“No AWS keys”</b>: your keys are in <code>C:\AskIT\dxc-agentic-ai\.env</code>. Tell the trainer.</li>
+        <li><b>Deploy failed or slow</b>: switch on <b>“Use the class backup Runtime”</b> in the app's sidebar and carry on. You still do every other step.</li>
+        <li><b>“Runtime not found”</b>: the name must be exactly <code>askit_user1NN</code> (small letters, underscore), region us-east-1. Then click <b>Refresh my Runtime</b>.</li>
+        <li><b>Port busy</b>: close the other Streamlit window (Ctrl+C in its terminal) and run <code>python run.py</code> again.</li>
+        
+      </ul></details>
+  </div>
+</section>
+
+<!-- ================================================================ ARCHITECTURE -->
+<section id="arch">
+  <h2>🏗️ What you built today, and which file does what</h2>
+  <p class="sub">The flow of one question, from your screen to the ticket system and back.</p>
+  <div class="diagram">
+  <svg viewBox="0 0 1120 470" width="100%" role="img" aria-label="Architecture: lab app calls AgentCore Runtime, which calls Bedrock and the Gateway; the Gateway checks the policy and calls the Lambda tools; CloudWatch records traces">
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#8a93a6"/></marker></defs>
+    <g stroke-width="2.4">
+      <rect x="14" y="150" width="180" height="130" rx="16" fill="rgba(31,90,166,.12)" stroke="#1F5AA6"/>
+      <rect x="250" y="40" width="300" height="330" rx="20" fill="rgba(106,63,160,.07)" stroke="#6A3FA0" stroke-dasharray="8 6"/>
+      <rect x="275" y="95" width="250" height="90" rx="14" fill="rgba(106,63,160,.14)" stroke="#6A3FA0"/>
+      <rect x="275" y="230" width="250" height="90" rx="14" fill="rgba(106,63,160,.14)" stroke="#6A3FA0"/>
+      <rect x="620" y="40" width="200" height="90" rx="14" fill="rgba(224,138,0,.14)" stroke="#E08A00"/>
+      <rect x="620" y="180" width="200" height="130" rx="14" fill="rgba(14,112,104,.14)" stroke="#0E7068"/>
+      <rect x="880" y="180" width="220" height="130" rx="14" fill="rgba(14,112,104,.08)" stroke="#0E7068"/>
+      <rect x="620" y="360" width="480" height="80" rx="14" fill="rgba(31,90,166,.08)" stroke="#1F5AA6"/>
+    </g>
+    <g class="fig-ink" text-anchor="middle" font-size="16">
+      <text x="104" y="190" font-weight="700" font-size="18">🖥️ Lab app (VM)</text><text x="104" y="216">app.py · cloud.py</text><text x="104" y="240" class="fig-mute">invoke_agent_runtime</text><text x="104" y="262" class="fig-mute">(your IAM user)</text>
+      <text x="400" y="70" font-weight="700" font-size="18">🏠 AgentCore Runtime</text>
+      <text x="400" y="128" font-weight="700">Session A · own sandbox</text><text x="400" y="152">main.py: the Day 5 loop</text><text x="400" y="174" class="fig-mute">runs as askit-runtime-role</text>
+      <text x="400" y="262" font-weight="700">Session B · own sandbox</text><text x="400" y="286">same code, own memory</text><text x="400" y="308" class="fig-mute">v1: no tools · v2: GATEWAY_URL</text>
+      <text x="720" y="78" font-weight="700" font-size="18">🤖 Bedrock</text><text x="720" y="104">Amazon Nova (Converse)</text>
+      <text x="720" y="215" font-weight="700" font-size="18">🚪 Gateway</text><text x="720" y="240">MCP: tools/list, tools/call</text><text x="720" y="264">🛡️ Policy (Cedar)</text><text x="720" y="288" class="fig-mute">askit-gw-user116</text>
+      <text x="990" y="215" font-weight="700" font-size="18">⚙️ Lambda tools</text><text x="990" y="240">get_ticket · get_user</text><text x="990" y="264">reset_password</text><text x="990" y="288">search_kb (RAG, Titan)</text>
+      <text x="860" y="395" font-weight="700" font-size="18">🔎 CloudWatch GenAI Observability</text><text x="860" y="420">sessions · traces · tool spans · logs · tokens</text>
+    </g>
+    <g stroke="#8a93a6" stroke-width="2.4" fill="none" marker-end="url(#ar)">
+      <line x1="196" y1="195" x2="272" y2="145"/><line x1="196" y1="240" x2="272" y2="270"/>
+      <line x1="527" y1="125" x2="617" y2="90"/><line x1="527" y1="160" x2="617" y2="225"/>
+      <line x1="822" y1="245" x2="877" y2="245"/>
+      <line x1="400" y1="372" x2="617" y2="400" stroke-dasharray="6 5"/><line x1="720" y1="312" x2="720" y2="357" stroke-dasharray="6 5"/>
+    </g>
+    <g class="fig-mute" font-size="14"><text x="560" y="88">Converse</text><text x="548" y="215">SigV4 signed</text><text x="830" y="236">invoke</text><text x="470" y="400">traces + logs</text></g>
+  </svg></div>
+  <div class="tbl" style="margin-top:12px"><table>
+    <tr><th>Piece</th><th>Where it lives</th><th>What it does</th><th>Who set it up</th></tr>
+    <tr><td><code>app.py</code>, <code>cloud.py</code></td><td>Your VM, lab folder</td><td>The screen; finds your Runtime and calls it</td><td>Ready-made</td></tr>
+    <tr><td><code>main.py</code> (agent)</td><td>Inside your Runtime (S3 zip)</td><td>The Day 5 loop: model → tool → answer. Prints every tool call to the logs</td><td><b>You deployed it</b></td></tr>
+    <tr><td><code>GATEWAY_URL</code></td><td>Runtime environment variable</td><td>Version 2: where the agent finds its tools</td><td><b>You set it</b></td></tr>
+    <tr><td>Gateway + Policy</td><td>AgentCore</td><td>MCP door to the tools; Cedar rules check each call</td><td>Trainer</td></tr>
+    <tr><td>Lambda <code>askit-get-ticket</code></td><td>AWS Lambda</td><td>The 4 tools; <code>search_kb</code> does RAG with Titan embeddings</td><td>Trainer (Day 11)</td></tr>
+    <tr><td><code>askit-runtime-role</code></td><td>IAM</td><td>What the agent may call: Bedrock, the Gateway, logs</td><td>Trainer</td></tr>
+  </table></div>
+</section>
+
+<!-- ================================================================ COMPARE -->
+<section id="compare">
+  <h2>⚖️ AgentCore vs “we build it ourselves”</h2>
+  <p class="sub">The question every client asks. LangGraph and MCP decide <i>how the agent thinks</i>. AgentCore decides <i>how it runs</i>. They work together.</p>
+  <div class="tbl"><table>
+    <tr><th>Need</th><th>DIY (Days 1–11)</th><th>AgentCore</th><th>Alternatives</th></tr>
+    <tr><td>Run the agent</td><td>Your VM / container on ECS or EKS: you patch and scale it</td><td>Runtime: sandbox per session, any framework, pay per use</td><td>Azure AI Foundry Agent Service, Google Vertex AI Agent Engine</td></tr>
+    <tr><td>Connect tools</td><td>MCP server you host (Day 9)</td><td>Gateway: Lambda/OpenAPI → MCP, IAM or OAuth in front</td><td>Self-hosted MCP gateway, API management</td></tr>
+    <tr><td>See inside</td><td>Langfuse / LangSmith (Day 10)</td><td>Observability in CloudWatch (OpenTelemetry)</td><td>Langfuse, LangSmith, Datadog; they work alongside</td></tr>
+    <tr><td>Rules on actions</td><td>Guardrails in code (Day 11)</td><td>Policy (Cedar) at the Gateway; no redeploy</td><td>OPA, custom middleware</td></tr>
+    <tr><td>Memory</td><td>Your own store (Day 7)</td><td>Memory: short and long term, managed</td><td>Redis, vector DB, Mem0</td></tr>
+  </table></div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3>✅ Adopt AgentCore when…</h3><ul><li>The client is on AWS and wants managed, not hand-built, infrastructure</li><li>Many agents must share the same tools and rules</li><li>Security asks for isolation, audit and central policy</li><li>Traffic is spiky (pay per use beats idle servers)</li></ul></div>
+    <div class="card"><h3>⚠️ Think twice when…</h3><ul><li>The client is standardised on another cloud</li><li>One tiny agent with steady traffic (a container may be simpler)</li><li>Strict data residency in a region where a feature is not available yet: check first</li><li>Cold start (a few seconds) is not acceptable: plan warm sessions</li></ul></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>💰 Cost in one line</h3>Hosting is the small number. <b>Model tokens are usually the biggest line</b>, then Runtime CPU time (billed only while working), then Gateway and policy calls (fractions of a cent). Always quote from the current AWS price page.</div>
+</section>
+
+<!-- ================================================================ CLINIC -->
+<section id="clinic">
+  <h2>🩺 Client clinic: which gaps matter most?</h2>
+  <p class="sub">2 minutes each. Decide in your head, then open the answer.</p>
+  <details><summary>🏦 AskBank Ops: password resets and system access for 8,000 bank staff</summary><p><b>Governance first</b> (Policy: never reset privileged accounts; approval for access grants) + Identity (bank login) + <b>Troubleshooting</b> for audit. <b>Go for a pilot with approvals on</b>; no for fully automatic.</p></details>
+  <details><summary>🛒 StoreHelp: shopping assistant, 20× traffic on sale days</summary><p><b>Scale & isolation</b> (Runtime sessions; plan for cold start) + <b>Enterprise tools</b> (stock and price APIs via Gateway) + a cost alarm. <b>Go, after a peak-load test.</b></p></details>
+  <details><summary>🏥 LabDoc: hospital report summaries for doctors</summary><p><b>Governance</b> (redact patient data; who may see which report) + <b>Troubleshooting</b> with evaluations (is the summary faithful?) + human sign-off. <b>No-go until redaction is proven</b>; pilot on non-patient reports.</p></details>
+</section>
+
+
+<!-- ================================================================ CLIENT-CALL CARD -->
+<section id="card">
+  <h2>📇 Client-call card: keep this for your next solutioning call</h2>
+  <div class="client" style="font-size:18px"><b>One line for the client:</b> you bring the agent (your code, any framework, any model); AgentCore gives you the production plumbing: <b>a place to run it, tools it can call, who it acts as, what it remembers, rules it cannot break, and eyes on everything it does.</b></div>
+  <div class="tbl" style="margin-top:12px"><table>
+    <tr><th>Feature</th><th>What it does</th><th>Client problem it solves</th><th>Question to ask the client</th><th>Today</th></tr>
+    <tr><td><b>Runtime</b></td><td>Hosts and scales the agent; a private sandbox per session; any framework and model</td><td>“We built a demo; how do we put it in production for many users?”</td><td>How many users at peak? Can they wait a few seconds for a first reply?</td><td><span class="tag hands">you deployed</span></td></tr>
+    <tr><td><b>Gateway</b></td><td>Turns your APIs and Lambdas into tools the agent can call (MCP)</td><td>“The agent needs our ticketing, HR and CRM systems.”</td><td>Which systems must the agent touch? Do they have APIs?</td><td><span class="tag hands">you used</span></td></tr>
+    <tr><td><b>Policy</b></td><td>Checks every tool call against rules first. Default deny; a forbid always wins</td><td>“The agent must never do X, whatever the prompt says.”</td><td>What are the “never” rules? Who owns them?</td><td><span class="tag demo">explained</span></td></tr>
+    <tr><td><b>Observability</b></td><td>Traces each run: model calls, tool calls, time, tokens, errors (CloudWatch)</td><td>“Why did it give a wrong answer? What does it cost?”</td><td>Who debugs at 3 am? Which monitoring tools do you use?</td><td><span class="tag demo">shown</span></td></tr>
+    <tr><td><b>Identity</b></td><td>The agent's identity + your login provider (Okta, Entra ID, Cognito)</td><td>“Whose permissions does the agent use?”</td><td>Act as itself, or as the logged-in user?</td><td><span class="tag">explained</span></td></tr>
+    <tr><td><b>Memory</b></td><td>Short-term (this chat) and long-term (across chats) memory</td><td>“It forgets the customer every time.”</td><td>What may it remember, and for how long?</td><td><span class="tag">explained</span></td></tr>
+    <tr><td><b>Code Interpreter</b></td><td>A safe sandbox where the agent runs code</td><td>“It must calculate, analyse files, make charts.”</td><td>Does it need data files or real maths?</td><td><span class="tag">explained</span></td></tr>
+    <tr><td><b>Browser</b></td><td>A managed cloud browser the agent can use</td><td>“The system has no API, only a web screen.”</td><td>Which web apps have no API? Who approves automating them?</td><td><span class="tag">explained</span></td></tr>
+    <tr><td><b>Evaluations</b></td><td>Scores real agent runs for quality</td><td>“How do we know it is still good after a change?”</td><td>What does “good” mean? Who signs off a release?</td><td><span class="tag">explained</span></td></tr>
+  </table></div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3>🧪 Field lessons from this course</h3><ul>
+      <li><b>First call is slow:</b> a few seconds for a new session, about 1 s after.</li>
+      <li><b>Agents fail “politely”:</b> a tool error can come back as a normal reply. Read the trace, not the answer.</li>
+      <li><b>One lock is not enough:</b> keep a check inside the tool as well as the policy.</li>
+      <li><b>Cost:</b> model tokens are usually the biggest line; hosting is small.</li></ul></div>
+    <div class="card"><h3>❓ Ten discovery questions</h3><ol>
+      <li>What job, and what does a good result look like?</li><li>Which systems to read, which to change?</li><li>Which actions need human approval?</li>
+      <li>What must it never do?</li><li>Whose permissions does it use?</li><li>What data may leave the company or country?</li>
+      <li>Users, questions per day, peak?</li><li>How will we know it is right?</li><li>Who is on call; what is the off switch?</li><li>Who pays, and what is the monthly limit?</li></ol></div>
+  </div>
+  <p class="sub" style="margin-top:10px">Services and names change often: check the AWS pages before quoting details to a client.</p>
+</section>
+
+<!-- ================================================================ WRAP -->
+<section id="wrap">
+  <h2>🏁 Wrap-up</h2>
+  <div class="grid g2">
+    <div class="card"><h3>🧹 Before you leave</h3><ol><li>AgentCore → Runtime → select <code>askit_user1NN</code> → <b>Delete</b>.</li><li>In the app, tab 6: <b>Check it is deleted</b>.</li><li>Download your lessons and client lines (tab 6).</li></ol><p>Keys never go into GitHub, wikis or chat.</p></div>
+    <div class="card"><h3>📇 Take home</h3><ul><li><a href="#card">Client-call card</a> (this page)</li><li>Your <code>day12_lessons.md</code> (6 lessons + 6 client lines)</li><li>The five gaps: Hosting, Scale, Tools, Troubleshooting, Governance: the checklist for any client agent</li></ul></div>
+  </div>
+  <div class="final" style="margin-top:18px">“Over 11 days you learned to build agents.<br>Today you ran one the way an enterprise does.”</div>
+</section>
+
+</div>
+<script>
+function cp(b){const t=b.parentElement.innerText.replace(/^Copy\s*/,'').trim();navigator.clipboard&&navigator.clipboard.writeText(t);b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1200)}
+function toggleTheme(){const r=document.documentElement;const dark=r.getAttribute('data-theme')==='dark'||(!r.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);r.setAttribute('data-theme',dark?'light':'dark');try{localStorage.setItem('d12theme',r.getAttribute('data-theme'))}catch(e){}}
+try{const t=localStorage.getItem('d12theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}
+const KEY='d12gaps';let closed={};try{closed=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+function paint(){document.querySelectorAll('.gapc').forEach(g=>{const on=!!closed[g.dataset.k];g.classList.toggle('closed',on);g.querySelector('.st').textContent=on?'✅':'⛔'});
+  document.getElementById('gaps').classList.toggle('allclosed',Object.values(closed).filter(Boolean).length===5)}
+document.querySelectorAll('.gapc').forEach(g=>g.addEventListener('click',()=>{closed[g.dataset.k]=!closed[g.dataset.k];try{localStorage.setItem(KEY,JSON.stringify(closed))}catch(e){}paint()}));
+paint();
+</script>
+</body>
+</html>

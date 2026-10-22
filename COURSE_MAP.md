@@ -17,7 +17,7 @@ New content appears the morning of each session — double-click `SYNC.bat` to g
 | 9 | Tue 13 Oct | MCP: one tool server, controls, stdio / HTTP / AWS Lambda | `Day09\Content` | `Day09\Labs\lab09-askit-mcp-control-room`, `homework-gatekeeper-mcp` | Ready |
 | 10 | Wed 14 Oct | Observability, cost, evaluation (traces, Langfuse, CloudWatch, evals) | `Day10\Content` | `Day10\Labs\lab10-askit-ops-control-room`, `homework-gatekeeper-evals` | Ready |
 | 11 | Wed 21 Oct | Ship It: workflow vs agent, AgentCore Gateway, security and red team | `Day11\Content` | `Day11\Labs\lab14-askit-front-desk`, `lab15-askit-gateway`, `lab12-askit-break-it-range` | Ready |
-| 12 | Thu 22 Oct | Go Live: AgentCore Runtime, Policy (Cedar), Production Readiness review | `Day12\Content` | `Day12\Labs\lab16a-askit-runtime`, `lab16b-askit-policy` | Ready |
+| 12 | Thu 22 Oct | AskIT Goes Live: deploy to AgentCore Runtime, Gateway tools, CloudWatch incident, Policy | `Day12\Content\AskIT_Goes_Live.html` | `Day12\Labs\lab16-askit-enterprise` | Ready |
 
 Dates and topics may be adjusted as the program progresses.
 

@@ -1,4 +1,4 @@
-"""Start Lab 16B · AskIT Policy Lab with ONE command:   python run.py
+"""Start Lab 16 · AskIT goes to production, with ONE command:   python run.py
 
 It installs what the lab needs (first time only), then runs:  streamlit run app.py
 Keep this window open.
@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-NEED = ["streamlit", "pandas", "langchain_core", "langchain_aws", "langchain_openai", "boto3", "dotenv", "cedarpy"]   # import names that must be present
+NEED = ["streamlit", "pandas", "langchain_core", "langchain_aws", "langchain_openai", "boto3", "dotenv"]   # import names that must be present
 
 
 def missing():

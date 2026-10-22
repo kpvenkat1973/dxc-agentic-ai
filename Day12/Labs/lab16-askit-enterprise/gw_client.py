@@ -24,6 +24,7 @@ import tools_core
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 PREFIX = "askit-lambda___"          # the Gateway names a tool  <target name>___<tool name>
+MCP_VERSIONS = ["2025-11-25", "2025-06-18", "2026-07-28", "2025-03-26"]   # a Gateway accepts only the versions it is set up for: we try each until one is accepted
 SAVE = HERE / "my_gateway.json"     # your own Gateway address and ARN (never pushed to GitHub)
 DAY11_SAVE = ROOT / "Day11" / "Labs" / "lab15-askit-gateway" / "my_gateway.json"   # the address you saved yesterday
 
@@ -113,15 +114,36 @@ class AwsGateway:
         self.region = region_of(self.url)
 
     def rpc(self, method, params=None):
+        """Send one MCP request. A Gateway only accepts the MCP versions it is configured for, so try each until one is accepted."""
+        last = None
+        order = ([self.version] if getattr(self, "version", None) else []) + [v for v in MCP_VERSIONS if v != getattr(self, "version", None)]
+        for v in order:
+            last = self._send(method, params, v)
+            if last.ok or not (last.status == 400 and "protocol version" in (last.error or "").lower()):
+                if last.ok:
+                    self.version = v
+                return last
+        return last
+
+    def _send(self, method, params, version):
         import boto3
         from botocore.auth import SigV4Auth
         from botocore.awsrequest import AWSRequest
-        req = {"jsonrpc": "2.0", "id": 1, "method": method, **({"params": params} if params else {})}
+        p = dict(params) if params else {}
+        headers = {"Content-Type": "application/json", "Accept": "application/json, text/event-stream", "MCP-Protocol-Version": version}
+        if version >= "2026-07-28":        # newest spec: no handshake; method, tool name and client info travel with every request
+            headers["Mcp-Method"] = method
+            if method == "tools/call" and p.get("name"):
+                headers["Mcp-Name"] = p["name"]
+            p["_meta"] = {"io.modelcontextprotocol/protocolVersion": version,
+                          "io.modelcontextprotocol/clientInfo": {"name": "askit-lab", "version": "1.0"},
+                          "io.modelcontextprotocol/clientCapabilities": {}}
+        req = {"jsonrpc": "2.0", "id": 1, "method": method, **({"params": p} if p else {})}
         body = json.dumps(req)
         creds = boto3.Session().get_credentials()
         if creds is None:
             return Result(False, error="No AWS keys found. Check the .env file in the course folder (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY).", request=req)
-        aws = AWSRequest(method="POST", url=self.url, data=body, headers={"Content-Type": "application/json", "Accept": "application/json"})
+        aws = AWSRequest(method="POST", url=self.url, data=body, headers=headers)
         SigV4Auth(creds.get_frozen_credentials(), "bedrock-agentcore", self.region).add_auth(aws)
         r = urllib.request.Request(self.url, data=body.encode("utf-8"), headers=dict(aws.headers.items()), method="POST")
         t0 = time.time()
@@ -138,8 +160,11 @@ class AwsGateway:
         except Exception:
             return Result(False, error=f"HTTP {status}: {text[:300]}", request=req, response=text, ms=ms, status=status)
         if status >= 400 or "error" in data:
-            msg = (data.get("error") or {}).get("message") if isinstance(data.get("error"), dict) else data.get("message") or text[:300]
-            return Result(False, data, error=explain(status, msg), request=req, response=data, ms=ms, status=status)
+            err = data.get("error")
+            msg = err.get("message") if isinstance(err, dict) else data.get("message") or text[:300]
+            if isinstance(err, dict) and err.get("data"):
+                msg = f"{msg} {json.dumps(err['data'])[:200]}"
+            return Result(False, data, error=explain(status, f"{msg} [MCP {version}]"), request=req, response=data, ms=ms, status=status)
         return Result(True, data, request=req, response=data, ms=ms, status=status)
 
 
